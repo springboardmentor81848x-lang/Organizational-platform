@@ -1,49 +1,90 @@
-import { useNavigate } from "react-router-dom";
+import { useMemo, useState } from "react";
+import { Navigate, useNavigate } from "react-router-dom";
+import "./EmployeeDashboard.css";
+
+const seedSkills = [
+  { id: 1, name: "Java Programming", category: "Technical", current: 76, required: 90, priority: "High" },
+  { id: 2, name: "SQL & Database Design", category: "Technical", current: 68, required: 85, priority: "High" },
+  { id: 3, name: "Problem Solving", category: "Core", current: 82, required: 85, priority: "Low" },
+  { id: 4, name: "Communication", category: "Soft skills", current: 72, required: 85, priority: "Medium" },
+  { id: 5, name: "Spring Boot", category: "Technical", current: 55, required: 80, priority: "High" },
+  { id: 6, name: "Team Collaboration", category: "Soft skills", current: 88, required: 85, priority: "Low" },
+];
+const seedCourses = [
+  { id: 1, title: "Spring Boot Fundamentals", category: "Backend development", duration: "4h 20m", progress: 42, tone: "blue" },
+  { id: 2, title: "SQL for Application Developers", category: "Database", duration: "2h 45m", progress: 0, tone: "green" },
+  { id: 3, title: "Effective Communication at Work", category: "Professional skills", duration: "1h 30m", progress: 25, tone: "purple" },
+];
+const navItems = ["Overview", "My Skills", "Knowledge Gaps", "Learning", "Notifications", "Reports", "My Profile", "Settings"];
+const initialNotifications = [
+  { id: 1, title: "Skill reassessment due soon", text: "Your Java Programming reassessment is due this Friday.", time: "2 hours ago", unread: true },
+  { id: 2, title: "New learning recommendation", text: "SQL for Application Developers was added to your learning plan.", time: "Yesterday", unread: true },
+  { id: 3, title: "Learning milestone", text: "You completed 3 modules in Spring Boot Fundamentals.", time: "2 days ago", unread: true },
+  { id: 4, title: "Profile reminder", text: "Add your recent certifications to your profile.", time: "4 days ago", unread: false },
+];
+
+function Progress({ value }) { return <div className="ed-progress"><span style={{ width: `${value}%` }} /></div>; }
+function Pill({ children, tone = "blue" }) { return <span className={`ed-pill ${tone}`}>{children}</span>; }
+function Metric({ icon, label, value, note, tone }) { return <article className="ed-metric"><span className={`ed-metric-icon ${tone}`}>{icon}</span><p>{label}</p><strong>{value}</strong><small>{note}</small></article>; }
+function Intro({ eyebrow, title, subtitle, action }) { return <section className="ed-intro"><div><p className="ed-eyebrow">{eyebrow}</p><h1>{title}</h1><p className="ed-subtitle">{subtitle}</p></div>{action}</section>; }
 
 export default function DashboardPage() {
   const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("kgipUser") || "null");
+  const [page, setPage] = useState("Overview");
+  const [skills, setSkills] = useState(seedSkills);
+  const [courses, setCourses] = useState(seedCourses);
+  const [notifications, setNotifications] = useState(initialNotifications);
+  const [skillSearch, setSkillSearch] = useState("");
+  const [priority, setPriority] = useState("All priorities");
+  const [courseSearch, setCourseSearch] = useState("");
+  const [reportMessage, setReportMessage] = useState("");
+  const [reportType, setReportType] = useState("Skill assessment report");
+  const [reportRange, setReportRange] = useState("Last 90 days");
+  const [profile, setProfile] = useState(() => {
+    const saved = JSON.parse(localStorage.getItem("kgipEmployeeProfile") || "null");
+    return saved || { firstName: user?.firstName || "", lastName: "", email: user?.email || "", department: "Engineering", designation: "Software Engineer", experience: "0–2 years" };
+  });
+  const [settings, setSettings] = useState({ assessment: true, learning: true, mentor: true, weekly: false });
+  const [message, setMessage] = useState("");
+  const name = [profile.firstName, profile.lastName].filter(Boolean).join(" ") || user?.email || "Employee";
+  const initials = name.split(/\s+/).map((s) => s[0]).join("").slice(0, 2).toUpperCase();
+  const readiness = Math.round(skills.reduce((sum, s) => sum + s.current, 0) / skills.length);
+  const gapCount = skills.filter((s) => s.current < s.required).length;
+  const learningProgress = Math.round(courses.reduce((sum, c) => sum + c.progress, 0) / courses.length);
+  const filteredSkills = useMemo(() => skills.filter((s) => (s.name.toLowerCase().includes(skillSearch.toLowerCase()) || s.category.toLowerCase().includes(skillSearch.toLowerCase())) && (priority === "All priorities" || s.priority === priority)), [skills, skillSearch, priority]);
+  const filteredCourses = useMemo(() => courses.filter((c) => `${c.title} ${c.category}`.toLowerCase().includes(courseSearch.toLowerCase())), [courses, courseSearch]);
 
-  if (!user) {
-    navigate("/login", { replace: true });
-    return null;
+  if (!user) return <Navigate to="/login" replace />;
+  function signOut() { localStorage.removeItem("kgipToken"); localStorage.removeItem("kgipUser"); navigate("/login", { replace: true }); }
+  function updateSkill(id, value) { setSkills((items) => items.map((s) => s.id === id ? { ...s, current: Math.max(0, Math.min(100, Number(value) || 0)) } : s)); }
+  function updateCourse(id) { setCourses((items) => items.map((c) => c.id === id ? { ...c, progress: Math.min(100, c.progress + 10) } : c)); }
+  function downloadCsv(filename, rows) {
+    const csv = rows.map((row) => row.map((cell) => `"${String(cell ?? "").replaceAll('"', '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const a = document.createElement("a"); a.href = url; a.download = filename; a.click(); URL.revokeObjectURL(url);
   }
+  function exportSkills() { downloadCsv("employee-skill-assessment.csv", [["Skill", "Category", "Current", "Required", "Gap", "Priority"], ...skills.map((s) => [s.name, s.category, s.current, s.required, Math.max(0, s.required - s.current), s.priority])]); }
 
-  function signOut() {
-    localStorage.removeItem("kgipToken");
-    localStorage.removeItem("kgipUser");
-    navigate("/login", { replace: true });
+  function SkillTable({ rows, compact = false }) {
+    return <div className="ed-table-scroll"><table className="ed-table"><thead><tr><th>Skill</th><th>Current level</th><th>Required</th><th>Gap</th><th>Priority</th>{!compact && <th>Update score</th>}</tr></thead><tbody>{rows.map((s) => <tr key={s.id}><td><div className="ed-skill"><span>{s.name.slice(0, 2).toUpperCase()}</span><div><b>{s.name}</b><small>{s.category}</small></div></div></td><td><div className="ed-level"><Progress value={s.current} /><b>{s.current}%</b></div></td><td>{s.required}%</td><td><b className={s.current < s.required ? "ed-negative" : "ed-positive"}>{s.current < s.required ? `-${s.required - s.current}%` : "Met"}</b></td><td><Pill tone={s.priority.toLowerCase()}>{s.priority}</Pill></td>{!compact && <td><input className="ed-score" aria-label={`Update ${s.name}`} type="number" min="0" max="100" value={s.current} onChange={(e) => updateSkill(s.id, e.target.value)} /></td>}</tr>)}</tbody></table>{!rows.length && <p className="ed-empty">No matching skills. Try another search or priority.</p>}</div>;
   }
+  function CardHeading({ title, subtitle, action }) { return <div className="ed-card-heading"><div><h2>{title}</h2>{subtitle && <p>{subtitle}</p>}</div>{action}</div>; }
 
-  return (
-    <main className="dashboard-shell">
-      <nav className="topbar">
-        <span className="wordmark">
-          KGIP<span>.</span>
-        </span>
-        <button className="quiet-button" onClick={signOut}>
-          Sign out
-        </button>
-      </nav>
-      <section className="dashboard-content">
-        <p className="eyebrow">Workspace / Overview</p>
-        <h1>Welcome back, {user.firstName || user.email}.</h1>
-        <p className="dashboard-copy">
-          Your knowledge intelligence workspace is ready to take shape.
-        </p>
-        <div className="dashboard-grid">
-          <article>
-            <span className="metric">01</span>
-            <h2>Knowledge map</h2>
-            <p>See where expertise lives across your organization.</p>
-          </article>
-          <article>
-            <span className="metric">02</span>
-            <h2>Open gaps</h2>
-            <p>Surface the areas that need attention next.</p>
-          </article>
-        </div>
-      </section>
-    </main>
-  );
+  function overview() { return <>
+    <section className="ed-welcome"><div><p className="ed-eyebrow">EMPLOYEE WORKSPACE · 2026</p><h1>Welcome back, {profile.firstName || "there"}!</h1><p className="ed-subtitle">Here’s where your skills stand and what to focus on next.</p></div><div className="ed-readiness"><div className="ed-ring" style={{ "--score": `${readiness}%` }}><b>{readiness}</b><small>/100</small></div><div><Pill tone="green">ON TRACK</Pill><h3>Role readiness</h3><p>Your current skills are moving in the right direction.</p></div></div></section>
+    <section className="ed-metrics"><Metric icon="◎" label="Skills assessed" value={skills.length} note="Across your skill profile" tone="blue"/><Metric icon="↗" label="Skills to improve" value={gapCount} note="Compared with role requirements" tone="orange"/><Metric icon="▤" label="Learning progress" value={`${learningProgress}%`} note="Average course completion" tone="purple"/><Metric icon="✓" label="Courses completed" value={courses.filter((c) => c.progress === 100).length} note="Keep building momentum" tone="green"/></section>
+    <section className="ed-main-grid"><article className="ed-card ed-chart"><CardHeading title="Knowledge gap analysis" subtitle="Your current level compared with role expectations." action={<button className="ed-link" onClick={() => setPage("Knowledge Gaps")}>View gaps →</button>}/><div className="ed-legend"><span>■ Current level</span><span>■ Required level</span></div><div className="ed-bars">{skills.slice(0, 5).map((s) => <div className="ed-bar-group" key={s.id}><div className="ed-bar-pair"><i style={{ height: `${s.current}%` }}/><i style={{ height: `${s.required}%` }}/></div><small>{s.name.length > 13 ? `${s.name.slice(0, 12)}…` : s.name}</small></div>)}</div></article><article className="ed-card ed-focus"><CardHeading title="Focus this week" subtitle="Take the next step in your learning plan."/><span className="ed-focus-icon">▤</span><Pill tone="orange">HIGH PRIORITY</Pill><h3>{courses[0].title}</h3><p>Strengthen your backend skills with APIs, dependency injection and application structure.</p><div className="ed-progress-meta"><span>{courses[0].progress}% complete</span><b>{courses[0].progress}%</b></div><Progress value={courses[0].progress}/><button className="ed-primary ed-full" onClick={() => setPage("Learning")}>Continue learning →</button></article></section>
+    <section className="ed-card ed-table-card"><CardHeading title="Skill assessment overview" subtitle="Latest results from your role-based assessment." action={<button className="ed-secondary" onClick={() => setPage("My Skills")}>View all skills</button>}/><SkillTable rows={skills.slice(0, 4)} compact/></section>
+  </>; }
+  function mySkills() { return <><Intro eyebrow="SKILL DEVELOPMENT" title="My Skills" subtitle="Review your proficiency and update assessment scores." action={<button className="ed-primary" onClick={exportSkills}>↓ Export skills</button>}/><section className="ed-readiness-banner"><div className="ed-ring" style={{ "--score": `${readiness}%` }}><b>{readiness}</b><small>/100</small></div><div><Pill tone="green">YOUR ROLE READINESS</Pill><h2>{readiness >= 80 ? "Strong foundation" : "Your skills are progressing"}</h2><p>{skills.filter((s) => s.current >= s.required).length} of {skills.length} tracked skills meet their required level.</p></div></section><section className="ed-card ed-table-card"><div className="ed-toolbar"><input className="ed-search" placeholder="⌕ Search skills or categories…" value={skillSearch} onChange={(e) => setSkillSearch(e.target.value)}/><select value={priority} onChange={(e) => setPriority(e.target.value)}><option>All priorities</option><option>High</option><option>Medium</option><option>Low</option></select></div><CardHeading title="Skill assessment" subtitle="Change a score to simulate an updated assessment."/><SkillTable rows={filteredSkills}/></section></>; }
+  function gaps() { const rows = skills.filter((s) => s.current < s.required).sort((a, b) => (b.required - b.current) - (a.required - a.current)); return <><Intro eyebrow="ROLE READINESS" title="Knowledge Gaps" subtitle="Prioritize skills where learning can make the biggest difference." action={<button className="ed-primary" onClick={exportSkills}>↓ Export analysis</button>}/><section className="ed-readiness-banner"><div className="ed-ring" style={{ "--score": `${readiness}%` }}><b>{readiness}</b><small>/100</small></div><div><Pill tone="green">DEVELOPMENT PLAN</Pill><h2>{rows.length} skills need attention</h2><p>Start with high-priority gaps, then reassess after practice or training.</p></div></section><section className="ed-card ed-table-card"><CardHeading title="Skills requiring attention" subtitle="Sorted by the size of the gap to the required level."/><SkillTable rows={rows}/></section><section className="ed-category-grid">{["Technical", "Core", "Soft skills"].map((category) => { const group = skills.filter((s) => s.category === category); const avg = group.length ? Math.round(group.reduce((sum, s) => sum + s.current, 0) / group.length) : 0; return <article className="ed-card ed-category" key={category}><Pill tone={group.some((s) => s.current < s.required) ? "orange" : "green"}>{group.filter((s) => s.current < s.required).length} gaps</Pill><h3>{category}</h3><p>{avg}% average proficiency</p><Progress value={avg}/></article>; })}</section></>; }
+  function learning() { return <><Intro eyebrow="PERSONALIZED DEVELOPMENT" title="Learning paths" subtitle="Recommended courses to help close your highest-impact skill gaps." action={<Pill>Based on your skill profile</Pill>}/><section className="ed-featured"><div><Pill tone="light">RECOMMENDED NEXT</Pill><h2>Build your backend development skills</h2><p>Follow a focused learning plan based on your current skills and role requirements.</p><button className="ed-feature-button" onClick={() => { const c = courses.find((item) => item.progress < 100); if (c) updateCourse(c.id); }}>Continue learning →</button></div><div className="ed-feature-art"><span>▤</span><b>{learningProgress}%</b><small>average progress</small></div></section><div className="ed-toolbar"><input className="ed-search" placeholder="⌕ Search courses…" value={courseSearch} onChange={(e) => setCourseSearch(e.target.value)}/><span className="ed-muted">{filteredCourses.length} courses</span></div><section className="ed-course-grid">{filteredCourses.map((c) => <article className="ed-course" key={c.id}><div className={`ed-course-art ${c.tone}`}>{c.tone === "green" ? "⌁" : c.tone === "purple" ? "◇" : "▤"}</div><div className="ed-course-body"><Pill tone={c.progress === 100 ? "green" : c.progress ? "blue" : "purple"}>{c.progress === 100 ? "Completed" : c.progress ? "In progress" : "Recommended"}</Pill><small>{c.category}</small><h3>{c.title}</h3><p>{c.duration}</p><div className="ed-progress-meta"><span>{c.progress}% complete</span><b>{c.progress}%</b></div><Progress value={c.progress}/><button className="ed-link ed-course-action" disabled={c.progress === 100} onClick={() => updateCourse(c.id)}>{c.progress === 100 ? "Completed ✓" : c.progress ? "Continue →" : "Start learning →"}</button></div></article>)}</section>{!filteredCourses.length && <p className="ed-empty">No courses match that search.</p>}</>; }
+  function notificationsPage() { const unread = notifications.filter((n) => n.unread).length; return <><Intro eyebrow="STAY UP TO DATE" title="Notifications" subtitle="Assessment reminders, learning recommendations and milestones." action={<button className="ed-secondary" onClick={() => setNotifications((items) => items.map((n) => ({ ...n, unread: false })))}>Mark all as read</button>}/><section className="ed-card ed-notifications"><CardHeading title="Your updates" subtitle={`${unread} unread notification${unread === 1 ? "" : "s"}`}/>{notifications.map((n) => <article className={`ed-notification ${n.unread ? "unread" : ""}`} key={n.id}><span className="ed-notification-icon">{n.id === 1 ? "◷" : n.id === 2 ? "▤" : n.id === 3 ? "✓" : "♙"}</span><div><b>{n.title}{n.unread && <i/>}</b><p>{n.text}</p><small>{n.time}</small></div><button className="ed-link" onClick={() => setNotifications((items) => items.map((item) => item.id === n.id ? { ...item, unread: false } : item))}>{n.unread ? "Mark read" : "Read"}</button></article>)}</section></>; }
+  function reports() { return <><Intro eyebrow="MEASURE YOUR GROWTH" title="Reports" subtitle="Preview and export a summary of your current skill development."/><section className="ed-card ed-report-builder"><CardHeading title="Build a new report" subtitle="Choose the report scope and date range."/><div className="ed-report-form"><label>Report type<select value={reportType} onChange={(e) => setReportType(e.target.value)}><option>Skill assessment report</option><option>Knowledge gap summary</option><option>Learning progress report</option></select></label><label>Date range<select value={reportRange} onChange={(e) => setReportRange(e.target.value)}><option>Last 30 days</option><option>Last 90 days</option><option>This year</option></select></label><button className="ed-primary" onClick={() => setReportMessage(`${reportType} preview created for ${reportRange.toLowerCase()}. Download the current sample data below.`)}>Generate preview</button></div>{reportMessage && <p className="ed-success">{reportMessage}</p>}</section><section className="ed-report-grid"><article className="ed-card ed-report-builder"><CardHeading title="Current skill levels" subtitle="Latest assessment snapshot · sample data"/>{skills.map((s) => <div className="ed-report-skill" key={s.id}><div><span>{s.name}</span><b>{s.current}%</b></div><Progress value={s.current}/></div>)}</article><article className="ed-card ed-report-builder"><h2>Report summary</h2>{[["Skills tracked", skills.length],["Skills below target", gapCount],["Role readiness", `${readiness}%`],["Learning progress", `${learningProgress}%`]].map(([label, value]) => <div className="ed-summary-line" key={label}><span>{label}</span><b>{value}</b></div>)}<button className="ed-primary ed-full" onClick={exportSkills}>Download CSV report ↓</button></article></section></>; }
+  function profilePage() { function save(e) { e.preventDefault(); localStorage.setItem("kgipEmployeeProfile", JSON.stringify(profile)); setMessage("Profile changes saved in this browser."); } return <><Intro eyebrow="YOUR WORKSPACE" title="My Profile" subtitle="Manage your employee details and professional information."/><section className="ed-profile-banner"><span className="ed-profile-avatar">{initials}</span><div><h2>{name}</h2><p>{profile.designation} · {profile.department}</p><Pill tone="green">Active employee</Pill></div><div className="ed-profile-score"><small>Role readiness</small><b>{readiness}%</b><Progress value={readiness}/></div></section><form className="ed-card ed-profile-form" onSubmit={save}><CardHeading title="Employee information" subtitle="Keep your profile accurate and up to date."/><div className="ed-form-grid"><label>First name<input required value={profile.firstName} onChange={(e) => setProfile({ ...profile, firstName: e.target.value })}/></label><label>Last name<input value={profile.lastName} onChange={(e) => setProfile({ ...profile, lastName: e.target.value })}/></label><label>Email address<input type="email" required value={profile.email} onChange={(e) => setProfile({ ...profile, email: e.target.value })}/></label><label>Department<input value={profile.department} onChange={(e) => setProfile({ ...profile, department: e.target.value })}/></label><label>Designation<input value={profile.designation} onChange={(e) => setProfile({ ...profile, designation: e.target.value })}/></label><label>Experience<select value={profile.experience} onChange={(e) => setProfile({ ...profile, experience: e.target.value })}><option>0–2 years</option><option>3–5 years</option><option>6–10 years</option><option>10+ years</option></select></label></div>{message && <p className="ed-success">{message}</p>}<button className="ed-primary" type="submit">Save profile</button></form><section className="ed-card ed-report-builder"><CardHeading title="Certifications & training" subtitle="Verified learning achievements will appear here."/><p className="ed-empty">No certifications added yet. This section is ready for future backend integration.</p></section></>; }
+  function settingsPage() { const rows = [["assessment", "Assessment reminders", "Get notified before a skill reassessment is due."],["learning", "Learning plan updates", "Receive course and recommendation updates."],["mentor", "Mentor feedback", "Know when feedback or guidance is available."],["weekly", "Weekly progress summary", "Show a weekly snapshot of learning progress."]]; return <><Intro eyebrow="PREFERENCES" title="Settings" subtitle="Manage your profile preferences and notification options."/><section className="ed-card ed-settings"><CardHeading title="Notification preferences" subtitle="These controls are frontend-only for now."/>{rows.map(([key, title, description]) => <div className="ed-setting" key={key}><div><b>{title}</b><p>{description}</p></div><button role="switch" aria-checked={settings[key]} className={`ed-switch ${settings[key] ? "on" : ""}`} onClick={() => setSettings((old) => ({ ...old, [key]: !old[key] }))}><span/></button></div>)}<button className="ed-primary" onClick={() => setMessage("Notification preferences updated for this session.")}>Save settings</button>{message && <p className="ed-success">{message}</p>}</section><section className="ed-card ed-report-builder"><CardHeading title="Account" subtitle={`Signed in as ${user.email}`}/><button className="ed-secondary" onClick={signOut}>Sign out</button></section></>; }
+
+  const pages = { Overview: overview, "My Skills": mySkills, "Knowledge Gaps": gaps, Learning: learning, Notifications: notificationsPage, Reports: reports, "My Profile": profilePage, Settings: settingsPage };
+  return <div className="ed-app"><aside className="ed-sidebar"><div className="ed-brand"><span className="ed-brand-mark">KG</span><div><b>SkillSphere</b><small>EMPLOYEE INTELLIGENCE</small></div></div><p className="ed-nav-label">EMPLOYEE WORKSPACE</p><nav className="ed-nav">{navItems.map((item, i) => <button key={item} className={`ed-nav-item ${page === item ? "active" : ""}`} onClick={() => { setPage(item); setMessage(""); }}><span className="ed-nav-icon">{["▦", "◎", "⌁", "▤", "♧", "▧", "♙", "⚙"][i]}</span>{item}{item === "Notifications" && notifications.some((n) => n.unread) && <span className="ed-nav-badge">{notifications.filter((n) => n.unread).length}</span>}</button>)}</nav><div className="ed-help"><b>Need a hand?</b><p>Close your skill gaps one step at a time.</p><button onClick={() => setPage("Learning")}>Explore learning →</button></div></aside><div className="ed-main"><header className="ed-topbar"><div className="ed-breadcrumb"><span>Workspace</span><b>/</b><strong>{page}</strong></div><div className="ed-top-actions"><label className="ed-global-search">⌕ <input placeholder="Search navigation…" onKeyDown={(e) => { if (e.key === "Enter") { const match = navItems.find((n) => n.toLowerCase().includes(e.currentTarget.value.toLowerCase())); if (match) setPage(match); } }}/></label><button className="ed-bell" aria-label="Notifications" onClick={() => setPage("Notifications")}>♧{notifications.some((n) => n.unread) && <i/>}</button><div className="ed-user-chip"><span className="ed-user-avatar">{initials}</span><div><b>{name}</b><small>{profile.designation}</small></div><button title="Sign out" onClick={signOut}>⌄</button></div></div></header><main className="ed-content">{pages[page]()}<footer className="ed-footer">SkillSphere · Employee knowledge and learning workspace <span>Frontend demonstration · Sample data</span></footer></main></div></div>;
 }
