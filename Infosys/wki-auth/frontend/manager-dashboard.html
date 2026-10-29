@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Team Manager Dashboard | Workforce Intelligence</title>
+<meta name="description" content="Manager dashboard to monitor team skills, track training progress, identify skill gaps, and recommend learning paths for your team.">
+<style>
+  /* ===== DESIGN TOKENS ===== */
+  :root {
+    --brand: #4f46e5; --brand-dark: #3b32c4; --brand-light: #ede9fe;
+    --nav: #1e1b6e; --ink: #1b1750; --muted: #6b6a8a;
+    --bg: #f3f5ff; --card: #ffffff; --line: #e1e3f5;
+    --ok: #1a7f37; --ok-bg: #e4f6ea;
+    --warn: #9a6700; --warn-bg: #fff3d1;
+    --bad: #c0262d; --bad-bg: #fde6e7;
+    --info-bg: #e9e8fd;
+    --accent1: #7c3aed; --accent2: #0ea5e9; --accent3: #f59e0b;
+    --accent4: #10b981; --accent5: #ef4444; --accent6: #8b5cf6;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    font-family: 'Segoe UI', system-ui, -apple-system, Roboto, sans-serif;
+    background: var(--bg); color: var(--ink); line-height: 1.45;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid #9d98ff; outline-offset: 2px; }
+
+  /* ===== TOP HEADER ===== */
+  .top {
+    background: var(--nav); color: #fff;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px; gap: 16px;
+    box-shadow: 0 2px 16px rgba(30,27,110,.3);
+  }
+  .brand { display: flex; align-items: center; gap: 12px; font-size: 17px; line-height: 1.2; }
+  .logo-box { background: var(--brand); border-radius: 10px; padding: 12px 10px; font-weight: 700; letter-spacing: .5px; }
+  .top .right { display: flex; align-items: center; gap: 16px; }
+  .who { text-align: right; line-height: 1.2; }
+  .who small { display: block; opacity: .75; font-size: 12px; }
+  .role-badge { background: rgba(255,255,255,.18); border-radius: 20px; padding: 4px 12px; font-size: 11px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; white-space: nowrap; }
+
+  /* ===== BUTTONS ===== */
+  .btn { background: var(--brand); color: #fff; border: 0; border-radius: 8px; padding: 9px 16px; cursor: pointer; font-weight: 600; transition: background .15s, transform .1s; }
+  .btn:hover { background: var(--brand-dark); }
+  .btn:active { transform: scale(.97); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn.ghost { background: #fff; color: var(--brand); border: 1px solid var(--brand); }
+  .btn.ghost:hover { background: var(--brand-light); }
+  .btn.danger { background: #fff; color: var(--bad); border: 1px solid #e9a6a9; }
+  .btn.danger:hover { background: var(--bad-bg); }
+  .btn.small { padding: 5px 11px; font-size: 13px; }
+  .btn.outline-nav { background: transparent; border: 1px solid rgba(255,255,255,.3); color: #fff; padding: 8px 16px; font-size: 13px; }
+  .btn.outline-nav:hover { background: rgba(255,255,255,.12); }
+
+  /* ===== LAYOUT ===== */
+  .layout { display: grid; grid-template-columns: 240px 1fr; gap: 24px; max-width: 1360px; margin: 0 auto; padding: 24px 20px 60px; }
+
+  /* ===== SIDEBAR NAV ===== */
+  nav#nav { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 16px; align-self: start; }
+  .nav-section-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); padding: 10px 14px 4px; margin-top: 8px; }
+  nav#nav button { text-align: left; background: transparent; border: 0; padding: 10px 14px; border-radius: 10px; cursor: pointer; color: var(--ink); font-weight: 500; display: flex; align-items: center; gap: 10px; transition: background .12s; }
+  nav#nav button:hover { background: #e7e8fb; }
+  nav#nav button[aria-current="page"] { background: var(--brand); color: #fff; }
+  nav#nav button svg { flex-shrink: 0; }
+
+  main { min-width: 0; }
+  h1 { margin: 0 0 4px; font-size: 26px; }
+  h2 { margin: 0 0 12px; font-size: 18px; }
+  h3 { margin: 0 0 8px; font-size: 15px; }
+  p.lead { margin: 0 0 20px; color: var(--muted); }
+
+  /* ===== CARDS ===== */
+  .card { background: var(--card); border-radius: 14px; padding: 20px; box-shadow: 0 4px 20px rgba(40,30,140,.07); margin-bottom: 18px; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .card-header h2 { margin: 0; }
+
+  /* ===== STAT TILES ===== */
+  .stats-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); margin-bottom: 18px; }
+  .stat-tile { background: var(--card); border-radius: 14px; padding: 18px 20px; box-shadow: 0 4px 20px rgba(40,30,140,.07); position: relative; overflow: hidden; border-left: 4px solid transparent; }
+  .stat-tile.accent-purple { border-left-color: var(--accent1); }
+  .stat-tile.accent-blue   { border-left-color: var(--accent2); }
+  .stat-tile.accent-amber  { border-left-color: var(--accent3); }
+  .stat-tile.accent-green  { border-left-color: var(--accent4); }
+  .stat-tile.accent-red    { border-left-color: var(--accent5); }
+  .stat-tile b { display: block; font-size: 32px; line-height: 1.1; font-weight: 700; }
+  .stat-tile span { color: var(--muted); font-size: 13px; }
+  .stat-tile .tile-icon { position: absolute; right: 14px; top: 14px; opacity: .12; font-size: 36px; line-height: 1; }
+
+  /* ===== GRIDS ===== */
+  .g2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 18px; }
+  .g3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; }
+
+  /* ===== TABLE ===== */
+  .tablewrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  tr:last-child td { border-bottom: 0; }
+  tr:hover td { background: #f8f8ff; }
+
+  /* ===== MISC ===== */
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .row:first-of-type { border-top: 0; }
+  .row .grow { flex: 1; min-width: 180px; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .chip { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--info-bg); color: var(--brand-dark); }
+  .chip.ok   { background: var(--ok-bg);   color: var(--ok);   }
+  .chip.warn { background: var(--warn-bg); color: var(--warn); }
+  .chip.bad  { background: var(--bad-bg);  color: var(--bad);  }
+  .empty { text-align: center; padding: 32px 16px; color: var(--muted); }
+
+  /* ===== PROGRESS BAR ===== */
+  .bar { height: 8px; background: #e7e8fb; border-radius: 999px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--brand); border-radius: 999px; transition: width .4s; }
+
+  /* ===== GAP BAR ===== */
+  .gapbar { position: relative; height: 12px; background: #e7e8fb; border-radius: 999px; }
+  .gapbar > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--brand); border-radius: 999px; }
+  .gapbar > u { position: absolute; top: -4px; bottom: -4px; width: 3px; background: #ff7a45; text-decoration: none; border-radius: 2px; }
+
+  /* ===== AVATAR ===== */
+  .avatar { width: 36px; height: 36px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; color: #fff; flex-shrink: 0; }
+
+  /* ===== SEARCH ===== */
+  .search-box { position: relative; }
+  .search-box input { width: 100%; padding: 10px 10px 10px 38px; border: 1px solid var(--line); border-radius: 10px; background: #fff; font-size: 14px; transition: border-color .15s; }
+  .search-box input:focus { border-color: var(--brand); outline: none; }
+  .search-box svg { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--muted); }
+
+  /* ===== MODAL ===== */
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: flex; align-items: center; justify-content: center; z-index: 100; padding: 16px; }
+  .modal { background: #fff; border-radius: 16px; padding: 28px; max-width: 680px; width: 100%; max-height: 90vh; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,.25); animation: slideIn .2s ease; }
+  @keyframes slideIn { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .modal-header h2 { margin: 0; }
+  .modal-close { background: none; border: 0; font-size: 22px; cursor: pointer; color: var(--muted); padding: 4px 8px; border-radius: 6px; }
+  .modal-close:hover { background: #f3f5ff; color: var(--ink); }
+
+  /* ===== FILTER BAR ===== */
+  .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-bar select, .filter-bar input { padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 13px; }
+  .filter-bar select:focus, .filter-bar input:focus { border-color: var(--brand); outline: none; }
+
+  /* ===== TRAINING CARD ===== */
+  .rec-card { border: 1px solid var(--line); border-radius: 12px; padding: 16px; transition: box-shadow .15s, transform .15s; margin-bottom: 12px; }
+  .rec-card:hover { box-shadow: 0 6px 20px rgba(79,70,229,.12); transform: translateY(-1px); }
+  .rec-card h3 { margin: 0 0 6px; font-size: 15px; }
+  .rec-card .meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+  .rec-card .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .priority-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+  .priority-high   { background: var(--bad); }
+  .priority-medium { background: var(--accent3); }
+  .priority-low    { background: var(--accent4); }
+
+  /* ===== SKILL DOTS ===== */
+  .skill-dots { display: inline-flex; gap: 4px; }
+  .skill-dot { width: 10px; height: 10px; border-radius: 50%; background: #e1e3f5; }
+  .skill-dot.filled { background: var(--brand); }
+  .skill-dot.gap    { background: #ffb347; }
+
+  /* ===== SECTION HEAD ===== */
+  .section-head { margin-bottom: 20px; }
+  .section-head h1 { margin: 0 0 4px; }
+  .section-head p  { margin: 0; color: var(--muted); font-size: 14px; }
+
+  /* ===== TOAST ===== */
+  #toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #1b1750; color: #fff; padding: 11px 18px; border-radius: 10px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; z-index: 200; font-size: 14px; }
+  #toast.show { opacity: 1; }
+  #toast.err  { background: var(--bad); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; padding: 16px; }
+    nav#nav { flex-direction: row; flex-wrap: nowrap; overflow-x: auto; position: static; padding-bottom: 8px; gap: 4px; }
+    nav#nav button { white-space: nowrap; flex-shrink: 0; }
+    .nav-section-label { display: none; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+  @media (max-width: 520px) {
+    .top { padding: 12px 14px; }
+    .who small, .role-badge { display: none; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media print {
+    .top, nav#nav, .noprint, #toast, .modal-overlay { display: none !important; }
+    .layout { display: block; padding: 0; }
+    .card, .stat-tile { box-shadow: none; border: 1px solid #ccc; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body data-role="MANAGER">
+<!-- custom-page: hand-built, so _generate_dashboards.py will not overwrite it -->
+<div id="app" hidden>
+
+<header class="top">
+  <div class="brand">
+    <span class="logo-box">WKI</span>
+    <span>Workforce<br>Intelligence</span>
+  </div>
+  <div class="right">
+    <span class="role-badge">&#128101; Manager</span>
+    <div class="who">
+      <strong id="userName">Loading&#8230;</strong>
+      <small id="userEmail"></small>
+    </div>
+    <button class="btn outline-nav" id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav id="nav" aria-label="Dashboard sections">
+    <div class="nav-section-label">Overview</div>
+    <button data-act="go" data-view="overview" aria-current="page">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+    <div class="nav-section-label">Team</div>
+    <button data-act="go" data-view="team">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Team Members
+    </button>
+    <button data-act="go" data-view="gaps">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Skill Gap Analysis
+    </button>
+    <button data-act="go" data-view="progress">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Training Progress
+    </button>
+    <div class="nav-section-label">Actions</div>
+    <button data-act="go" data-view="recommendations">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+      Training Recommendations
+    </button>
+    <button data-act="go" data-view="reports">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Reports
+    </button>
+  </nav>
+
+  <main id="main" tabindex="-1">
+    <div class="card empty">Loading your dashboard&#8230;</div>
+  </main>
+</div>
+
+<!-- Employee Detail Modal -->
+<div id="empModal" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+    <div class="modal-header">
+      <h2 id="modalTitle">Employee Details</h2>
+      <button class="modal-close" id="modalClose" aria-label="Close">&times;</button>
+    </div>
+    <div id="modalBody">Loading&#8230;</div>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script src="js/guard.js"></script>
+<script>
+/* ================================================================
+   MANAGER DASHBOARD — Workforce Knowledge Intelligence
+   ================================================================ */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $ = (s, r) => (r||document).querySelector(s);
+const $$ = (s, r) => [...(r||document).querySelectorAll(s)];
+const pct = (a, b) => b ? Math.round(a * 100 / b) : 0;
+const fmt = (dt) => {
+  if (!dt) return "-";
+  const d = new Date(dt); if (isNaN(d)) return "-";
+  return d.toLocaleDateString([], { dateStyle: "medium" });
+};
+
+function getSession() {
+  try { return JSON.parse(localStorage.getItem("wki_session") || "null"); } catch { return null; }
+}
+function goLogin() { localStorage.removeItem("wki_session"); window.location.replace("login.html"); }
+function toast(msg, isErr) {
+  const t = $("#toast"); t.textContent = msg;
+  t.className = "show" + (isErr ? " err" : "");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = "", 3200);
+}
+
+/* ====== AVATAR ====== */
+const COLORS = ["#4f46e5","#7c3aed","#0ea5e9","#10b981","#f59e0b","#ef4444","#8b5cf6","#06b6d4"];
+function ac(name) { let h=0; for(let c of String(name||"X")) h=(h*31+c.charCodeAt(0))&0xffffffff; return COLORS[Math.abs(h)%COLORS.length]; }
+function ini(name) { const p=String(name||"?").trim().split(/\s+/); return (p[0]?.[0]||"?").toUpperCase()+(p[1]?.[0]||"").toUpperCase(); }
+function av(name, size) { size=size||36; return `<span class="avatar" style="background:${ac(name)};width:${size}px;height:${size}px;font-size:${Math.round(size*0.38)}px">${esc(ini(name))}</span>`; }
+
+function gapDots(cur, req, max) {
+  max=max||5;
+  return `<span class="skill-dots">${Array.from({length:max},(_,i)=>{
+    let cls=""; if(i<cur) cls=" filled"; else if(i<req) cls=" gap";
+    return `<span class="skill-dot${cls}"></span>`;
+  }).join("")}</span>`;
+}
+
+/* ====== MOCK DATA ====== */
+function getMockData() {
+  return {
+    employees: [
+      {id:1,  name:"Arjun Mehta",      email:"arjun.m@infosys.com",    role:"Senior Developer",    department:"Engineering", status:"ACTIVE",   skills:5, gaps:2, training:75, lastActive:"2026-10-28"},
+      {id:2,  name:"Sneha Kapoor",     email:"sneha.k@infosys.com",    role:"Data Analyst",        department:"Analytics",   status:"ACTIVE",   skills:4, gaps:3, training:40, lastActive:"2026-10-27"},
+      {id:3,  name:"Rahul Sharma",     email:"rahul.s@infosys.com",    role:"DevOps Engineer",     department:"Engineering", status:"ACTIVE",   skills:6, gaps:1, training:90, lastActive:"2026-10-28"},
+      {id:4,  name:"Divya Nair",       email:"divya.n@infosys.com",    role:"QA Engineer",         department:"Quality",     status:"ACTIVE",   skills:3, gaps:4, training:25, lastActive:"2026-10-25"},
+      {id:5,  name:"Karthik Raj",      email:"karthik.r@infosys.com",  role:"Full Stack Dev",      department:"Engineering", status:"ACTIVE",   skills:7, gaps:0, training:100,lastActive:"2026-10-29"},
+      {id:6,  name:"Pooja Singh",      email:"pooja.s@infosys.com",    role:"Business Analyst",    department:"Business",    status:"ACTIVE",   skills:4, gaps:2, training:60, lastActive:"2026-10-26"},
+      {id:7,  name:"Vivek Kumar",      email:"vivek.k@infosys.com",    role:"Junior Developer",    department:"Engineering", status:"ACTIVE",   skills:2, gaps:5, training:15, lastActive:"2026-10-22"},
+      {id:8,  name:"Ananya Krishnan",  email:"ananya.k@infosys.com",   role:"ML Engineer",         department:"AI/ML",       status:"ACTIVE",   skills:5, gaps:2, training:55, lastActive:"2026-10-28"},
+      {id:9,  name:"Saurabh Patel",    email:"saurabh.p@infosys.com",  role:"Cloud Architect",     department:"Cloud",       status:"ON_LEAVE", skills:4, gaps:1, training:80, lastActive:"2026-10-20"},
+      {id:10, name:"Meera Iyer",       email:"meera.i@infosys.com",    role:"Security Analyst",    department:"Security",    status:"ACTIVE",   skills:3, gaps:3, training:35, lastActive:"2026-10-27"},
+      {id:11, name:"Deepak Verma",     email:"deepak.v@infosys.com",   role:"Database Admin",      department:"Engineering", status:"ACTIVE",   skills:5, gaps:1, training:85, lastActive:"2026-10-29"},
+      {id:12, name:"Ritu Malhotra",    email:"ritu.m@infosys.com",     role:"Scrum Master",        department:"Engineering", status:"ACTIVE",   skills:4, gaps:2, training:70, lastActive:"2026-10-28"}
+    ],
+    skillGaps: [
+      {skill:"Cloud Computing",   category:"Cloud",      teamAvg:2.1, required:4, employeesGap:8, severity:"high"},
+      {skill:"Machine Learning",  category:"AI/ML",      teamAvg:1.8, required:3, employeesGap:7, severity:"high"},
+      {skill:"Kubernetes",        category:"DevOps",     teamAvg:2.5, required:4, employeesGap:6, severity:"high"},
+      {skill:"React.js",          category:"Frontend",   teamAvg:3.2, required:4, employeesGap:4, severity:"medium"},
+      {skill:"Python",            category:"Backend",    teamAvg:3.0, required:4, employeesGap:5, severity:"medium"},
+      {skill:"Cybersecurity",     category:"Security",   teamAvg:1.5, required:3, employeesGap:9, severity:"high"},
+      {skill:"SQL / Databases",   category:"Database",   teamAvg:3.8, required:4, employeesGap:2, severity:"low"},
+      {skill:"Agile / Scrum",     category:"Management", teamAvg:3.5, required:4, employeesGap:3, severity:"low"},
+      {skill:"Docker",            category:"DevOps",     teamAvg:2.8, required:4, employeesGap:4, severity:"medium"},
+      {skill:"Data Visualization",category:"Analytics",  teamAvg:2.3, required:3, employeesGap:5, severity:"medium"}
+    ],
+    trainingProgress: [
+      {name:"Arjun Mehta",    course:"AWS Cloud Practitioner",    progress:75,  status:"IN_PROGRESS", dueDate:"2026-11-15"},
+      {name:"Sneha Kapoor",   course:"Python for Data Science",   progress:40,  status:"IN_PROGRESS", dueDate:"2026-11-30"},
+      {name:"Rahul Sharma",   course:"Kubernetes Advanced",       progress:90,  status:"IN_PROGRESS", dueDate:"2026-11-10"},
+      {name:"Divya Nair",     course:"Selenium Testing",          progress:25,  status:"IN_PROGRESS", dueDate:"2026-12-01"},
+      {name:"Karthik Raj",    course:"React Advanced",            progress:100, status:"COMPLETED",   dueDate:"2026-10-20"},
+      {name:"Pooja Singh",    course:"Business Analysis Pro",     progress:60,  status:"IN_PROGRESS", dueDate:"2026-11-25"},
+      {name:"Vivek Kumar",    course:"JavaScript Fundamentals",   progress:15,  status:"IN_PROGRESS", dueDate:"2026-12-15"},
+      {name:"Ananya Krishnan",course:"Deep Learning",             progress:55,  status:"IN_PROGRESS", dueDate:"2026-11-20"},
+      {name:"Meera Iyer",     course:"CompTIA Security+",         progress:35,  status:"IN_PROGRESS", dueDate:"2026-11-28"},
+      {name:"Deepak Verma",   course:"PostgreSQL Advanced",       progress:85,  status:"IN_PROGRESS", dueDate:"2026-11-05"},
+      {name:"Ritu Malhotra",  course:"Agile Leadership",          progress:70,  status:"IN_PROGRESS", dueDate:"2026-11-18"}
+    ],
+    recommendations: [
+      {title:"AWS Cloud Practitioner Essentials", provider:"Amazon AWS",   skill:"Cloud Computing",    priority:"high",   employees:8, duration:20, type:"Course"},
+      {title:"Kubernetes for Developers",          provider:"CNCF",          skill:"Kubernetes",         priority:"high",   employees:6, duration:16, type:"Course"},
+      {title:"Certified Ethical Hacker (CEH)",     provider:"EC-Council",    skill:"Cybersecurity",      priority:"high",   employees:9, duration:40, type:"Certification"},
+      {title:"Machine Learning Crash Course",      provider:"Google",        skill:"Machine Learning",   priority:"high",   employees:7, duration:15, type:"Course"},
+      {title:"Python for Everybody",               provider:"Coursera",      skill:"Python",             priority:"medium", employees:5, duration:12, type:"Course"},
+      {title:"React - The Complete Guide",         provider:"Udemy",         skill:"React.js",           priority:"medium", employees:4, duration:48, type:"Course"},
+      {title:"Docker and Container Basics",        provider:"Docker Inc.",   skill:"Docker",             priority:"medium", employees:4, duration:8,  type:"Workshop"},
+      {title:"Tableau for Beginners",              provider:"Tableau",       skill:"Data Visualization", priority:"medium", employees:5, duration:10, type:"Course"},
+      {title:"Scrum Master Certification",         provider:"Scrum Alliance",skill:"Agile / Scrum",      priority:"low",    employees:3, duration:16, type:"Certification"},
+      {title:"Advanced SQL for Analytics",         provider:"DataCamp",      skill:"SQL / Databases",    priority:"low",    employees:2, duration:8,  type:"Course"}
+    ],
+    employeeDetails: {
+      1:{name:"Arjun Mehta",role:"Senior Developer",dept:"Engineering",email:"arjun.m@infosys.com",phone:"+91-9876543210",location:"Bengaluru",joinDate:"2022-03-15",status:"ACTIVE",skills:[{name:"Java",level:4,required:4},{name:"Spring Boot",level:3,required:4},{name:"AWS",level:2,required:4},{name:"Docker",level:3,required:4},{name:"React",level:2,required:3}],courses:[{title:"AWS Cloud Practitioner",progress:75,status:"IN_PROGRESS"},{title:"React Advanced",progress:100,status:"COMPLETED"}]},
+      2:{name:"Sneha Kapoor",role:"Data Analyst",dept:"Analytics",email:"sneha.k@infosys.com",phone:"+91-9876543211",location:"Hyderabad",joinDate:"2023-01-10",status:"ACTIVE",skills:[{name:"Python",level:3,required:4},{name:"SQL",level:4,required:4},{name:"Tableau",level:2,required:3},{name:"Machine Learning",level:1,required:3}],courses:[{title:"Python for Data Science",progress:40,status:"IN_PROGRESS"}]},
+      3:{name:"Rahul Sharma",role:"DevOps Engineer",dept:"Engineering",email:"rahul.s@infosys.com",phone:"+91-9876543212",location:"Pune",joinDate:"2021-06-20",status:"ACTIVE",skills:[{name:"Kubernetes",level:3,required:4},{name:"Docker",level:4,required:4},{name:"CI/CD",level:4,required:4},{name:"Linux",level:5,required:4},{name:"Terraform",level:3,required:4}],courses:[{title:"Kubernetes Advanced",progress:90,status:"IN_PROGRESS"}]},
+      4:{name:"Divya Nair",role:"QA Engineer",dept:"Quality",email:"divya.n@infosys.com",phone:"+91-9876543213",location:"Chennai",joinDate:"2023-09-05",status:"ACTIVE",skills:[{name:"Selenium",level:2,required:4},{name:"Manual Testing",level:3,required:4},{name:"JIRA",level:2,required:3},{name:"API Testing",level:1,required:3}],courses:[{title:"Selenium Testing",progress:25,status:"IN_PROGRESS"}]},
+      5:{name:"Karthik Raj",role:"Full Stack Dev",dept:"Engineering",email:"karthik.r@infosys.com",phone:"+91-9876543214",location:"Bengaluru",joinDate:"2020-11-01",status:"ACTIVE",skills:[{name:"React",level:5,required:4},{name:"Node.js",level:4,required:4},{name:"MongoDB",level:4,required:3},{name:"TypeScript",level:4,required:4},{name:"AWS",level:3,required:3}],courses:[{title:"React Advanced",progress:100,status:"COMPLETED"}]},
+      6:{name:"Pooja Singh",role:"Business Analyst",dept:"Business",email:"pooja.s@infosys.com",phone:"+91-9876543215",location:"Mumbai",joinDate:"2022-07-18",status:"ACTIVE",skills:[{name:"Business Analysis",level:3,required:4},{name:"SQL",level:3,required:3},{name:"JIRA",level:4,required:4},{name:"Power BI",level:2,required:3}],courses:[{title:"Business Analysis Pro",progress:60,status:"IN_PROGRESS"}]},
+      7:{name:"Vivek Kumar",role:"Junior Developer",dept:"Engineering",email:"vivek.k@infosys.com",phone:"+91-9876543216",location:"Bengaluru",joinDate:"2025-06-01",status:"ACTIVE",skills:[{name:"JavaScript",level:1,required:4},{name:"HTML/CSS",level:2,required:3},{name:"React",level:1,required:3},{name:"Git",level:2,required:3}],courses:[{title:"JavaScript Fundamentals",progress:15,status:"IN_PROGRESS"}]},
+      8:{name:"Ananya Krishnan",role:"ML Engineer",dept:"AI/ML",email:"ananya.k@infosys.com",phone:"+91-9876543217",location:"Hyderabad",joinDate:"2022-12-10",status:"ACTIVE",skills:[{name:"Python",level:4,required:4},{name:"TensorFlow",level:3,required:4},{name:"Machine Learning",level:3,required:4},{name:"Deep Learning",level:2,required:4}],courses:[{title:"Deep Learning",progress:55,status:"IN_PROGRESS"}]},
+      9:{name:"Saurabh Patel",role:"Cloud Architect",dept:"Cloud",email:"saurabh.p@infosys.com",phone:"+91-9876543218",location:"Bengaluru",joinDate:"2019-04-22",status:"ON_LEAVE",skills:[{name:"AWS",level:5,required:4},{name:"Azure",level:4,required:4},{name:"Terraform",level:4,required:4},{name:"Kubernetes",level:4,required:4}],courses:[]},
+      10:{name:"Meera Iyer",role:"Security Analyst",dept:"Security",email:"meera.i@infosys.com",phone:"+91-9876543219",location:"Chennai",joinDate:"2023-05-15",status:"ACTIVE",skills:[{name:"Cybersecurity",level:2,required:4},{name:"Network Security",level:2,required:4},{name:"SIEM",level:1,required:3}],courses:[{title:"CompTIA Security+",progress:35,status:"IN_PROGRESS"}]},
+      11:{name:"Deepak Verma",role:"Database Admin",dept:"Engineering",email:"deepak.v@infosys.com",phone:"+91-9876543220",location:"Delhi",joinDate:"2021-02-08",status:"ACTIVE",skills:[{name:"PostgreSQL",level:4,required:4},{name:"MySQL",level:5,required:4},{name:"MongoDB",level:3,required:3},{name:"Oracle",level:4,required:4}],courses:[{title:"PostgreSQL Advanced",progress:85,status:"IN_PROGRESS"}]},
+      12:{name:"Ritu Malhotra",role:"Scrum Master",dept:"Engineering",email:"ritu.m@infosys.com",phone:"+91-9876543221",location:"Bengaluru",joinDate:"2022-08-30",status:"ACTIVE",skills:[{name:"Agile/Scrum",level:4,required:4},{name:"JIRA",level:4,required:4},{name:"Risk Management",level:3,required:4}],courses:[{title:"Agile Leadership",progress:70,status:"IN_PROGRESS"}]}
+    }
+  };
+}
+
+/* ====== STATE ====== */
+var S = null;
+var currentView = "overview";
+
+function computeSummary() {
+  var emp = S.employees;
+  S.summary = {
+    totalEmployees: emp.length,
+    avgGapScore: +(emp.reduce((a,e)=>a+e.gaps,0)/emp.length).toFixed(1),
+    trainingCompletion: Math.round(emp.reduce((a,e)=>a+e.training,0)/emp.length),
+    criticalGaps: emp.filter(e=>e.gaps>=3).length,
+    onTrack: emp.filter(e=>e.gaps<=1&&e.training>=70).length,
+    needsAttention: emp.filter(e=>e.gaps>=3||e.training<30).length
+  };
+}
+
+/* ====== NAV ====== */
+function renderNav() {
+  $$("nav#nav button[data-act='go']").forEach(btn => {
+    btn.removeAttribute("aria-current");
+    if (btn.dataset.view === currentView) btn.setAttribute("aria-current","page");
+  });
+}
+
+/* ====== GAP ROW HTML ====== */
+function renderGapRows(severity) {
+  var data = severity==="all" ? S.skillGaps : S.skillGaps.filter(g=>g.severity===severity);
+  if (!data.length) return '<tr><td colspan="7" class="empty">No gaps match the filter.</td></tr>';
+  return data.map(g => {
+    var gap = (g.required - g.teamAvg).toFixed(1);
+    var cc = g.severity==="high"?"bad":g.severity==="medium"?"warn":"ok";
+    var label = g.severity==="high"?"&#128308; High":g.severity==="medium"?"&#128993; Medium":"&#128994; Low";
+    return '<tr><td><strong>'+esc(g.skill)+'</strong></td><td>'+esc(g.category)+'</td>'
+      +'<td>'+gapDots(Math.round(g.teamAvg),g.required)+' <span style="font-size:12px">'+g.teamAvg+'/5</span></td>'
+      +'<td>'+g.required+'/5</td>'
+      +'<td style="font-weight:700;color:var(--'+(g.severity==="high"?"bad":g.severity==="medium"?"warn":"ok")+')">'+gap+'</td>'
+      +'<td><div style="display:flex;align-items:center;gap:8px"><div class="bar" style="width:80px"><i style="width:'+pct(g.employeesGap,S.summary.totalEmployees)+'%"></i></div><span style="font-size:12px">'+g.employeesGap+'/'+S.summary.totalEmployees+'</span></div></td>'
+      +'<td><span class="chip '+cc+'">'+label+'</span></td></tr>';
+  }).join("");
+}
+
+/* ====== VIEWS ====== */
+var views = {
+  overview: function() {
+    var sm = S.summary;
+    var topGap = S.skillGaps.slice(0,3);
+    var atRisk = S.employees.filter(e=>e.gaps>=3||e.training<30).slice(0,4);
+    var noGap = S.employees.filter(e=>e.gaps===0).length;
+    var minorGap = S.employees.filter(e=>e.gaps>=1&&e.gaps<=2).length;
+    var criticalGap = S.employees.filter(e=>e.gaps>=3).length;
+
+    return '<div class="section-head"><h1>Team Dashboard</h1><p>Overview of your team\'s skills, gaps, and training progress.</p></div>'
+      +'<div class="stats-grid">'
+      +'<div class="stat-tile accent-purple"><b>'+sm.totalEmployees+'</b><span>Total Employees</span><span class="tile-icon">&#128101;</span></div>'
+      +'<div class="stat-tile accent-red"><b>'+sm.criticalGaps+'</b><span>Critical Skill Gaps</span><span class="tile-icon">&#9888;</span></div>'
+      +'<div class="stat-tile accent-green"><b>'+sm.trainingCompletion+'%</b><span>Avg. Training Completion</span><span class="tile-icon">&#127891;</span></div>'
+      +'<div class="stat-tile accent-blue"><b>'+sm.onTrack+'</b><span>On Track</span><span class="tile-icon">&#9989;</span></div>'
+      +'<div class="stat-tile accent-amber"><b>'+sm.needsAttention+'</b><span>Needs Attention</span><span class="tile-icon">&#128270;</span></div>'
+      +'</div>'
+      +'<div class="g2">'
+      +'<div class="card"><div class="card-header"><h2>Training Progress</h2><button class="btn ghost small" data-act="go" data-view="progress">View all</button></div>'
+      +S.employees.slice(0,6).map(e=>{
+        var tc = e.training>=70?"ok":e.training>=40?"warn":"bad";
+        return '<div style="display:flex;align-items:center;gap:10px;padding:5px 0">'+av(e.name,28)+'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(e.name)+'</div><div class="bar" style="height:6px;margin-top:3px"><i style="width:'+e.training+'%"></i></div></div><span style="font-size:12px;font-weight:600;min-width:36px;text-align:right">'+e.training+'%</span></div>';
+      }).join("")
+      +'<div style="text-align:center;margin-top:8px"><button class="btn ghost small" data-act="go" data-view="progress">All '+sm.totalEmployees+' employees</button></div></div>'
+
+      +'<div class="card"><div class="card-header"><h2>Top Skill Gaps</h2><button class="btn ghost small" data-act="go" data-view="gaps">Full analysis</button></div>'
+      +topGap.map(g=>{
+        var cc = g.severity==="high"?"bad":g.severity==="medium"?"warn":"ok";
+        var lbl = g.severity==="high"?"&#128308; High":g.severity==="medium"?"&#128993; Medium":"&#128994; Low";
+        return '<div class="row" style="padding:10px 0"><div class="grow"><div style="font-weight:600">'+esc(g.skill)+'</div><div class="sub">'+esc(g.category)+' &middot; '+g.employeesGap+' of '+sm.totalEmployees+' affected</div><div style="margin:6px 0 2px"><div class="gapbar"><i style="width:'+g.teamAvg/5*100+'%"></i><u style="left:calc('+g.required/5*100+'% - 1px)"></u></div></div><span class="sub">Team avg: '+g.teamAvg+'/5 &middot; Required: '+g.required+'/5</span></div><span class="chip '+cc+'">'+lbl+'</span></div>';
+      }).join("")
+      +'</div></div>'
+
+      +'<div class="g2">'
+      +'<div class="card"><div class="card-header"><h2>&#9888;&#65039; Needs Attention</h2></div>'
+      +(atRisk.length ? atRisk.map(e=>{
+        return '<div class="row"><div style="display:flex;align-items:center;gap:10px" class="grow">'+av(e.name)+'<div><div style="font-weight:600">'+esc(e.name)+'</div><div class="sub">'+esc(e.role)+'</div></div></div><div style="display:flex;gap:6px;flex-wrap:wrap">'+(e.gaps>=3?'<span class="chip bad">&#9888; '+e.gaps+' gaps</span>':'')+(e.training<30?'<span class="chip warn">&#128201; '+e.training+'% trained</span>':'')+'</div><button class="btn small" data-act="viewemp" data-empid="'+e.id+'">Details</button></div>';
+      }).join("") : '<div class="empty">All employees are on track!</div>')
+      +'</div>'
+
+      +'<div class="card"><div class="card-header"><h2>&#128202; Gap Distribution</h2></div>'
+      +'<div style="display:flex;justify-content:center;margin-bottom:12px"><canvas id="gapDonutChart" width="200" height="200"></canvas></div>'
+      +'<div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap;font-size:13px">'
+      +'<span><span style="display:inline-block;width:12px;height:12px;background:#2da44e;border-radius:3px;margin-right:4px;vertical-align:middle"></span>No gap: '+noGap+'</span>'
+      +'<span><span style="display:inline-block;width:12px;height:12px;background:#f59e0b;border-radius:3px;margin-right:4px;vertical-align:middle"></span>Minor: '+minorGap+'</span>'
+      +'<span><span style="display:inline-block;width:12px;height:12px;background:#ef4444;border-radius:3px;margin-right:4px;vertical-align:middle"></span>Critical: '+criticalGap+'</span>'
+      +'</div></div></div>';
+  },
+
+  team: function() {
+    var query = ($("#teamSearch") ? $("#teamSearch").value : "").toLowerCase();
+    var deptFilter = $("#deptFilter") ? $("#deptFilter").value : "all";
+    var filtered = S.employees.filter(e=>{
+      var ok = true;
+      if (query) ok = e.name.toLowerCase().includes(query)||e.role.toLowerCase().includes(query)||e.department.toLowerCase().includes(query);
+      if (ok && deptFilter!=="all") ok = e.department===deptFilter;
+      return ok;
+    });
+    var depts = [...new Set(S.employees.map(e=>e.department))].sort();
+
+    return '<div class="section-head"><h1>Team Members</h1><p>All '+S.summary.totalEmployees+' employees assigned to your team.</p></div>'
+      +'<div class="filter-bar">'
+      +'<div class="search-box" style="flex:1;min-width:200px">'
+      +'<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>'
+      +'<input id="teamSearch" placeholder="Search name, role, department..." value="'+esc(query)+'">'
+      +'</div>'
+      +'<select id="deptFilter"><option value="all">All Departments</option>'
+      +depts.map(d=>'<option value="'+esc(d)+'"'+(d===deptFilter?" selected":"")+'>'+esc(d)+'</option>').join("")
+      +'</select></div>'
+      +'<div class="card"><div class="tablewrap"><table><thead><tr><th>Employee</th><th>Role / Dept</th><th>Status</th><th>Skills</th><th>Gaps</th><th>Training</th><th>Action</th></tr></thead><tbody>'
+      +(filtered.length ? filtered.map(e=>{
+        var cc = e.gaps>=3?"bad":e.gaps>=1?"warn":"ok";
+        var tc = e.training>=70?"ok":e.training>=40?"warn":"bad";
+        return '<tr><td><div style="display:flex;align-items:center;gap:10px">'+av(e.name)+'<div><div style="font-weight:600">'+esc(e.name)+'</div><div class="sub" style="font-size:11px">'+esc(e.email)+'</div></div></div></td>'
+          +'<td><div style="font-size:13px">'+esc(e.role)+'</div><div class="sub" style="font-size:11px">'+esc(e.department)+'</div></td>'
+          +'<td><span class="chip '+(e.status==="ACTIVE"?"ok":e.status==="ON_LEAVE"?"warn":"bad")+'">'+(e.status==="ACTIVE"?"Active":e.status==="ON_LEAVE"?"On Leave":"Inactive")+'</span></td>'
+          +'<td><strong>'+e.skills+'</strong></td>'
+          +'<td>'+(e.gaps===0?'<span class="chip ok">None</span>':'<span class="chip '+cc+'">'+e.gaps+' gap'+(e.gaps!==1?'s':'')+'</span>')+'</td>'
+          +'<td><div style="display:flex;align-items:center;gap:8px"><div class="bar" style="width:80px"><i style="width:'+e.training+'%"></i></div><span style="font-size:12px;font-weight:600">'+e.training+'%</span></div></td>'
+          +'<td><button class="btn small" data-act="viewemp" data-empid="'+e.id+'">View Details</button></td></tr>';
+      }).join("") : '<tr><td colspan="7" class="empty">No employees match your search.</td></tr>')
+      +'</tbody></table></div><div class="sub" style="margin-top:10px;text-align:right">Showing '+filtered.length+' of '+S.employees.length+'</div></div>';
+  },
+
+  gaps: function() {
+    var gapSlice = S.skillGaps.slice(0,6);
+    var categories = [...new Set(S.skillGaps.map(g=>g.category))];
+
+    return '<div class="section-head"><h1>Team Skill Gap Analysis</h1><p>Visualised skill gaps across your entire team.</p></div>'
+      +'<div class="g2" style="margin-bottom:18px">'
+      +'<div class="card"><h2 style="margin-bottom:16px">Skill Gap Radar Chart</h2>'
+      +'<div style="display:flex;justify-content:center;align-items:center;height:280px"><canvas id="radarChart" width="260" height="260"></canvas></div>'
+      +'<div style="text-align:center;margin-top:8px;font-size:12px;color:var(--muted)">&#9644; Team Avg &nbsp; <span style="color:rgba(239,68,68,.6)">&#9644;</span> Required Level</div>'
+      +'</div>'
+      +'<div class="card"><h2 style="margin-bottom:16px">Employees Affected by Skill Gap</h2>'
+      +'<div style="display:flex;justify-content:center;align-items:center;height:280px"><canvas id="gapBarChart" width="340" height="260"></canvas></div>'
+      +'</div></div>'
+
+      +'<div class="card" style="margin-bottom:18px"><h2>Skill Category Heatmap</h2>'
+      +'<div id="heatmapGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;margin-top:12px">'
+      +categories.map(cat=>{
+        var cg = S.skillGaps.filter(g=>g.category===cat);
+        var avgGap = cg.reduce((a,g)=>a+(g.required-g.teamAvg),0)/cg.length;
+        var intensity = Math.min(avgGap/3,1);
+        var r2 = Math.round(255*intensity), gb2 = Math.round(255*(1-intensity*0.7));
+        return '<div style="background:rgba('+r2+','+gb2+','+gb2+',.15);border:1px solid rgba('+r2+','+gb2+','+gb2+',.4);border-radius:10px;padding:14px;text-align:center">'
+          +'<div style="font-weight:700;font-size:14px;margin-bottom:4px">'+esc(cat)+'</div>'
+          +'<div style="font-size:22px;font-weight:800;color:rgba('+r2+','+Math.round(gb2*0.5)+','+Math.round(gb2*0.5)+',1)">'+avgGap.toFixed(1)+'</div>'
+          +'<div class="sub" style="font-size:11px">avg gap</div>'
+          +'</div>';
+      }).join("")
+      +'</div></div>'
+
+      +'<div class="card"><div class="card-header"><h2>Detailed Gap Breakdown</h2>'
+      +'<select id="gapFilter" style="padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px"><option value="all">All Severities</option><option value="high">High Priority</option><option value="medium">Medium Priority</option><option value="low">Low Priority</option></select>'
+      +'</div><div class="tablewrap"><table><thead><tr><th>Skill</th><th>Category</th><th>Team Avg</th><th>Required</th><th>Gap</th><th>Employees Affected</th><th>Severity</th></tr></thead>'
+      +'<tbody id="gapTableBody">'+renderGapRows("all")+'</tbody></table></div></div>';
+  },
+
+  progress: function() {
+    var completed = S.trainingProgress.filter(t=>t.status==="COMPLETED").length;
+    var inProgress = S.trainingProgress.filter(t=>t.status!=="COMPLETED").length;
+    var avgP = Math.round(S.trainingProgress.reduce((a,t)=>a+t.progress,0)/S.trainingProgress.length);
+
+    return '<div class="section-head"><h1>Training Progress</h1><p>Track how your team is progressing through their assigned training.</p></div>'
+      +'<div class="stats-grid">'
+      +'<div class="stat-tile accent-blue"><b>'+S.trainingProgress.length+'</b><span>Active Enrollments</span></div>'
+      +'<div class="stat-tile accent-green"><b>'+completed+'</b><span>Completed</span></div>'
+      +'<div class="stat-tile accent-amber"><b>'+inProgress+'</b><span>In Progress</span></div>'
+      +'<div class="stat-tile accent-purple"><b>'+avgP+'%</b><span>Avg. Progress</span></div>'
+      +'</div>'
+
+      +'<div class="card" style="margin-bottom:18px"><h2 style="margin-bottom:14px">Completion Overview</h2>'
+      +'<div style="display:flex;justify-content:center"><canvas id="progressBarsChart" width="640" height="220"></canvas></div>'
+      +'</div>'
+
+      +'<div class="card"><div class="card-header"><h2>Individual Training Status</h2>'
+      +'<div style="display:flex;gap:6px"><span class="chip ok">'+completed+' Completed</span><span class="chip warn">'+inProgress+' In Progress</span></div>'
+      +'</div><div class="tablewrap"><table><thead><tr><th>Employee</th><th>Course</th><th>Progress</th><th>Due Date</th><th>Status</th></tr></thead><tbody>'
+      +S.trainingProgress.map(t=>{
+        var overdue = new Date(t.dueDate)<new Date() && t.status!=="COMPLETED";
+        var tc = t.progress>=70?"ok":t.progress>=40?"warn":"bad";
+        return '<tr><td><div style="display:flex;align-items:center;gap:8px">'+av(t.name,28)+'<span style="font-weight:600;font-size:13px">'+esc(t.name)+'</span></div></td>'
+          +'<td style="font-size:13px">'+esc(t.course)+'</td>'
+          +'<td style="min-width:140px"><div style="display:flex;align-items:center;gap:8px"><div class="bar" style="flex:1"><i style="width:'+t.progress+'%" class="'+tc+'"></i></div><span style="font-size:12px;font-weight:600;min-width:32px">'+t.progress+'%</span></div></td>'
+          +'<td><span'+(overdue?' style="color:var(--bad);font-weight:600"':'')+'>'+fmt(t.dueDate)+(overdue?' &#9888;':'')+'</span></td>'
+          +'<td>'+(t.status==="COMPLETED"?'<span class="chip ok">&#10004; Completed</span>':'<span class="chip warn">In Progress</span>')+'</td></tr>';
+      }).join("")
+      +'</tbody></table></div></div>';
+  },
+
+  recommendations: function() {
+    var pFilter = ($("#recFilter")||{}).value || "all";
+    var tFilter = ($("#typeFilter")||{}).value || "all";
+    var recs = S.recommendations.filter(r=>{
+      return (pFilter==="all"||r.priority===pFilter) && (tFilter==="all"||r.type===tFilter);
+    });
+    var types = [...new Set(S.recommendations.map(r=>r.type))];
+    var high=S.recommendations.filter(r=>r.priority==="high").length;
+    var med=S.recommendations.filter(r=>r.priority==="medium").length;
+    var low=S.recommendations.filter(r=>r.priority==="low").length;
+
+    return '<div class="section-head"><h1>Training Recommendations</h1><p>Curated courses and certifications to close your team\'s skill gaps.</p></div>'
+      +'<div class="filter-bar">'
+      +'<select id="recFilter"><option value="all">All Priorities</option><option value="high"'+(pFilter==="high"?" selected":"")+'>&#128308; High Priority</option><option value="medium"'+(pFilter==="medium"?" selected":"")+'>&#128993; Medium Priority</option><option value="low"'+(pFilter==="low"?" selected":"")+'>&#128994; Low Priority</option></select>'
+      +'<select id="typeFilter"><option value="all">All Types</option>'+types.map(t=>'<option value="'+esc(t)+'"'+(t===tFilter?" selected":"")+'>'+esc(t)+'</option>').join("")+'</select>'
+      +'<span class="sub" style="line-height:36px">'+recs.length+' results</span>'
+      +'</div>'
+      +'<div class="g3" style="margin-bottom:18px">'
+      +'<div class="stat-tile accent-red"><b>'+high+'</b><span>&#128308; High Priority</span></div>'
+      +'<div class="stat-tile accent-amber"><b>'+med+'</b><span>&#128993; Medium Priority</span></div>'
+      +'<div class="stat-tile accent-green"><b>'+low+'</b><span>&#128994; Low Priority</span></div>'
+      +'</div>'
+      +(recs.length ? recs.map(r=>{
+        var cc = r.priority==="high"?"bad":r.priority==="medium"?"warn":"ok";
+        var pLabel = r.priority.charAt(0).toUpperCase()+r.priority.slice(1);
+        var barPct = pct(r.employees,S.summary.totalEmployees);
+        return '<div class="rec-card"><div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;flex-wrap:wrap">'
+          +'<div style="flex:1;min-width:220px"><h3><span class="priority-dot priority-'+r.priority+'"></span>'+esc(r.title)+'</h3>'
+          +'<div class="meta">'+esc(r.provider)+' &middot; '+r.duration+'h &middot; '+esc(r.type)+'</div>'
+          +'<div class="tags"><span class="chip">'+esc(r.skill)+'</span><span class="chip '+cc+'">'+pLabel+' Priority</span><span class="chip">'+r.employees+' employees</span></div></div>'
+          +'<div style="display:flex;gap:8px;flex-shrink:0"><button class="btn ghost small">Assign Team</button><button class="btn small">View Course</button></div>'
+          +'</div><div style="margin-top:10px;display:flex;align-items:center;gap:8px"><span class="sub" style="white-space:nowrap">Team impact:</span>'
+          +'<div class="bar" style="flex:1;max-width:200px"><i style="width:'+barPct+'%" class="'+cc+'"></i></div>'
+          +'<span style="font-size:12px;font-weight:600">'+barPct+'%</span></div></div>';
+      }).join("") : '<div class="card empty">No recommendations match the selected filters.</div>');
+  },
+
+  reports: function() {
+    return '<div class="section-head"><h1>Team Reports</h1><p>Exportable summaries for your team.</p></div>'
+      +'<div class="card noprint" style="display:flex;gap:10px;flex-wrap:wrap">'
+      +'<button class="btn" data-act="exportcsv">&#11015; Download CSV</button>'
+      +'<button class="btn ghost" data-act="printreport">&#128438; Print Report</button>'
+      +'</div>'
+      +'<div class="stats-grid">'
+      +'<div class="stat-tile accent-purple"><b>'+S.summary.totalEmployees+'</b><span>Total Employees</span></div>'
+      +'<div class="stat-tile accent-red"><b>'+S.skillGaps.filter(g=>g.severity==="high").length+'</b><span>High-Priority Gaps</span></div>'
+      +'<div class="stat-tile accent-green"><b>'+S.summary.trainingCompletion+'%</b><span>Training Completion</span></div>'
+      +'<div class="stat-tile accent-blue"><b>'+S.summary.onTrack+'</b><span>Employees On Track</span></div>'
+      +'</div>'
+      +'<div class="card"><h2>Team Skills Matrix</h2><div class="tablewrap"><table><thead><tr><th>Skill</th><th>Category</th><th>Team Avg</th><th>Required</th><th>Gap Score</th><th>Affected</th><th>Severity</th></tr></thead><tbody>'
+      +S.skillGaps.map(g=>{
+        var cc=g.severity==="high"?"bad":g.severity==="medium"?"warn":"ok";
+        return '<tr><td><strong>'+esc(g.skill)+'</strong></td><td>'+esc(g.category)+'</td>'
+          +'<td>'+gapDots(Math.round(g.teamAvg),g.required)+' '+g.teamAvg+'</td>'
+          +'<td>'+g.required+'/5</td><td>'+(g.required-g.teamAvg).toFixed(1)+'</td>'
+          +'<td>'+g.employeesGap+' / '+S.summary.totalEmployees+'</td>'
+          +'<td><span class="chip '+cc+'">'+g.severity.charAt(0).toUpperCase()+g.severity.slice(1)+'</span></td></tr>';
+      }).join("")
+      +'</tbody></table></div></div>'
+      +'<div class="card"><h2>Employee Summary</h2><div class="tablewrap"><table><thead><tr><th>Name</th><th>Role</th><th>Department</th><th>Gaps</th><th>Training %</th><th>Status</th></tr></thead><tbody>'
+      +S.employees.map(e=>{
+        var sc=e.status==="ACTIVE"?"ok":e.status==="ON_LEAVE"?"warn":"bad";
+        var gc=e.gaps===0?"ok":e.gaps>=3?"bad":"warn";
+        return '<tr><td><strong>'+esc(e.name)+'</strong></td><td style="font-size:13px">'+esc(e.role)+'</td>'
+          +'<td style="font-size:13px">'+esc(e.department)+'</td>'
+          +'<td><span class="chip '+gc+'">'+e.gaps+'</span></td><td>'+e.training+'%</td>'
+          +'<td><span class="chip '+sc+'">'+e.status+'</span></td></tr>';
+      }).join("")
+      +'</tbody></table></div></div>';
+  }
+};
+
+/* ====== EMPLOYEE MODAL ====== */
+function showEmployeeModal(id) {
+  var emp = S.employeeDetails && S.employeeDetails[id];
+  var basic = S.employees.find(e=>e.id===id);
+  if (!emp && !basic) { toast("Employee details not available", true); return; }
+  var e = emp || basic;
+  var skills = (emp && emp.skills) || [];
+  var courses = (emp && emp.courses) || [];
+  $("#modalTitle").textContent = e.name;
+  var html = '<div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">'+av(e.name,52)+'<div><div style="font-size:18px;font-weight:700">'+esc(e.name)+'</div><div class="sub">'+esc(e.role||basic.role)+' &middot; '+esc(e.dept||e.department||basic.department)+'</div><span class="chip '+(((e.status||basic.status)==="ACTIVE")?"ok":(e.status||basic.status)==="ON_LEAVE"?"warn":"bad")+'" style="margin-top:4px">'+esc(e.status||basic.status)+'</span></div></div>';
+  html += '<div class="g2" style="margin-bottom:16px">';
+  if (e.email) html += '<div><div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Email</div><div style="font-size:13px">'+esc(e.email)+'</div></div>';
+  if (e.phone) html += '<div><div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Phone</div><div style="font-size:13px">'+esc(e.phone)+'</div></div>';
+  if (e.location) html += '<div><div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Location</div><div style="font-size:13px">'+esc(e.location)+'</div></div>';
+  if (e.joinDate) html += '<div><div class="sub" style="font-size:11px;text-transform:uppercase;letter-spacing:.5px">Joined</div><div style="font-size:13px">'+fmt(e.joinDate)+'</div></div>';
+  html += '</div>';
+  if (skills.length) {
+    html += '<h3 style="margin-bottom:10px">Skills &amp; Gaps</h3><div style="display:grid;gap:10px;margin-bottom:16px">';
+    html += skills.map(s=>{
+      var gap=s.required-s.level;
+      return '<div><div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px"><span style="font-weight:600">'+esc(s.name)+'</span><span class="sub">'+s.level+'/'+s.required+(gap>0?' <span style="color:var(--bad);font-weight:700">gap: '+gap+'</span>':' &#10004;')+'</span></div><div class="gapbar"><i style="width:'+s.level/5*100+'%"></i><u style="left:calc('+s.required/5*100+'% - 1px)"></u></div></div>';
+    }).join("") + '</div>';
+  }
+  if (courses.length) {
+    html += '<h3 style="margin-bottom:10px">Current Training</h3><div style="display:grid;gap:8px">';
+    html += courses.map(c=>{
+      var tc=c.progress>=70?"ok":c.progress>=40?"warn":"bad";
+      return '<div style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div style="font-size:13px;font-weight:600">'+esc(c.title)+'</div><div class="bar" style="margin-top:4px"><i style="width:'+c.progress+'%" class="'+tc+'"></i></div></div><span style="font-size:12px;font-weight:600;min-width:40px">'+c.progress+'%</span><span class="chip '+(c.status==="COMPLETED"?"ok":"warn")+'">'+( c.status==="COMPLETED"?"Done":"Active")+'</span></div>';
+    }).join("") + '</div>';
+  } else { html += '<div class="empty sub" style="padding:12px 0">No active training enrolled.</div>'; }
+  html += '<div style="margin-top:20px"><button class="btn ghost small" onclick="closeModal()">Close</button></div>';
+  $("#modalBody").innerHTML = html;
+  $("#empModal").hidden = false;
+}
+function closeModal() { $("#empModal").hidden = true; }
+
+/* ====== CHARTS ====== */
+function drawDonut(id, segments) {
+  var c = document.getElementById(id); if(!c) return;
+  var ctx = c.getContext("2d"), cx=c.width/2, cy=c.height/2, r=Math.min(cx,cy)-10;
+  ctx.clearRect(0,0,c.width,c.height);
+  var total = segments.reduce((a,s)=>a+s.value,0); if(!total) return;
+  var start = -Math.PI/2;
+  segments.forEach(seg=>{
+    var angle = (seg.value/total)*2*Math.PI;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,r,start,start+angle); ctx.closePath();
+    ctx.fillStyle=seg.color; ctx.fill(); start+=angle;
+  });
+  ctx.beginPath(); ctx.arc(cx,cy,r*0.55,0,2*Math.PI); ctx.fillStyle="#fff"; ctx.fill();
+  ctx.fillStyle="#1b1750"; ctx.font="bold 22px 'Segoe UI',sans-serif"; ctx.textAlign="center"; ctx.textBaseline="middle";
+  ctx.fillText(total,cx,cy-8); ctx.font="12px 'Segoe UI',sans-serif"; ctx.fillStyle="#6b6a8a"; ctx.fillText("employees",cx,cy+10);
+}
+
+function drawBar(id, labels, values, colors) {
+  var c = document.getElementById(id); if(!c) return;
+  var ctx=c.getContext("2d"), W=c.width, H=c.height;
+  ctx.clearRect(0,0,W,H);
+  var pad={top:20,right:16,bottom:50,left:36};
+  var cW=W-pad.left-pad.right, cH=H-pad.top-pad.bottom;
+  var maxV=Math.max(...values,1);
+  var bW=Math.floor(cW/labels.length*0.55), gap=Math.floor(cW/labels.length*0.45);
+  ctx.strokeStyle="#e1e3f5"; ctx.lineWidth=1;
+  for(var i=0;i<=4;i++){
+    var y=pad.top+cH-(i/4)*cH;
+    ctx.beginPath(); ctx.moveTo(pad.left,y); ctx.lineTo(pad.left+cW,y); ctx.stroke();
+    ctx.fillStyle="#6b6a8a"; ctx.font="11px 'Segoe UI',sans-serif"; ctx.textAlign="right";
+    ctx.fillText(Math.round(maxV*i/4),pad.left-4,y+4);
+  }
+  labels.forEach((lbl,i)=>{
+    var x=pad.left+i*(bW+gap)+gap/2;
+    var bh=(values[i]/maxV)*cH, y=pad.top+cH-bh;
+    ctx.beginPath(); ctx.rect(x,y,bW,bh); ctx.fillStyle=colors[i%colors.length]; ctx.fill();
+    ctx.fillStyle="#1b1750"; ctx.textAlign="center"; ctx.font="bold 11px 'Segoe UI',sans-serif";
+    ctx.fillText(values[i],x+bW/2,y-5);
+    var words=lbl.split(" ");
+    ctx.fillStyle="#6b6a8a"; ctx.font="10px 'Segoe UI',sans-serif";
+    words.slice(0,2).forEach((w,wi)=>ctx.fillText(w,x+bW/2,pad.top+cH+14+wi*13));
+  });
+}
+
+function drawRadar(id, labels, values, max) {
+  var c=document.getElementById(id); if(!c) return;
+  var ctx=c.getContext("2d"), W=c.width, H=c.height;
+  ctx.clearRect(0,0,W,H);
+  var cx=W/2, cy=H/2, r=Math.min(cx,cy)-42, n=labels.length, a0=-Math.PI/2;
+  function pt(i,val){ var a=a0+(i/n)*2*Math.PI, d=(val/max)*r; return [cx+d*Math.cos(a),cy+d*Math.sin(a)]; }
+  [0.25,0.5,0.75,1].forEach(f=>{
+    ctx.beginPath();
+    for(var i=0;i<n;i++){ var [x,y]=pt(i,max*f); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+    ctx.closePath(); ctx.strokeStyle="#e1e3f5"; ctx.lineWidth=1; ctx.stroke();
+  });
+  for(var i=0;i<n;i++){ var [x,y]=pt(i,max); ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x,y); ctx.strokeStyle="#e1e3f5"; ctx.lineWidth=1; ctx.stroke(); }
+  // required outline
+  ctx.beginPath();
+  for(var i=0;i<n;i++){ var [x,y]=pt(i,max); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); }
+  ctx.closePath(); ctx.strokeStyle="rgba(239,68,68,.5)"; ctx.lineWidth=2; ctx.stroke();
+  // data
+  ctx.beginPath();
+  values.forEach((v,i)=>{ var [x,y]=pt(i,v); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.closePath(); ctx.fillStyle="rgba(79,70,229,.18)"; ctx.fill(); ctx.strokeStyle="#4f46e5"; ctx.lineWidth=2; ctx.stroke();
+  values.forEach((v,i)=>{ var [x,y]=pt(i,v); ctx.beginPath(); ctx.arc(x,y,4,0,2*Math.PI); ctx.fillStyle="#4f46e5"; ctx.fill(); });
+  labels.forEach((lbl,i)=>{
+    var [x,y]=pt(i,max+0.9);
+    ctx.fillStyle="#1b1750"; ctx.font="10px 'Segoe UI',sans-serif"; ctx.textAlign="center";
+    var ws=lbl.split(" ");
+    ws.slice(0,2).forEach((w,wi)=>ctx.fillText(w,x,y+wi*13));
+  });
+}
+
+function drawProgressChart(id) {
+  var c=document.getElementById(id); if(!c) return;
+  var ctx=c.getContext("2d"), W=c.width, H=c.height;
+  ctx.clearRect(0,0,W,H);
+  var data=S.trainingProgress.slice(0,9);
+  var bH=18, gap=8, padL=110, padR=60, chartW=W-padL-padR;
+  data.forEach((t,i)=>{
+    var y=i*(bH+gap)+10;
+    ctx.fillStyle="#6b6a8a"; ctx.font="12px 'Segoe UI',sans-serif"; ctx.textAlign="right";
+    ctx.fillText(t.name.split(" ")[0],padL-6,y+bH/2+4);
+    ctx.beginPath(); ctx.rect(padL,y,chartW,bH); ctx.fillStyle="#e7e8fb"; ctx.fill();
+    var bw=(t.progress/100)*chartW;
+    ctx.beginPath(); ctx.rect(padL,y,bw,bH);
+    ctx.fillStyle=t.progress>=70?"#2da44e":t.progress>=40?"#f59e0b":"#ef4444"; ctx.fill();
+    ctx.fillStyle="#1b1750"; ctx.font="bold 11px 'Segoe UI',sans-serif"; ctx.textAlign="left";
+    ctx.fillText(t.progress+"%",padL+chartW+6,y+bH/2+4);
+  });
+}
+
+function drawCharts() {
+  setTimeout(function(){
+    // Donut on overview
+    if(document.getElementById("gapDonutChart")){
+      var noG=S.employees.filter(e=>e.gaps===0).length;
+      var minG=S.employees.filter(e=>e.gaps>=1&&e.gaps<=2).length;
+      var crG=S.employees.filter(e=>e.gaps>=3).length;
+      drawDonut("gapDonutChart",[{value:noG,color:"#2da44e"},{value:minG,color:"#f59e0b"},{value:crG,color:"#ef4444"}]);
+    }
+    if(document.getElementById("radarChart")){
+      var gs=S.skillGaps.slice(0,6);
+      drawRadar("radarChart",gs.map(g=>g.skill.split(" ")[0]),gs.map(g=>g.teamAvg),5);
+    }
+    if(document.getElementById("gapBarChart")){
+      var gs=S.skillGaps.slice(0,6);
+      var cols=gs.map(g=>g.severity==="high"?"#ef4444":g.severity==="medium"?"#f59e0b":"#2da44e");
+      drawBar("gapBarChart",gs.map(g=>g.skill),gs.map(g=>g.employeesGap),cols);
+    }
+    if(document.getElementById("progressBarsChart")) drawProgressChart("progressBarsChart");
+  },60);
+}
+
+/* ====== RENDER ====== */
+function render() {
+  var fn = views[currentView];
+  $("#main").innerHTML = fn ? fn() : views.overview();
+  renderNav();
+  drawCharts();
+  document.title = currentView.charAt(0).toUpperCase()+currentView.slice(1)+" | Manager Dashboard | WKI";
+}
+function go(view) {
+  if(!views[view]) view="overview";
+  currentView=view;
+  if(location.hash!=="#"+view) location.hash=view;
+  render();
+  window.scrollTo({top:0});
+  $("#main").focus({preventScroll:true});
+}
+
+/* ====== EVENTS ====== */
+document.addEventListener("click", function(e){
+  var el=e.target.closest("[data-act]"); if(!el) return;
+  var act=el.dataset.act;
+  if(act==="go"){ go(el.dataset.view); return; }
+  if(act==="viewemp"){ showEmployeeModal(+el.dataset.empid); return; }
+  if(act==="exportcsv"){ exportCSV(); return; }
+  if(act==="printreport"){ window.print(); return; }
+});
+document.getElementById("modalClose").addEventListener("click", closeModal);
+document.getElementById("empModal").addEventListener("click", function(e){ if(e.target===this) closeModal(); });
+document.addEventListener("change", function(e){
+  if(e.target.id==="gapFilter"){ var tb=document.getElementById("gapTableBody"); if(tb) tb.innerHTML=renderGapRows(e.target.value); return; }
+  if(e.target.id==="recFilter"||e.target.id==="typeFilter"||e.target.id==="deptFilter") render();
+});
+document.addEventListener("input", function(e){
+  if(e.target.id==="teamSearch"){ clearTimeout(document._st); document._st=setTimeout(render,200); }
+});
+window.addEventListener("hashchange", function(){
+  var v=location.hash.slice(1);
+  if(v&&views[v]&&v!==currentView) go(v);
+});
+
+/* ====== CSV EXPORT ====== */
+function exportCSV(){
+  var rows=[],cell=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  var add=function(){ rows.push([...arguments].map(cell).join(",")); };
+  add("WKI Manager Report","Generated: "+new Date().toLocaleString());
+  add();add("TEAM SUMMARY");add("Total Employees",S.summary.totalEmployees);add("Critical Gaps",S.summary.criticalGaps);add("Avg Training %",S.summary.trainingCompletion);add("On Track",S.summary.onTrack);
+  add();add("EMPLOYEES");add("Name","Role","Department","Gaps","Training %","Status");
+  S.employees.forEach(e=>add(e.name,e.role,e.department,e.gaps,e.training,e.status));
+  add();add("SKILL GAPS");add("Skill","Category","Team Avg","Required","Gap","Affected","Severity");
+  S.skillGaps.forEach(g=>add(g.skill,g.category,g.teamAvg,g.required,(g.required-g.teamAvg).toFixed(1),g.employeesGap,g.severity));
+  add();add("RECOMMENDATIONS");add("Title","Provider","Skill","Priority","Employees","Duration (h)","Type");
+  S.recommendations.forEach(r=>add(r.title,r.provider,r.skill,r.priority,r.employees,r.duration,r.type));
+  var blob=new Blob(["\uFEFF"+rows.join("\r\n")],{type:"text/csv;charset=utf-8"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="team-manager-report.csv";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+  toast("CSV downloaded!");
+}
+
+/* ====== INIT ====== */
+(async function init(){
+  var sess=getSession(); if(!sess) return goLogin();
+  try {
+    S = getMockData();
+    computeSummary();
+    var v=location.hash.slice(1);
+    currentView=views[v]?v:"overview";
+    render();
+  } catch(err){
+    $("#main").innerHTML='<div class="card empty"><b>Could not load dashboard</b><p style="margin:8px 0">'+esc(err.message)+'</p><button class="btn" onclick="location.reload()">Try again</button></div>';
+  }
+})();
+</script>
+</body>
+</html>

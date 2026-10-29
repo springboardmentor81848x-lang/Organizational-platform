@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Employee Dashboard | Workforce Intelligence</title>
+<style>
+  :root {
+    --brand: #4f46e5; --brand-dark: #3b32c4; --nav: #231f7a; --ink: #1b1750;
+    --muted: #6b6a8a; --bg: #f3f5ff; --card: #ffffff; --line: #e1e3f5;
+    --ok: #1a7f37; --ok-bg: #e4f6ea; --warn: #9a6700; --warn-bg: #fff3d1;
+    --bad: #c0262d; --bad-bg: #fde6e7; --info-bg: #e9e8fd;
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.45; }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid #9d98ff; outline-offset: 2px; }
+
+  /* header */
+  .top { background: var(--nav); color: #fff; display: flex; align-items: center; justify-content: space-between; padding: 14px 28px; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 12px; font-size: 17px; line-height: 1.2; }
+  .logo { background: var(--brand); border-radius: 10px; padding: 12px 10px; font-weight: 700; letter-spacing: .5px; }
+  .top .right { display: flex; align-items: center; gap: 16px; }
+  .who { text-align: right; line-height: 1.2; } .who small { display: block; opacity: .8; font-size: 12px; }
+  .bell { position: relative; background: transparent; border: 0; color: #fff; cursor: pointer; padding: 6px; border-radius: 8px; }
+  .bell:hover { background: rgba(255,255,255,.12); }
+  .badge { position: absolute; top: -2px; right: -4px; background: #ff4d5a; color: #fff; border-radius: 999px; font-size: 11px; padding: 1px 6px; font-weight: 600; }
+  .btn { background: var(--brand); color: #fff; border: 0; border-radius: 8px; padding: 9px 16px; cursor: pointer; font-weight: 600; }
+  .btn:hover { background: var(--brand-dark); }
+  .btn:disabled { opacity: .55; cursor: default; }
+  .btn.ghost { background: #fff; color: var(--brand); border: 1px solid var(--brand); }
+  .btn.ghost:hover { background: var(--info-bg); }
+  .btn.danger { background: #fff; color: var(--bad); border: 1px solid #e9a6a9; }
+  .btn.small { padding: 5px 11px; font-size: 13px; }
+
+  /* layout */
+  .layout { display: grid; grid-template-columns: 230px 1fr; gap: 24px; max-width: 1280px; margin: 0 auto; padding: 24px 20px 60px; }
+  nav#nav { display: flex; flex-direction: column; gap: 4px; position: sticky; top: 16px; align-self: start; }
+  nav#nav button { text-align: left; background: transparent; border: 0; padding: 10px 14px; border-radius: 10px; cursor: pointer; color: var(--ink); font-weight: 500; display: flex; justify-content: space-between; align-items: center; }
+  nav#nav button:hover { background: #e7e8fb; }
+  nav#nav button[aria-current="page"] { background: var(--brand); color: #fff; }
+  nav#nav .count { background: #ff4d5a; color: #fff; border-radius: 999px; font-size: 11px; padding: 1px 7px; }
+  main { min-width: 0; }
+  h1 { margin: 0 0 4px; font-size: 28px; }
+  h2 { margin: 0 0 12px; font-size: 18px; }
+  p.lead { margin: 0 0 20px; color: var(--muted); }
+
+  /* cards & grids */
+  .card { background: var(--card); border-radius: 14px; padding: 20px; box-shadow: 0 4px 20px rgba(40,30,140,.07); margin-bottom: 18px; }
+  .grid { display: grid; gap: 16px; }
+  .g4 { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+  .tile { background: var(--card); border-radius: 14px; padding: 16px 18px; box-shadow: 0 4px 20px rgba(40,30,140,.07); }
+  .tile b { display: block; font-size: 30px; line-height: 1.1; }
+  .tile span { color: var(--muted); font-size: 14px; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .row:first-of-type { border-top: 0; }
+  .row .grow { flex: 1; min-width: 200px; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--info-bg); color: var(--brand-dark); }
+  .chip.ok { background: var(--ok-bg); color: var(--ok); } .chip.warn { background: var(--warn-bg); color: var(--warn); } .chip.bad { background: var(--bad-bg); color: var(--bad); }
+  .empty { text-align: center; padding: 28px 12px; color: var(--muted); }
+  .callout { background: var(--info-bg); border-radius: 12px; padding: 14px 16px; margin-bottom: 18px; display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+
+  /* forms */
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; }
+  input, select, textarea { width: 100%; padding: 10px; border: 1px solid #c9cce8; border-radius: 8px; background: #fff; }
+  input[readonly] { background: #f0f1fa; color: var(--muted); }
+  textarea { min-height: 90px; resize: vertical; }
+  .form2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16px; }
+  .inline { display: flex; gap: 10px; align-items: end; flex-wrap: wrap; } .inline > div { flex: 1; min-width: 160px; }
+
+  /* bars */
+  .bar { height: 10px; background: #e7e8fb; border-radius: 999px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--brand); border-radius: 999px; }
+  .bar.ok > i { background: #2da44e; }
+  .gapbar { position: relative; height: 12px; background: #e7e8fb; border-radius: 999px; }
+  .gapbar > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--brand); border-radius: 999px; }
+  .gapbar > u { position: absolute; top: -4px; bottom: -4px; width: 3px; background: #ff7a45; text-decoration: none; border-radius: 2px; }
+  .rate { display: inline-flex; gap: 4px; }
+  .dot { width: 32px; height: 32px; border-radius: 8px; border: 1px solid #c9cce8; background: #fff; cursor: pointer; font-weight: 600; }
+  .dot.on { background: var(--brand); color: #fff; border-color: var(--brand); }
+  .dot:hover { border-color: var(--brand); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 8px; border-bottom: 1px solid var(--line); vertical-align: middle; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .4px; }
+  .tablewrap { overflow-x: auto; }
+  .unread { border-left: 4px solid var(--brand); padding-left: 12px; }
+  input[type=range] { padding: 0; accent-color: var(--brand); }
+
+  #toast { position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%); background: #1b1750; color: #fff; padding: 11px 18px; border-radius: 10px; opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw; z-index: 10; }
+  #toast.show { opacity: 1; } #toast.err { background: var(--bad); }
+
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: minmax(0, 1fr); padding: 16px; }
+    nav#nav { flex-direction: row; overflow-x: auto; position: static; padding-bottom: 6px; }
+    nav#nav button { white-space: nowrap; }
+    .form2 { grid-template-columns: 1fr; }
+    .top { padding: 12px 16px; } .who small { display: none; }
+  }
+  @media (max-width: 520px) {
+    .brand span:last-child { display: none; }
+    .top .right { gap: 8px; min-width: 0; }
+    .who { max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  }
+  @media print {
+    .top, nav#nav, .noprint, #toast { display: none !important; }
+    .layout { display: block; padding: 0; } .card, .tile { box-shadow: none; border: 1px solid #ccc; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body data-role="EMPLOYEE">
+<!-- custom-page: hand-built, so _generate_dashboards.py will not overwrite it -->
+<div id="app" hidden>
+<header class="top">
+  <div class="brand"><span class="logo">WKI</span><span>Workforce<br>Intelligence</span></div>
+  <div class="right">
+    <button class="bell" id="bell" aria-label="Notifications">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      <span class="badge" id="badge" hidden>0</span>
+    </button>
+    <div class="who"><strong id="userName">Loading…</strong><small id="userEmail"></small></div>
+    <button class="btn" id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav id="nav" aria-label="Dashboard sections"></nav>
+  <main id="main" tabindex="-1"><div class="card empty">Loading your dashboard…</div></main>
+</div>
+<div id="toast" role="status" aria-live="polite"></div>
+</div><!-- /#app -->
+
+<!-- guard.js checks the login token and role, shows #app, and handles the Logout button -->
+<script src="js/guard.js"></script>
+<script>
+/* ============================ CONFIG ============================ */
+const CONFIG = {
+  API: "http://localhost:8080/api/employee",   // backend base URL
+  LOGIN_PAGE: "login.html"                      // where to send people who are not logged in (same as guard.js)
+};
+
+/* ============================ HELPERS =========================== */
+const $ = (s, r = document) => r.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const LEVELS = ["", "Beginner", "Basic", "Intermediate", "Advanced", "Expert"];
+// Same session object that login.html / auth.js saves (see js/auth.js)
+function getSession() {
+  try { return JSON.parse(localStorage.getItem("wki_session") || "null"); } catch (_) { return null; }
+}
+function goLogin() {
+  try { localStorage.removeItem("wki_session"); } catch (_) {}
+  window.location.replace(CONFIG.LOGIN_PAGE);
+}
+function toast(msg, isErr) {
+  const t = $("#toast"); t.textContent = msg; t.className = "show" + (isErr ? " err" : "");
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.className = "", 3200);
+}
+async function api(path, { method = "GET", body } = {}) {
+  const sess = getSession();
+  if (!sess || !sess.token) { goLogin(); throw new Error("Please log in"); }
+  let res;
+  try {
+    res = await fetch(CONFIG.API + path, {
+      method,
+      headers: { Authorization: "Bearer " + sess.token, ...(body ? { "Content-Type": "application/json" } : {}) },
+      body: body ? JSON.stringify(body) : undefined
+    });
+  } catch (_) { throw new Error("Cannot reach the server. Is the backend running at " + CONFIG.API + " ?"); }
+  if (res.status === 401) { goLogin(); throw new Error("Session expired, please log in again"); }
+  const data = await res.json().catch(() => null);
+  if (!res.ok) {
+    if (res.status === 403 && !(data && data.message)) throw new Error("Access denied. This dashboard is only for Employee accounts.");
+    throw new Error((data && (data.message || data.error)) || "Request failed (" + res.status + ")");
+  }
+  return data;
+}
+function fmt(dt, withTime = true) {
+  if (!dt) return "";
+  const d = new Date(dt); if (isNaN(d)) return "";
+  return d.toLocaleString([], withTime ? { dateStyle: "medium", timeStyle: "short" } : { dateStyle: "medium" });
+}
+const cleanLast = n => (n && n !== "-") ? n : "";
+const fullName = p => [p.firstName, cleanLast(p.lastName)].filter(Boolean).join(" ");
+const pct = (a, b) => b ? Math.round(a * 100 / b) : 0;
+
+/* ============================ STATE ============================= */
+const S = { assessmentQuestions: [], assessmentHistory: [], assessmentSkillId: null, lastAssessment: null };
+const loaders = {
+  profile:     async () => S.profile     = await api("/me/profile"),
+  skills:      async () => S.skills      = await api("/me/skills"),
+  catalog:     async () => S.catalog     = await api("/skills"),
+  assessmentHistory: async () => S.assessmentHistory = await api("/me/assessment/history"),
+  gaps:        async () => S.gaps        = await api("/me/gaps"),
+  recs:        async () => S.recs        = await api("/me/recommendations"),
+  learning:    async () => S.learning    = await api("/me/learning"),
+  mentorships: async () => S.mentorships = await api("/me/mentorships"),
+  suggestions: async () => S.suggestions = await api("/me/mentor-suggestions"),
+  sessions:    async () => S.sessions    = await api("/sessions"),
+  notifs:      async () => S.notifs      = await api("/me/notifications"),
+  certs:       async () => S.certs       = await api("/me/certifications"),
+  achievements:async () => S.achievements= await api("/me/achievements")
+};
+const refresh = (...names) => Promise.all((names.length ? names : Object.keys(loaders)).map(n => loaders[n]()));
+
+/* ============================ UI PIECES ========================= */
+const VIEWS = [
+  ["overview", "Overview"], ["profile", "My Profile"], ["skills", "My Skills"], ["assessment", "Skill Assessments"],
+  ["gaps", "Knowledge Gaps"], ["recommended", "Recommended Training"], ["progress", "Learning Progress"],
+  ["community", "Sharing & Mentorship"], ["certifications", "Certifications"],
+  ["achievements", "Progress & Achievements"], ["notifications", "Notifications"], ["reports", "Reports"]
+];
+let current = "overview";
+
+const tile = (n, label) => `<div class="tile"><b>${esc(n)}</b><span>${esc(label)}</span></div>`;
+const empty = (msg, btn) => `<div class="empty">${esc(msg)}${btn || ""}</div>`;
+const goBtn = (view, label) => `<div style="margin-top:12px"><button class="btn small" data-act="go" data-view="${view}">${esc(label)}</button></div>`;
+const progressBar = (p, cls = "") => `<div class="bar ${cls}" role="progressbar" aria-valuenow="${Number(p)}" aria-valuemin="0" aria-valuemax="100"><i style="width:${Number(p)}%"></i></div>`;
+const head = (title, lead) => `<h1>${esc(title)}</h1><p class="lead">${esc(lead)}</p>`;
+const gapChip = g => g >= 2 ? `<span class="chip bad">High gap</span>` : g === 1 ? `<span class="chip warn">Small gap</span>` : `<span class="chip ok">On target</span>`;
+const rater = (id, cur) => `<div class="rate" role="group" aria-label="Your level">${[1, 2, 3, 4, 5].map(n =>
+  `<button type="button" class="dot${n <= cur ? " on" : ""}" data-act="rate" data-skill="${Number(id)}" data-level="${n}" aria-pressed="${n === cur}" title="${n} – ${LEVELS[n]}">${n}</button>`).join("")}</div>`;
+
+/* ============================ VIEWS ============================= */
+const views = {
+  overview() {
+    const g = S.gaps.summary, l = S.learning.summary;
+    const topGaps = S.gaps.gaps.slice(0, 3), recs = S.recs.courses.slice(0, 3);
+    const sess = S.sessions.slice(0, 3);
+    return head("Welcome back, " + (S.profile.firstName || ""), "Here is where you stand today.") +
+      (g.assessed === 0 ? `<div class="callout"><span><b>Start here:</b> add a skill and take an assessment so we can identify knowledge gaps and recommend training.</span><button class="btn small" data-act="go" data-view="skills">Add my skills</button></div>` : "") +
+      `<div class="grid g4" style="margin-bottom:18px">${tile(g.assessed, "Skills assessed")}${tile(g.gapCount, "Open knowledge gaps")}${tile(l.inProgress, "Courses in progress")}${tile(S.notifs.unread, "Unread notifications")}</div>
+      <div class="grid g2">
+        <div class="card"><h2>Biggest gaps</h2>${topGaps.length ? topGaps.map(x => `<div class="row"><span class="grow"><b>${esc(x.skillName)}</b><div class="sub">You ${x.selfLevel} · Target ${x.requiredLevel}</div></span>${gapChip(x.gap)}</div>`).join("") : empty("No gaps found yet.")}${goBtn("gaps", "View all gaps")}</div>
+        <div class="card"><h2>Recommended for you</h2>${recs.length ? recs.map(c => `<div class="row"><span class="grow"><b>${esc(c.title)}</b><div class="sub">${esc(c.skillName)} · ${Number(c.durationHours)}h</div></span></div>`).join("") : empty("Nothing to recommend yet.")}${goBtn("recommended", "See training")}</div>
+        <div class="card"><h2>Upcoming sessions</h2>${sess.length ? sess.map(x => `<div class="row"><span class="grow"><b>${esc(x.title)}</b><div class="sub">${esc(fmt(x.scheduledAt))} · ${esc(x.hostName)}</div></span></div>`).join("") : empty("No sessions scheduled.")}${goBtn("community", "Open sharing & mentorship")}</div>
+      </div>`;
+  },
+
+  profile() {
+    const p = S.profile;
+    const filled = ["phone", "location", "bio", "linkedin", "education", "workExperience", "department", "jobRole"].filter(k => p[k]).length;
+    const done = pct(filled, 8);
+    return head("My Profile", "Keep your details up to date so colleagues can find and reach you.") +
+      `<div class="card"><div class="sub" style="margin-bottom:6px">Profile completeness: ${done}%</div>${progressBar(done)}</div>
+      <form class="card" data-form="profile">
+        <h2>Personal Details</h2>
+        <div class="form2">
+          <div><label for="f_first">First name</label><input id="f_first" name="firstName" required maxlength="100" value="${esc(p.firstName)}"></div>
+          <div><label for="f_last">Last name</label><input id="f_last" name="lastName" maxlength="100" value="${esc(cleanLast(p.lastName))}"></div>
+          <div><label for="f_email">Email (cannot be changed here)</label><input id="f_email" value="${esc(p.email)}" readonly></div>
+          <div><label for="f_phone">Phone</label><input id="f_phone" name="phone" maxlength="30" value="${esc(p.phone)}"></div>
+          <div><label for="f_loc">Location</label><input id="f_loc" name="location" maxlength="100" value="${esc(p.location)}"></div>
+          <div><label for="f_li">LinkedIn / profile link</label><input id="f_li" name="linkedin" maxlength="255" value="${esc(p.linkedin)}"></div>
+        </div>
+        <h2 style="margin-top:20px">Professional Details</h2>
+        <div class="form2">
+          <div><label for="f_dept">Department</label><input id="f_dept" name="department" maxlength="100" value="${esc(p.department)}"></div>
+          <div><label for="f_role">Job Role</label><input id="f_role" name="jobRole" maxlength="100" value="${esc(p.jobRole)}"></div>
+        </div>
+        <label for="f_edu">Education</label><textarea id="f_edu" name="education" maxlength="500" placeholder="e.g. B.Tech Computer Science, XYZ University, 2020">${esc(p.education)}</textarea>
+        <label for="f_exp">Work Experience</label><textarea id="f_exp" name="workExperience" maxlength="1000" placeholder="e.g. 3 years as Full Stack Developer at ABC Corp">${esc(p.workExperience)}</textarea>
+        <label for="f_bio">About me</label><textarea id="f_bio" name="bio" maxlength="1000">${esc(p.bio)}</textarea>
+        <div style="margin-top:16px"><button class="btn" type="submit">Save profile</button> <span class="chip ${p.status === "ACTIVE" ? "ok" : "warn"}">${esc(p.status)}</span>${p.role ? ` <span class="chip">${esc(p.role)}</span>` : ""}</div>
+      </form>`;
+  },
+
+  skills() {
+    const have = new Set(S.skills.map(s => s.skillId));
+    const avail = S.catalog.filter(s => !have.has(s.skillId));
+    const cats = [...new Set(avail.map(s => s.category))];
+    return head("My Skills", "Add the skills you want to demonstrate. We use a knowledge assessment—not a self-selected level—to identify gaps and recommend courses.") +
+      `<form class="card" data-form="addskill"><h2>Add a skill to assess</h2>
+        ${avail.length ? `<div class="inline"><div><label for="a_skill">Skill</label><select id="a_skill" name="skillId" required>${cats.map(c => `<optgroup label="${esc(c)}">${avail.filter(s => s.category === c).map(s => `<option value="${Number(s.skillId)}">${esc(s.skillName)}</option>`).join("")}</optgroup>`).join("")}</select></div><div style="flex:0"><button class="btn" type="submit">Add skill</button></div></div>` : `<div class="sub">You have added every skill in the catalogue.</div>`}
+      </form>
+      <div class="card"><h2>My selected skills</h2>
+        ${S.skills.length ? `<div class="tablewrap"><table><thead><tr><th>Skill</th><th>Category</th><th>Latest assessment</th><th>Assessment status</th><th>Action</th></tr></thead><tbody>
+          ${S.skills.map(s => `<tr><td><b>${esc(s.skillName)}</b></td><td>${esc(s.category)}</td><td>${s.assessmentPercent == null ? "—" : Number(s.assessmentPercent) + "%"}</td><td>${s.assessmentPercent == null ? `<span class="chip warn">Not assessed</span>` : Number(s.assessmentPercent) >= 75 ? `<span class="chip ok">Strong result</span>` : `<span class="chip bad">Learning gap found</span>`}</td><td><button class="btn small" data-act="startassessment" data-skill="${Number(s.skillId)}">${s.assessmentPercent == null ? "Take assessment" : "Retake assessment"}</button> <button class="btn danger small" data-act="removeskill" data-skill="${Number(s.skillId)}">Remove</button></td></tr>`).join("")}
+        </tbody></table></div>` : empty("Add a skill to begin your first assessment.")}
+      </div>
+      <div class="card"><h2>Assessment history</h2>${(S.assessmentHistory || []).length ? (S.assessmentHistory).map(a => `<div class="row"><div class="grow"><b>${esc(a.skillName)}</b><div class="sub">${esc(fmt(a.attemptedAt))} · ${Number(a.correctAnswers)}/${Number(a.totalQuestions)} correct</div></div><b>${Number(a.scorePct)}%</b></div>`).join("") : empty("Your completed assessments will appear here.")}</div>`;
+  },
+
+  assessment() {
+    const skills = S.skills || [];
+    const chosen = skills.find(s => Number(s.skillId) === Number(S.assessmentSkillId));
+    let content = `<form class="card" data-form="startassessment"><h2>Choose a skill</h2><p class="sub">Questions are selected from the assessment bank. Your score is calculated from your answers.</p><div class="inline"><div><label for="assessmentSkill">Skill</label><select id="assessmentSkill" name="skillId" required>${skills.map(s => `<option value="${Number(s.skillId)}"${Number(s.skillId) === Number(S.assessmentSkillId) ? " selected" : ""}>${esc(s.skillName)}</option>`).join("")}</select></div><div style="flex:0"><button class="btn" type="submit" ${skills.length ? "" : "disabled"}>Load assessment</button></div></div>${skills.length ? "" : empty("Add a skill first.", goBtn("skills", "Go to My Skills"))}</form>`;
+    if (S.assessmentQuestions && S.assessmentQuestions.length && chosen) {
+      content += `<form class="card" data-form="assessment"><h2>${esc(chosen.skillName)} assessment</h2><p class="sub">Answer every question. The result will update your knowledge-gap summary and course recommendations.</p>
+        ${S.assessmentQuestions.map((q,i) => `<fieldset style="border:1px solid var(--line);border-radius:10px;padding:14px;margin:14px 0"><legend><b>${i+1}. ${esc(q.questionText)}</b></legend><p class="sub">Topic: ${esc(q.topic)}</p>${["A","B","C","D"].map(letter => `<label style="display:flex;gap:8px;align-items:flex-start;font-weight:400"><input style="width:auto;margin-top:4px" type="radio" name="q_${Number(q.questionId)}" value="${letter}" required> <span>${letter}. ${esc(q["option"+letter])}</span></label>`).join("")}</fieldset>`).join("")}
+        <button class="btn" type="submit">Submit assessment</button></form>`;
+    }
+    if (S.lastAssessment) {
+      const r=S.lastAssessment;
+      content += `<div class="card"><h2>Latest result: ${esc(r.skillName)}</h2><div class="grid g4"><div class="tile"><b>${Number(r.scorePct)}%</b><span>Assessment score</span></div><div class="tile"><b>${Number(r.correctAnswers)}/${Number(r.totalQuestions)}</b><span>Correct answers</span></div><div class="tile"><b>${Number(r.assessedLevel)}/5</b><span>Evidence-based skill level</span></div></div><p>Recommendations are now based on your assessed performance. Review your <button class="btn ghost small" data-act="go" data-view="recommended">recommended courses</button>.</p>${(r.answerReview||[]).map((a,i)=>`<div class="row"><div class="grow"><b>Question ${i+1}: ${a.isCorrect ? "Correct" : "Review this topic"}</b><div class="sub">${esc(a.topic)} — ${esc(a.explanation||"")}</div></div><span class="chip ${a.isCorrect ? "ok" : "bad"}">${a.isCorrect ? "Correct" : "Incorrect"}</span></div>`).join("")}</div>`;
+    }
+    return head("Skill Assessments", "Measure actual knowledge through questions. Scores identify specific gaps and drive personalized course recommendations.") + content;
+  },
+
+  gaps() {
+    const { summary: g, gaps, strengths } = S.gaps;
+    if (!g.assessed) return head("Knowledge Gap Summary", "Where your skills fall short of the target level.") + `<div class="card">${empty("Complete a skill assessment first to see your gaps.", goBtn("skills", "Rate my skills"))}</div>`;
+    return head("Knowledge Gap Summary", "Where your skills fall short of the target level for your role.") +
+      `<div class="grid g4" style="margin-bottom:18px">${tile(g.gapCount, "Skills with a gap")}${tile(g.strengthCount, "Skills on target")}${tile(g.avgSelf, "Average assessed level")}${tile(g.totalGapPoints, "Total gap points")}</div>
+      <div class="card"><h2>Skills to develop</h2>
+        ${gaps.length ? gaps.map(x => `<div class="row"><div class="grow"><b>${esc(x.skillName)}</b> <span class="sub">${esc(x.category)}</span>
+          <div class="gapbar" style="margin:8px 0 4px" role="img" aria-label="Assessed level ${x.selfLevel} of 5, target ${x.requiredLevel}"><i style="width:${x.selfLevel * 20}%"></i><u style="left:calc(${x.requiredLevel * 20}% - 1px)"></u></div>
+          <span class="sub">Assessed level: ${x.selfLevel} (${esc(LEVELS[x.selfLevel])}) · Target: ${x.requiredLevel} (${esc(LEVELS[x.requiredLevel])}) · Gap: ${x.gap}</span></div>${gapChip(x.gap)}</div>`).join("") : empty("Great news, you meet the target on every assessed skill!")}
+        ${gaps.length ? goBtn("recommended", "Find training for these gaps") : ""}
+      </div>
+      <div class="card"><h2>Your strengths</h2>${strengths.length ? strengths.map(x => `<span class="chip ok" style="margin:0 6px 6px 0">${esc(x.skillName)} · ${x.selfLevel}/5</span>`).join("") : empty("No strengths recorded yet.")}</div>`;
+  },
+
+  recommended() {
+    const { courses, paths } = S.recs;
+    return head("Recommended Training & Learning Paths", "Picked from the skills where you have a gap.") +
+      `<div class="card"><h2>Recommended courses</h2>
+        ${courses.length ? courses.map(c => `<div class="row"><div class="grow"><b>${esc(c.title)}</b><div class="sub">${esc(c.provider || "")} · Skill: ${esc(c.skillName)} · Level ${Number(c.courseLevel)} · ${Number(c.durationHours)} hours</div></div><span class="chip warn">Closes a ${Number(c.gap)}-level gap</span><button class="btn small" data-act="enroll" data-course="${Number(c.courseId)}">Enroll</button></div>`).join("")
+          : empty(S.gaps.summary.assessed ? "No new courses to recommend right now." : "Complete a skill assessment to get personalised recommendations.", S.gaps.summary.assessed ? "" : goBtn("skills", "Rate my skills"))}
+      </div>
+      <div class="card"><h2>Learning paths</h2>
+        ${paths.length ? paths.map(p => { const pr = pct(p.completedCourses, p.totalCourses); return `<div class="row"><div class="grow"><b>${esc(p.title)}</b> ${p.gapMatches > 0 ? `<span class="chip">Covers ${Number(p.gapMatches)} of your gaps</span>` : ""}
+          <div class="sub">${esc(p.description || "")}</div><div style="margin:8px 0 2px;max-width:340px">${progressBar(pr, pr === 100 ? "ok" : "")}</div><div class="sub">${Number(p.completedCourses)} of ${Number(p.totalCourses)} courses completed</div></div>
+          <button class="btn ghost small" data-act="enrollpath" data-path="${Number(p.pathId)}">${p.completedCourses === p.totalCourses && p.totalCourses ? "Completed" : "Start path"}</button></div>`; }).join("") : empty("No learning paths available yet.")}
+      </div>`;
+  },
+
+  progress() {
+    const { summary: l, items } = S.learning;
+    return head("Learning Progress", "Track the courses you have started and finished.") +
+      `<div class="grid g4" style="margin-bottom:18px">${tile(l.enrolled, "Courses enrolled")}${tile(l.inProgress, "In progress")}${tile(l.completed, "Completed")}${tile(l.hoursCompleted, "Learning hours completed")}</div>
+      <div class="card"><h2>My courses</h2>
+        ${items.length ? items.map(i => `<div class="row"><div class="grow"><b>${esc(i.title)}</b> ${i.status === "COMPLETED" ? `<span class="chip ok">Completed</span>` : `<span class="chip">In progress</span>`}
+          <div class="sub">${esc(i.provider || "")} · ${esc(i.skillName)} · ${Number(i.durationHours)}h · Started ${esc(fmt(i.startedAt, false))}${i.completedAt ? " · Finished " + esc(fmt(i.completedAt, false)) : ""}</div>
+          <div style="margin:8px 0 2px;max-width:420px">${progressBar(i.progressPct, i.status === "COMPLETED" ? "ok" : "")}</div><span class="sub" id="pv_${Number(i.courseId)}">${Number(i.progressPct)}% complete</span></div>
+          ${i.status === "COMPLETED" ? "" : `<div class="inline noprint" style="max-width:340px"><div style="min-width:140px"><label class="sub" for="r_${Number(i.courseId)}" style="margin:0">Update progress</label><input type="range" id="r_${Number(i.courseId)}" min="0" max="95" step="5" value="${Math.min(Number(i.progressPct), 95)}" data-range="${Number(i.courseId)}"></div>
+          <button class="btn small" data-act="saveprogress" data-course="${Number(i.courseId)}">Save</button><button class="btn ghost small" data-act="complete" data-course="${Number(i.courseId)}">Mark complete</button></div>`}</div>`).join("")
+          : empty("You have not enrolled in any courses yet.", goBtn("recommended", "Browse recommended training"))}
+      </div>`;
+  },
+
+  community() {
+    const ms = S.mentorships, sug = S.suggestions, ses = S.sessions;
+    const stat = s => ({ REQUESTED: ["warn", "Pending"], ACTIVE: ["ok", "Active"], DECLINED: ["bad", "Declined"], COMPLETED: ["", "Completed"] }[s] || ["", s]);
+    return head("Knowledge Sharing & Mentorship", "Learn from colleagues and share what you know.") +
+      `<div class="card"><h2>My mentorships</h2>
+        ${ms.length ? ms.map(m => { const [c, t] = stat(m.status); const iMentor = m.myRole === "MENTOR";
+          return `<div class="row"><div class="grow"><b>${esc(m.topic)}</b><div class="sub">${iMentor ? "You mentor " + esc(m.menteeName) : "Mentor: " + esc(m.mentorName)} · ${esc(fmt(m.createdAt, false))}</div></div><span class="chip ${c}">${t}</span>
+          ${iMentor && m.status === "REQUESTED" ? `<button class="btn small" data-act="answer" data-id="${Number(m.mentorshipId)}" data-status="ACTIVE">Accept</button><button class="btn danger small" data-act="answer" data-id="${Number(m.mentorshipId)}" data-status="DECLINED">Decline</button>` : ""}
+          ${iMentor && m.status === "ACTIVE" ? `<button class="btn ghost small" data-act="answer" data-id="${Number(m.mentorshipId)}" data-status="COMPLETED">Mark complete</button>` : ""}</div>`; }).join("")
+          : empty("No mentorships yet. Request one from the suggestions below.")}
+      </div>
+      <div class="card"><h2>Suggested mentors</h2><p class="sub" style="margin-top:-6px">Colleagues who rate themselves 4 or 5 in skills where you have a gap.</p>
+        ${sug.length ? sug.map(s => `<div class="row"><div class="grow"><b>${esc(s.mentorName)}</b><div class="sub">${esc(s.skillName)} · level ${Number(s.level)}/5</div></div><button class="btn small" data-act="requestmentor" data-mentor="${Number(s.mentorId)}" data-topic="${esc("Help with " + s.skillName)}">Request mentorship</button></div>`).join("")
+          : empty("No suggestions right now. They appear when colleagues rate themselves highly in your gap skills.")}
+      </div>
+      <div class="card"><h2>Knowledge-sharing sessions</h2>
+        ${ses.length ? ses.map(x => { const mine = Number(x.hostId) === Number(S.profile.employeeId); return `<div class="row"><div class="grow"><b>${esc(x.title)}</b> ${mine ? `<span class="chip">You are hosting</span>` : ""}<div class="sub">${esc(fmt(x.scheduledAt))} · Host: ${esc(x.hostName)} · ${Number(x.attendees)} registered</div>${x.description ? `<div class="sub">${esc(x.description)}</div>` : ""}</div>
+          ${x.registered ? `<button class="btn ghost small" data-act="unregister" data-id="${Number(x.sessionId)}">Cancel registration</button>` : `<button class="btn small" data-act="register" data-id="${Number(x.sessionId)}">Register</button>`}</div>`; }).join("")
+          : empty("No upcoming sessions. Be the first to host one below!")}
+      </div>
+      <form class="card" data-form="session"><h2>Share your knowledge</h2><p class="sub" style="margin-top:-6px">Host a short session on something you know well.</p>
+        <div class="form2"><div><label for="s_title">Session title</label><input id="s_title" name="title" required maxlength="150"></div>
+        <div><label for="s_when">Date and time</label><input id="s_when" name="scheduledAt" type="datetime-local" required></div></div>
+        <label for="s_desc">What will you cover?</label><textarea id="s_desc" name="description" maxlength="500"></textarea>
+        <div style="margin-top:14px"><button class="btn" type="submit">Schedule session</button></div></form>`;
+  },
+
+  notifications() {
+    const { unread, items } = S.notifs;
+    return head("Notifications", unread ? `You have ${unread} unread notification${unread > 1 ? "s" : ""}.` : "You are all caught up.") +
+      `<div class="card">${items.length ? `<div style="text-align:right;margin-bottom:6px"><button class="btn ghost small" data-act="readall"${unread ? "" : " disabled"}>Mark all as read</button></div>` +
+        items.map(n => `<div class="row ${n.isRead ? "" : "unread"}"><div class="grow">${n.isRead ? esc(n.message) : "<b>" + esc(n.message) + "</b>"}<div class="sub">${esc(fmt(n.createdAt))}</div></div>${n.isRead ? "" : `<button class="btn ghost small" data-act="readone" data-id="${Number(n.notificationId)}">Mark read</button>`}</div>`).join("")
+        : empty("No notifications yet.")}</div>`;
+  },
+
+  certifications() {
+    const certs = S.certs || [];
+    const expiring = certs.filter(c => { if (!c.expiryDate) return false; const d = new Date(c.expiryDate); return d > new Date() && d < new Date(Date.now() + 90*86400000); });
+    const expired = certs.filter(c => c.expiryDate && new Date(c.expiryDate) < new Date());
+    return head("Certifications", "Track your professional certifications and credentials.") +
+      (expiring.length ? `<div class="callout"><span><b>⚠ Expiring soon:</b> ${expiring.map(c => esc(c.title)).join(", ")} — renew before they expire.</span></div>` : "") +
+      (expired.length ? `<div class="callout" style="background:#fde6e7"><span><b>⛔ Expired:</b> ${expired.map(c => esc(c.title)).join(", ")} — please renew these certifications.</span></div>` : "") +
+      `<div class="grid g4" style="margin-bottom:18px">${tile(certs.length, "Total certifications")}${tile(expired.length, "Expired")}${tile(expiring.length, "Expiring soon")}</div>
+      <form class="card" data-form="addcert">
+        <h2>Add a Certification</h2>
+        <div class="form2">
+          <div><label for="c_title">Certification title</label><input id="c_title" name="title" required maxlength="200" placeholder="e.g. AWS Certified Cloud Practitioner"></div>
+          <div><label for="c_issuer">Issuer</label><input id="c_issuer" name="issuer" maxlength="150" placeholder="e.g. Amazon Web Services"></div>
+          <div><label for="c_credid">Credential ID</label><input id="c_credid" name="credentialId" maxlength="100"></div>
+          <div><label for="c_url">Credential URL</label><input id="c_url" name="credentialUrl" maxlength="500" placeholder="https://..."></div>
+          <div><label for="c_issued">Issue date</label><input id="c_issued" name="issueDate" type="date"></div>
+          <div><label for="c_expiry">Expiry date (if applicable)</label><input id="c_expiry" name="expiryDate" type="date"></div>
+        </div>
+        <div style="margin-top:14px"><button class="btn" type="submit">Add certification</button></div>
+      </form>
+      <div class="card"><h2>My Certifications</h2>
+        ${certs.length ? certs.map(c => {
+          const isExpired = c.expiryDate && new Date(c.expiryDate) < new Date();
+          const isSoon = c.expiryDate && !isExpired && new Date(c.expiryDate) < new Date(Date.now() + 90*86400000);
+          return `<div class="row"><div class="grow"><b>${esc(c.title)}</b>${c.issuer ? ` <span class="sub">by ${esc(c.issuer)}</span>` : ""}
+            <div class="sub">${c.issueDate ? "Issued: " + esc(fmt(c.issueDate, false)) : ""}${c.expiryDate ? " · Expires: " + esc(fmt(c.expiryDate, false)) : " · No expiry"}
+            ${c.credentialId ? " · ID: " + esc(c.credentialId) : ""}</div>
+            ${c.credentialUrl ? `<div class="sub"><a href="${esc(c.credentialUrl)}" target="_blank" rel="noopener">View credential ↗</a></div>` : ""}
+          </div>
+          ${isExpired ? `<span class="chip bad">Expired</span>` : isSoon ? `<span class="chip warn">Expiring soon</span>` : `<span class="chip ok">Active</span>`}
+          <button class="btn danger small" data-act="deletecert" data-id="${Number(c.certificationId)}">Remove</button></div>`;
+        }).join("") : empty("No certifications yet. Add your first one above!")}
+      </div>`;
+  },
+
+  achievements() {
+    const data = S.achievements || { stats: {}, achievements: [], improvements: [], milestones: [] };
+    const st = data.stats || {};
+    const badges = data.achievements || [];
+    const impr = data.improvements || [];
+    const milestones = data.milestones || [];
+    const BADGE_ICONS = { MILESTONE: "🏁", COURSE_COMPLETE: "🎓", SKILL_MASTERY: "⭐", ASSESSMENT_ACE: "🏆", STREAK: "🔥" };
+    return head("Progress & Achievements", "Track your learning journey, measure improvement, and earn badges.") +
+      `<div class="grid g4" style="margin-bottom:18px">
+        ${tile(st.completedCourses || 0, "Courses completed")}${tile(st.assessedSkills || 0, "Skills assessed")}
+        ${tile(st.totalCertifications || 0, "Certifications")}${tile(badges.length, "Achievements earned")}
+      </div>
+      <div class="grid g2">
+        <div class="card"><h2>🏆 Achievements & Badges</h2>
+          ${badges.length ? badges.map(a => `<div class="row"><div class="grow">
+            <b>${BADGE_ICONS[a.badgeType] || "🏅"} ${esc(a.title)}</b>
+            <div class="sub">${esc(a.description || "")} · Earned ${esc(fmt(a.earnedAt))}</div>
+          </div><span class="chip">${esc(a.badgeType.replace("_", " "))}</span></div>`).join("") : empty("Complete assessments and courses to earn your first badge!")}
+        </div>
+        <div class="card"><h2>📈 Skill Improvement</h2>
+          <p class="sub" style="margin-top:-6px">Comparing your first and latest assessment scores.</p>
+          ${impr.length ? impr.map(i => {
+            const improved = Number(i.improvement) > 0;
+            return `<div class="row"><div class="grow"><b>${esc(i.skillName)}</b>
+              <div class="sub">First: ${Number(i.firstScore)}% → Latest: ${Number(i.latestScore)}%</div></div>
+              <span class="chip ${improved ? "ok" : Number(i.improvement) === 0 ? "warn" : "bad"}">${improved ? "+" : ""}${Number(i.improvement).toFixed(1)}%</span></div>`;
+          }).join("") : empty("Retake a skill assessment to see your improvement over time.", goBtn("assessment", "Go to assessments"))}
+        </div>
+      </div>
+      <div class="card" style="margin-top:18px"><h2>📅 Learning Milestones</h2>
+        ${milestones.length ? `<div class="tablewrap"><table><thead><tr><th>Course</th><th>Skill</th><th>Hours</th><th>Completed</th></tr></thead><tbody>
+          ${milestones.map(m => `<tr><td><b>${esc(m.courseTitle)}</b></td><td>${esc(m.skillName)}</td><td>${Number(m.durationHours)}h</td><td>${esc(fmt(m.completedAt))}</td></tr>`).join("")}
+        </tbody></table></div>` : empty("Complete a course to see your learning milestones here.", goBtn("recommended", "Browse training"))}
+      </div>
+      <div class="card" style="margin-top:18px"><h2>🎯 Learning Goals Progress</h2>
+        <div class="row"><div class="grow"><b>Skills assessed</b><div class="sub">${st.assessedSkills || 0} of ${st.totalSkills || 0} skills</div>
+          ${progressBar(pct(st.assessedSkills || 0, st.totalSkills || 1))}</div></div>
+        <div class="row"><div class="grow"><b>Courses completed</b><div class="sub">${st.completedCourses || 0} of ${st.totalEnrolled || 0} enrolled</div>
+          ${progressBar(pct(st.completedCourses || 0, st.totalEnrolled || 1), (st.completedCourses || 0) === (st.totalEnrolled || 0) && (st.totalEnrolled || 0) > 0 ? "ok" : "")}</div></div>
+      </div>`;
+  },
+
+  reports() {
+    const p = S.profile, g = S.gaps.summary, l = S.learning.summary;
+    return head("My Reports", "A summary of your skills and learning. Download it or print it as a PDF.") +
+      `<div class="card noprint" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" data-act="csv">Download CSV</button><button class="btn ghost" data-act="print">Print / Save as PDF</button></div>
+      <div class="card"><h2>${esc(fullName(p))}</h2><div class="sub">${esc(p.email)} · Report date ${esc(fmt(new Date().toISOString(), false))}</div></div>
+      <div class="grid g4" style="margin-bottom:18px">${tile(g.assessed, "Skills assessed")}${tile(g.gapCount, "Open gaps")}${tile(l.completed + " / " + l.enrolled, "Courses completed")}${tile(l.hoursCompleted, "Learning hours")}</div>
+      <div class="card"><h2>Skills &amp; gaps</h2>${S.skills.length ? `<div class="tablewrap"><table><thead><tr><th>Skill</th><th>Category</th><th>My level</th><th>Target</th><th>Gap</th></tr></thead><tbody>${S.skills.map(s => `<tr><td>${esc(s.skillName)}</td><td>${esc(s.category)}</td><td>${s.selfLevel}</td><td>${s.requiredLevel}</td><td>${Math.max(s.requiredLevel - s.selfLevel, 0)}</td></tr>`).join("")}</tbody></table></div>` : empty("No skills rated yet.")}</div>
+      <div class="card"><h2>Learning</h2>${S.learning.items.length ? `<div class="tablewrap"><table><thead><tr><th>Course</th><th>Skill</th><th>Hours</th><th>Progress</th><th>Status</th></tr></thead><tbody>${S.learning.items.map(i => `<tr><td>${esc(i.title)}</td><td>${esc(i.skillName)}</td><td>${Number(i.durationHours)}</td><td>${Number(i.progressPct)}%</td><td>${esc(i.status === "COMPLETED" ? "Completed" : "In progress")}</td></tr>`).join("")}</tbody></table></div>` : empty("No courses yet.")}</div>`;
+  }
+};
+
+/* ============================ RENDER ============================ */
+function renderNav() {
+  $("#nav").innerHTML = VIEWS.map(([id, label]) =>
+    `<button data-act="go" data-view="${id}"${id === current ? ' aria-current="page"' : ""}>${esc(label)}${id === "notifications" && S.notifs && S.notifs.unread ? `<span class="count">${S.notifs.unread}</span>` : ""}</button>`).join("");
+}
+function renderHeader() {
+  // guard.js writes the login name (e.g. "Ramya -") into these; keep the cleaner profile name on top
+  const setText = (sel, v) => { const el = $(sel); if (el && el.textContent !== v) el.textContent = v; };
+  if (S.profile) { setText("#userName", fullName(S.profile)); setText("#userEmail", S.profile.email); }
+  const b = $("#badge"), n = S.notifs ? S.notifs.unread : 0; b.hidden = !n; b.textContent = n;
+}
+function render() {
+  renderNav(); renderHeader();
+  $("#main").innerHTML = views[current]();
+  document.title = (VIEWS.find(v => v[0] === current) || [0, "Dashboard"])[1] + " | Workforce Intelligence";
+}
+function go(view) {
+  if (!views[view]) view = "overview";
+  current = view; if (location.hash !== "#" + view) location.hash = view;
+  render(); window.scrollTo({ top: 0 }); $("#main").focus({ preventScroll: true });
+}
+
+/* ============================ ACTIONS =========================== */
+async function run(fn, okMsg) {
+  try { await fn(); if (okMsg) toast(okMsg); }
+  catch (e) { toast(e.message, true); }
+  render();
+}
+const post = (p, body) => api(p, { method: "POST", body });
+const put = (p, body) => api(p, { method: "PUT", body });
+
+const actions = {
+  go: d => go(d.view),
+  startassessment: d => run(async () => { S.assessmentSkillId = +d.skill; S.assessmentQuestions = await api("/me/assessment/questions?skillId=" + +d.skill); S.lastAssessment = null; go("assessment"); }, "Assessment loaded"),
+  removeskill: d => { if (confirm("Remove this skill from your profile?")) run(async () => { await api("/me/skills/" + +d.skill, { method: "DELETE" }); await refresh("skills", "gaps", "recs", "suggestions"); }, "Skill removed"); },
+  deletecert: d => { if (confirm("Remove this certification?")) run(async () => { await api("/me/certifications/" + +d.id, { method: "DELETE" }); await refresh("certs"); }, "Certification removed"); },
+  enroll: d => run(async () => { await post("/me/enroll", { courseId: +d.course }); await refresh("recs", "learning", "notifs"); }, "Enrolled! Track it under Learning Progress."),
+  enrollpath: d => run(async () => { await post("/me/enroll-path", { pathId: +d.path }); await refresh("recs", "learning", "notifs"); }, "Path started"),
+  saveprogress: d => run(async () => { const v = $('[data-range="' + d.course + '"]').value; await put("/me/progress", { courseId: +d.course, progressPct: +v }); await refresh("learning"); }, "Progress saved"),
+  complete: d => run(async () => { await put("/me/progress", { courseId: +d.course, progressPct: 100 }); await refresh("learning", "notifs"); }, "Course completed. Well done!"),
+  requestmentor: d => run(async () => { await post("/me/mentorship-requests", { mentorId: +d.mentor, topic: d.topic }); await refresh("mentorships", "suggestions"); }, "Mentorship request sent"),
+  answer: d => run(async () => { await put("/me/mentorships/" + +d.id, { status: d.status }); await refresh("mentorships"); }, "Updated"),
+  register: d => run(async () => { await post("/sessions/" + +d.id + "/register"); await refresh("sessions"); }, "You are registered"),
+  unregister: d => run(async () => { await api("/sessions/" + +d.id + "/register", { method: "DELETE" }); await refresh("sessions"); }, "Registration cancelled"),
+  readone: d => run(async () => { await put("/me/notifications/" + +d.id + "/read"); await refresh("notifs"); }),
+  readall: () => run(async () => { await put("/me/notifications/read-all"); await refresh("notifs"); }, "All marked as read"),
+  csv: () => downloadCsv(),
+  print: () => window.print()
+};
+const forms = {
+  profile: f => run(async () => { S.profile = await put("/me/profile", Object.fromEntries(new FormData(f))); }, "Profile saved"),
+  addskill: f => run(async () => { const d = Object.fromEntries(new FormData(f)); await put("/me/skills", { skillId: +d.skillId }); await refresh("skills", "gaps", "recs", "suggestions", "assessmentHistory"); }, "Skill added. Take its assessment to get recommendations."),
+  startassessment: f => run(async () => { const d = Object.fromEntries(new FormData(f)); S.assessmentSkillId = +d.skillId; S.assessmentQuestions = await api("/me/assessment/questions?skillId=" + +d.skillId); S.lastAssessment = null; current = "assessment"; if (location.hash !== "#assessment") location.hash = "assessment"; }, "Assessment loaded"),
+  assessment: f => run(async () => { const answers = S.assessmentQuestions.map(q => { const chosen = f.querySelector('input[name="q_' + q.questionId + '"]:checked'); return { questionId: q.questionId, selectedOption: chosen ? chosen.value : "" }; }); if (answers.some(a => !a.selectedOption)) throw new Error("Please answer every question."); S.lastAssessment = await post("/me/assessment/submit", { skillId: +S.assessmentSkillId, answers }); S.assessmentQuestions = []; await refresh("skills", "gaps", "recs", "notifs", "assessmentHistory", "achievements"); }, "Assessment submitted. Your recommendations are updated."),
+  session: f => run(async () => { await post("/sessions", Object.fromEntries(new FormData(f))); await refresh("sessions"); }, "Session scheduled"),
+  addcert: f => run(async () => { await post("/me/certifications", Object.fromEntries(new FormData(f))); f.reset(); await refresh("certs", "notifs", "achievements"); }, "Certification added!")
+};
+
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-act]");
+  if (el && actions[el.dataset.act]) actions[el.dataset.act](el.dataset);
+});
+document.addEventListener("submit", e => {
+  const f = e.target.closest("form[data-form]");
+  if (f) { e.preventDefault(); forms[f.dataset.form](f); }
+});
+document.addEventListener("input", e => {
+  if (e.target.dataset && e.target.dataset.range) { const l = $("#pv_" + e.target.dataset.range); if (l) l.textContent = e.target.value + "% complete"; }
+});
+window.addEventListener("hashchange", () => { const v = location.hash.slice(1); if (v !== current && views[v] && S.profile) go(v); });
+$("#bell").addEventListener("click", () => go("notifications"));
+
+/* ---- CSV export (cells starting with = + - @ are prefixed to block spreadsheet formula injection) ---- */
+function csvCell(v) {
+  let s = String(v ?? "");
+  if (/^[=+\-@\t\r]/.test(s)) s = "'" + s;
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+function downloadCsv() {
+  const rows = [];
+  const add = (...c) => rows.push(c.map(csvCell).join(","));
+  add("Employee", fullName(S.profile), S.profile.email);
+  add("Generated", new Date().toLocaleString());
+  add(); add("SKILLS & ASSESSMENTS"); add("Skill", "Category", "Assessment score %", "Assessed level", "Target level", "Gap");
+  S.skills.forEach(s => add(s.skillName, s.category, s.assessmentPercent == null ? "Not assessed" : s.assessmentPercent, s.assessmentPercent == null ? "Not assessed" : s.selfLevel, s.requiredLevel, s.assessmentPercent == null ? "Not assessed" : Math.max(s.requiredLevel - s.selfLevel, 0)));
+  add(); add("LEARNING"); add("Course", "Skill", "Hours", "Progress %", "Status");
+  S.learning.items.forEach(i => add(i.title, i.skillName, i.durationHours, i.progressPct, i.status));
+  const blob = new Blob(["﻿" + rows.join("\r\n")], { type: "text/csv;charset=utf-8" });
+  const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "my-skills-and-learning-report.csv";
+  document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+/* ============================ START ============================= */
+(async function init() {
+  if (!getSession()) return goLogin();
+  try {
+    await refresh();
+    new MutationObserver(renderHeader).observe($("#userName"), { childList: true, characterData: true, subtree: true });
+    const v = location.hash.slice(1);
+    current = views[v] ? v : "overview";
+    render();
+  } catch (e) {
+    $("#main").innerHTML = `<div class="card empty"><b>Could not load your dashboard</b><p>${esc(e.message)}</p><button class="btn" onclick="location.reload()">Try again</button></div>`;
+  }
+})();
+</script>
+</body>
+</html>

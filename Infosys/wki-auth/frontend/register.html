@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Register | Workforce Intelligence</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="layout">
+  <aside class="brand">
+    <div class="logo"><span>WKI</span><div>Workforce<br>Intelligence</div></div>
+    <h1>Build Better Teams, <em>Sharper Skills</em></h1>
+    <p>Identify skill gaps, track learning progress and unlock your team's full potential.</p>
+  </aside>
+
+  <main class="panel">
+    <form class="card" id="registerForm" novalidate>
+      <h2>Create Your Account</h2>
+      <p class="sub">Join Workforce Intelligence and start building better teams today.</p>
+
+      <label for="fullName">Full Name *</label>
+      <input type="text" id="fullName" placeholder="Enter your full name" autocomplete="name" required>
+
+      <label for="email">Email Address *</label>
+      <input type="email" id="email" placeholder="Enter your email address" autocomplete="email" required>
+
+      <label for="password">Password *</label>
+      <div class="pw">
+        <input type="password" id="password" placeholder="Create a strong password" autocomplete="new-password" required>
+        <button type="button" class="eye" data-target="password" aria-label="Show or hide password">👁</button>
+      </div>
+
+      <label for="confirmPassword">Confirm Password *</label>
+      <div class="pw">
+        <input type="password" id="confirmPassword" placeholder="Confirm your password" autocomplete="new-password" required>
+        <button type="button" class="eye" data-target="confirmPassword" aria-label="Show or hide password">👁</button>
+      </div>
+
+      <label>Select Your Role *</label>
+      <div class="roles">
+        <label class="role"><span>Super Admin</span><input type="radio" name="role" value="ADMIN"></label>
+        <label class="role"><span>HR Manager</span><input type="radio" name="role" value="HR_MANAGER"></label>
+        <label class="role"><span>Team Manager</span><input type="radio" name="role" value="MANAGER"></label>
+        <label class="role"><span>Employee</span><input type="radio" name="role" value="EMPLOYEE"></label>
+        <label class="role"><span>Trainer / Mentor</span><input type="radio" name="role" value="TRAINER_MENTOR"></label>
+        <label class="role"><span>Learning Coordinator</span><input type="radio" name="role" value="TRAINING_COORDINATOR"></label>
+      </div>
+
+      <div id="msg" class="msg" role="alert"></div>
+      <button type="submit" class="btn">Register →</button>
+
+      <div class="or"><span>or</span></div>
+      <button type="button" class="btn-outline">Continue with Google</button>
+      <p class="foot">Already have an account? <a href="login.html">Login</a></p>
+    </form>
+  </main>
+</div>
+<script src="js/auth.js"></script>
+</body>
+</html>

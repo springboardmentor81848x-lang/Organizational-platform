@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin Dashboard | Workforce Intelligence</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-role="ADMIN">
+<div id="app" hidden>
+  <header class="topbar">
+    <div class="logo"><span>WKI</span><div>Workforce<br>Intelligence</div></div>
+    <div class="who">
+      <div><strong id="userName"></strong><small id="userEmail"></small></div>
+      <button class="logout" id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <h2>Admin Dashboard</h2>
+    <span class="badge">Super Admin</span>
+    <div class="grid">
+      <div class="tile"><h3>Users & Roles</h3><p>Manage accounts and assign roles.</p></div>
+      <div class="tile"><h3>Departments</h3><p>Maintain departments and designations.</p></div>
+      <div class="tile"><h3>Platform Settings</h3><p>Configure the platform.</p></div>
+    </div>
+  </main>
+</div>
+<script src="js/guard.js"></script>
+</body>
+</html>

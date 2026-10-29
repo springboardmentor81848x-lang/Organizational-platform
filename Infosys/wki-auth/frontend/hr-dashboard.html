@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HR Dashboard | Workforce Intelligence</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-role="HR_MANAGER">
+<div id="app" hidden>
+  <header class="topbar">
+    <div class="logo"><span>WKI</span><div>Workforce<br>Intelligence</div></div>
+    <div class="who">
+      <div><strong id="userName"></strong><small id="userEmail"></small></div>
+      <button class="logout" id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <main class="content">
+    <h2>HR Dashboard</h2>
+    <span class="badge">HR Manager</span>
+    <div class="grid">
+      <div class="tile"><h3>Workforce Overview</h3><p>Headcount, departments and skills at a glance.</p></div>
+      <div class="tile"><h3>Skill Gap Reports</h3><p>Identify gaps across the organisation.</p></div>
+      <div class="tile"><h3>Competency Frameworks</h3><p>Define required skills per role.</p></div>
+    </div>
+  </main>
+</div>
+<script src="js/guard.js"></script>
+</body>
+</html>
