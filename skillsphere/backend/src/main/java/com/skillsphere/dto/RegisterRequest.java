@@ -17,7 +17,7 @@ public record RegisterRequest(
         String employeeId,
 
         /** What the person is asking for. It is recorded for admin review but never granted automatically. */
-        @Pattern(regexp = "^(?i)(EMPLOYEE|HR|MANAGER|ADMIN)$", message = "Choose a valid role.")
+        @Pattern(regexp = "^(?i)(EMPLOYEE|MANAGER|MENTOR|HR_SPECIALIST|DEPARTMENT_HEAD|ADMIN)$", message = "Choose a valid role.")
         String role,
 
         @NotBlank(message = "Password is required.")

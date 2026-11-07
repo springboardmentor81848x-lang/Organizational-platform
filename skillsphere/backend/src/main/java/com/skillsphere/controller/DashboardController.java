@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 
 /**
- * Placeholder role-protected endpoints. Each dashboard is enforced on the server;
- * the React route guards only improve the experience.
+ * Role-authorized workspace summary endpoints. Enforced on the server;
+ * the React route guards improve user experience.
  */
 @RestController
 @RequestMapping("/api/dashboard")
@@ -26,25 +26,37 @@ public class DashboardController {
     @GetMapping("/employee")
     @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
     public Map<String, String> employee(Authentication auth) {
-        return payload(auth, "Employee workspace", "Your skills profile and recommended learning will appear here.");
-    }
-
-    @GetMapping("/hr")
-    @PreAuthorize("hasAnyRole('HR','ADMIN')")
-    public Map<String, String> hr(Authentication auth) {
-        return payload(auth, "HR workspace", "Organization-wide skill coverage and training programmes will appear here.");
+        return payload(auth, "Employee Workspace", "Measure skills, track learning paths, and connect with peer mentors.");
     }
 
     @GetMapping("/manager")
     @PreAuthorize("hasAnyRole('MANAGER','ADMIN')")
     public Map<String, String> manager(Authentication auth) {
-        return payload(auth, "Manager workspace", "Your team's skill gaps and development plans will appear here.");
+        return payload(auth, "Manager Workspace", "Monitor team capability, identify skill gaps, and support professional growth.");
+    }
+
+    @GetMapping("/mentor")
+    @PreAuthorize("hasAnyRole('MENTOR','ADMIN')")
+    public Map<String, String> mentor(Authentication auth) {
+        return payload(auth, "Mentor Workspace", "Guide assigned mentees, conduct 1-on-1 sessions, and track development goals.");
+    }
+
+    @GetMapping("/hr")
+    @PreAuthorize("hasAnyRole('HR_SPECIALIST','ADMIN')")
+    public Map<String, String> hr(Authentication auth) {
+        return payload(auth, "HR Specialist Workspace", "Govern competency frameworks, organizational skill matrices, and learning initiatives.");
+    }
+
+    @GetMapping("/department-head")
+    @PreAuthorize("hasAnyRole('DEPARTMENT_HEAD','ADMIN')")
+    public Map<String, String> departmentHead(Authentication auth) {
+        return payload(auth, "Department Head Workspace", "Analyze department skill coverage, workforce readiness, and strategic capability risks.");
     }
 
     @GetMapping("/admin")
     @PreAuthorize("hasRole('ADMIN')")
     public Map<String, String> admin(Authentication auth) {
-        return payload(auth, "Admin console", "Manage people, roles, and access across SkillSphere.");
+        return payload(auth, "Admin Console", "Manage users, configure permissions, and monitor system security.");
     }
 
     private Map<String, String> payload(Authentication auth, String title, String message) {

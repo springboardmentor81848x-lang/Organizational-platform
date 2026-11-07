@@ -97,7 +97,42 @@ to `frontend/.env` and change `VITE_API_BASE_URL`.
 - **Validation:** all input is validated again on the backend (Bean Validation) and unique constraints back up the
   duplicate checks.
 
-## 6. Employee workspace notes
+## 6. AI-Powered Dynamic Skill Assessment & Employee Workspace
+
+The SkillSphere assessment system provides dynamically generated, database-backed skill assessments powered by the Google Gemini API with seamless database fallback:
+
+### 6.1 Architecture & Workflow
+- **Dynamic Question Generation:** Every new assessment attempt for an employee generates a fresh set of questions tailored to:
+  - Selected technical skill (e.g. Java, Spring Boot, SQL, Web Development, Automated Testing, Git, Data Structures, Problem Solving).
+  - Target requested proficiency level (Beginner, Intermediate, Advanced, Expert).
+  - Employee's current calibrated proficiency level (if available).
+  - Configured difficulty blueprint: 30% Easy, 40% Medium, 30% Hard (10 questions total).
+- **Lifecycle & Refresh Safety:**
+  - Starting an assessment generates questions once and saves the attempt in `assessment_attempts` with status `IN_PROGRESS`.
+  - Refreshing the page, reopening an ongoing attempt, or navigating away returns the existing stored attempt questions without regenerating.
+  - Concurrent start requests recover the ongoing attempt to prevent duplicate attempts.
+- **Secure Server-Side Scoring:**
+  - Answer keys (`correct_answer_index`) and explanations are strictly omitted from frontend API responses before submission.
+  - Submissions are evaluated 100% server-side by Spring Boot; Gemini is never allowed to calculate or tamper with employee scores.
+  - Question explanations and score breakdowns are only revealed in the post-submission results.
+- **Calibrated Skill Profile & Gap Integration:**
+  - Submissions update employee skill records (`employee_skills`) based on score percentage (Unaware <= 25%, Beginner <= 50%, Intermediate <= 70%, Advanced <= 85%, Expert > 85%).
+  - Skill gaps (`skill_gaps`) are recalculated automatically against the employee's role requirements.
+- **Controlled Fallback Mechanism:**
+  - When `GEMINI_API_KEY` is not configured, or if the Gemini API times out or exhausts retries, the platform automatically draws questions from the curated database question bank (`assessment_questions`).
+  - Attempts are transparently flagged as `FALLBACK` (vs `AI_GENERATED`) in the UI and database.
+- **Duplicate Prevention:**
+  - The employee's last 5 attempts for that skill are queried.
+  - Normalized string comparison and token-level Jaccard similarity (threshold 0.70) filter out identical or paraphrased questions.
+  - Recent question titles are passed to Gemini in the prompt's exclusion list.
+  - *Limitation:* Semantic variations that use entirely different vocabularies may not be caught by token Jaccard similarity; however, prompt exclusion guides Gemini to explore alternate subtopics.
+
+### 6.2 Configuration
+- `GEMINI_API_KEY`: API key from Google AI Studio. Set in `backend/.env`. Stays securely on the server.
+- `GEMINI_MODEL`: Model identifier (default: `gemini-3.5-flash`).
+- Database Schema: Managed additively by Flyway migration `V6__dynamic_assessment_enhancements.sql`.
+
+## 7. Employee workspace notes
 
 - Registration contains a **User role** dropdown: Employee, HR, Manager, and Admin.
 - For security, public registration always creates an Employee account. Choosing HR, Manager, or Admin records an access request for administrator approval; it does not immediately grant those privileges.

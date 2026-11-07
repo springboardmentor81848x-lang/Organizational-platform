@@ -45,6 +45,11 @@ app:
     email: ${ADMIN_EMAIL:}
     password: ${ADMIN_PASSWORD:}
     full-name: ${ADMIN_FULL_NAME:SkillSphere Administrator}
+  backup:
+    directory: ${BACKUP_DIR:backups}
+    postgres-bin-path: ${PG_BIN_PATH:D:\PostgreSQL\18\bin}
+    max-retained: ${BACKUP_MAX_RETAINED:15}
+    timeout-minutes: ${BACKUP_TIMEOUT_MINUTES:5}
 
 logging:
   level:

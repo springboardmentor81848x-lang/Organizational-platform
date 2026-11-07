@@ -12,9 +12,11 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const EMPLOYEE_ID_RE = /^[A-Za-z0-9._/-]{3,30}$/;
 const ROLES = [
   { value: "EMPLOYEE", label: "Employee" },
-  { value: "HR", label: "HR" },
   { value: "MANAGER", label: "Manager" },
-  { value: "ADMIN", label: "Admin" },
+  { value: "MENTOR", label: "Mentor" },
+  { value: "HR_SPECIALIST", label: "HR Specialist" },
+  { value: "DEPARTMENT_HEAD", label: "Department Head" },
+  { value: "ADMIN", label: "Administrator" },
 ];
 const EMPTY = { fullName: "", email: "", employeeId: "", role: "EMPLOYEE", password: "", confirmPassword: "" };
 

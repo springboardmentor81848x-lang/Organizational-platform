@@ -59,4 +59,12 @@ export const updateUserStatus = (id, status) => api.patch(`/api/admin/users/${id
 export const getAiRecommendations = (payload) =>
   api.post("/api/ai/recommendations", payload, { timeout: 70000 }).then((r) => r.data);
 
-export const dashboardPath = (role) => `/dashboard/${String(role || "employee").toLowerCase()}`;
+export const dashboardPath = (role) => {
+  const r = String(role || "employee").toUpperCase();
+  if (r === "HR_SPECIALIST" || r === "HR") return "/dashboard/hr";
+  if (r === "DEPARTMENT_HEAD") return "/dashboard/department-head";
+  if (r === "MANAGER") return "/dashboard/manager";
+  if (r === "MENTOR") return "/dashboard/mentor";
+  if (r === "ADMIN") return "/dashboard/admin";
+  return "/dashboard/employee";
+};

@@ -16,9 +16,12 @@ import java.util.Map;
 public class MentorshipController {
 
     private final MentorshipService mentorshipService;
+    private final com.skillsphere.service.MentorshipRequestService mentorshipRequestService;
 
-    public MentorshipController(MentorshipService mentorshipService) {
+    public MentorshipController(MentorshipService mentorshipService,
+                                com.skillsphere.service.MentorshipRequestService mentorshipRequestService) {
         this.mentorshipService = mentorshipService;
+        this.mentorshipRequestService = mentorshipRequestService;
     }
 
     // -------------------------------------------------------------
@@ -107,5 +110,50 @@ public class MentorshipController {
             @Valid @RequestBody UpdateGoalStatusRequest request,
             Authentication auth) {
         return mentorshipService.updateGoalStatus(auth.getName(), goalId, request);
+    }
+
+    // -------------------------------------------------------------
+    // Mentorship Direct Requests & Shared Resources
+    // -------------------------------------------------------------
+
+    @PostMapping("/requests")
+    @ResponseStatus(HttpStatus.CREATED)
+    public MentorshipRequestResponseDto createMentorshipRequest(
+            @Valid @RequestBody CreateMentorshipRequestDto request,
+            Authentication auth) {
+        return mentorshipRequestService.createRequest(auth.getName(), request);
+    }
+
+    @GetMapping("/requests/sent")
+    public List<MentorshipRequestResponseDto> getMySentRequests(Authentication auth) {
+        return mentorshipRequestService.getMySentRequests(auth.getName());
+    }
+
+    @GetMapping("/requests/incoming")
+    public List<MentorshipRequestResponseDto> getMyIncomingRequests(Authentication auth) {
+        return mentorshipRequestService.getMyIncomingRequests(auth.getName());
+    }
+
+    @PutMapping("/requests/{requestId}/respond")
+    public MentorshipRequestResponseDto respondToRequest(
+            @PathVariable Long requestId,
+            @Valid @RequestBody RespondMentorshipRequestDto request,
+            Authentication auth) {
+        return mentorshipRequestService.respondToRequest(auth.getName(), requestId, request);
+    }
+
+    @PostMapping("/resources")
+    @ResponseStatus(HttpStatus.CREATED)
+    public SharedResourceDto shareResource(
+            @Valid @RequestBody SharedResourceDto.CreateRequest request,
+            Authentication auth) {
+        return mentorshipRequestService.shareResource(auth.getName(), request);
+    }
+
+    @GetMapping("/assignments/{assignmentId}/resources")
+    public List<SharedResourceDto> getSharedResources(
+            @PathVariable Long assignmentId,
+            Authentication auth) {
+        return mentorshipRequestService.getResourcesForAssignment(auth.getName(), assignmentId);
     }
 }
