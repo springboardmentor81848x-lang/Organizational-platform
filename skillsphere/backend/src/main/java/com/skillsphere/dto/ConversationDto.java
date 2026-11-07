@@ -10,8 +10,15 @@ public record ConversationDto(
         Instant updatedAt,
         List<ParticipantDto> participants,
         MessageDto latestMessage,
-        long unreadCount
+        long unreadCount,
+        boolean isMuted,
+        boolean isArchived
 ) {
+    public ConversationDto(Long id, String type, String title, Instant updatedAt,
+                           List<ParticipantDto> participants, MessageDto latestMessage, long unreadCount) {
+        this(id, type, title, updatedAt, participants, latestMessage, unreadCount, false, false);
+    }
+
     public record ParticipantDto(
             Long userId,
             String fullName,

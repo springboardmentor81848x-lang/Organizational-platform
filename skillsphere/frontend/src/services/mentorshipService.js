@@ -35,6 +35,16 @@ export const getMyGoals = () => api.get("/api/mentorship/my-goals").then((r) => 
 export const submitSessionFeedback = (sessionId, payload) =>
   api.post(`/api/mentorship/sessions/${sessionId}/feedback`, payload).then((r) => r.data);
 
+// Direct Mentorship Requests
+export const createMentorshipRequest = (payload) =>
+  api.post("/api/mentorship/requests", payload).then((r) => r.data);
+
+export const getMySentMentorshipRequests = () =>
+  api.get("/api/mentorship/requests/sent").then((r) => r.data);
+
+export const cancelMentorshipRequest = (requestId) =>
+  api.patch(`/api/mentorship/requests/${requestId}/cancel`).then((r) => r.data);
+
 // Mentor Workspace
 export const getMentorStatus = () => api.get("/api/mentorship/mentor/status").then((r) => r.data);
 export const getMyMentees = () => api.get("/api/mentorship/mentor/mentees").then((r) => r.data);

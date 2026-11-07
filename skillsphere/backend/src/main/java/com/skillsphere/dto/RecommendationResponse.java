@@ -13,6 +13,7 @@ public record RecommendationResponse(
         String notice
 ) {
     public record Course(
+            Long id,
             String title,
             String skill,
             String level,
@@ -21,6 +22,7 @@ public record RecommendationResponse(
             String provider,
             String reason,
             List<String> topics,
-            String searchQuery
+            String searchQuery,
+            String courseUrl
     ) {}
 }

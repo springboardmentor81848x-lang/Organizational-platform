@@ -1,5 +1,6 @@
 package com.skillsphere.service;
 
+import com.skillsphere.dto.ChangePasswordRequest;
 import com.skillsphere.dto.RegisterRequest;
 import com.skillsphere.dto.RegisterResponse;
 import com.skillsphere.dto.UserResponse;
@@ -79,6 +80,30 @@ public class UserService {
     public User getByEmail(String email) {
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found."));
+    }
+
+    @Transactional
+    public void changePassword(String email, ChangePasswordRequest req) {
+        if (!req.newPassword().equals(req.confirmPassword())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "New password and confirmation do not match.",
+                    Map.of("confirmPassword", "Passwords do not match."));
+        }
+
+        User user = userRepository.findByEmail(email.trim().toLowerCase())
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found."));
+
+        if (!passwordEncoder.matches(req.currentPassword(), user.getPasswordHash())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Current password is incorrect.",
+                    Map.of("currentPassword", "Current password is incorrect."));
+        }
+
+        if (passwordEncoder.matches(req.newPassword(), user.getPasswordHash())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "New password cannot be the same as your current password.",
+                    Map.of("newPassword", "New password cannot be the same as current password."));
+        }
+
+        user.setPasswordHash(passwordEncoder.encode(req.newPassword()));
+        userRepository.save(user);
     }
 
     // ---------------- administration ----------------

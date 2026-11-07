@@ -6,6 +6,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
@@ -53,8 +54,9 @@ public class ReportController {
 
     @GetMapping(value = "/export/gaps.csv", produces = "text/csv")
     @PreAuthorize("hasAnyRole('HR_SPECIALIST', 'ADMIN', 'DEPARTMENT_HEAD', 'MANAGER')")
-    public ResponseEntity<String> exportGapsCsv() {
-        String csv = reportService.generateSkillGapsCsv();
+    public ResponseEntity<String> exportGapsCsv(Authentication auth) {
+        String callerEmail = auth != null ? auth.getName() : null;
+        String csv = reportService.generateSkillGapsCsv(callerEmail);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"skill_gaps_report.csv\"")
                 .contentType(MediaType.parseMediaType("text/csv"))

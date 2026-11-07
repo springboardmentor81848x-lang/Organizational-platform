@@ -21,6 +21,16 @@ public class SharedResource {
     @Column(name = "url_or_content", nullable = false, columnDefinition = "TEXT")
     private String urlOrContent;
 
+    @Column(name = "resource_type", length = 30)
+    private String resourceType = "ARTICLE";
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "skill_id")
+    private Skill skill;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "shared_by_id", nullable = false)
     private User sharedBy;
@@ -35,6 +45,7 @@ public class SharedResource {
         this.title = title;
         this.urlOrContent = urlOrContent;
         this.sharedBy = sharedBy;
+        this.resourceType = "ARTICLE";
         this.createdAt = Instant.now();
     }
 
@@ -43,6 +54,7 @@ public class SharedResource {
         this.sharedBy = sharedBy;
         this.title = title;
         this.urlOrContent = urlOrContent;
+        this.resourceType = "ARTICLE";
         this.createdAt = Instant.now();
     }
 
@@ -53,6 +65,12 @@ public class SharedResource {
     public void setTitle(String title) { this.title = title; }
     public String getUrlOrContent() { return urlOrContent; }
     public void setUrlOrContent(String urlOrContent) { this.urlOrContent = urlOrContent; }
+    public String getResourceType() { return resourceType; }
+    public void setResourceType(String resourceType) { this.resourceType = resourceType; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public Skill getSkill() { return skill; }
+    public void setSkill(Skill skill) { this.skill = skill; }
     public User getSharedBy() { return sharedBy; }
     public void setSharedBy(User sharedBy) { this.sharedBy = sharedBy; }
     public Instant getCreatedAt() { return createdAt; }

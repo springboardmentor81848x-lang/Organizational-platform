@@ -127,6 +127,28 @@ public class MentorshipRequestService {
     }
 
     @Transactional
+    public MentorshipRequestResponseDto cancelRequest(String employeeEmail, Long requestId) {
+        User employee = getUserByEmail(employeeEmail);
+        MentorshipRequest request = requestRepository.findById(requestId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Mentorship request not found."));
+
+        if (!request.getEmployee().getId().equals(employee.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You are not authorized to cancel this request.");
+        }
+
+        if (!"PENDING".equalsIgnoreCase(request.getStatus())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Only pending requests can be cancelled.");
+        }
+
+        request.setStatus("CANCELLED");
+        request.setRespondedAt(Instant.now());
+        request.setResponseNote("Cancelled by employee.");
+        MentorshipRequest saved = requestRepository.save(request);
+
+        return toResponseDto(saved);
+    }
+
+    @Transactional
     public SharedResourceDto shareResource(String userEmail, SharedResourceDto.CreateRequest dto) {
         User user = getUserByEmail(userEmail);
         MentorAssignment assignment = assignmentRepository.findById(dto.assignmentId())

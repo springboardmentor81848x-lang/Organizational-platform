@@ -22,6 +22,14 @@ public class TrainingProgramme {
     @JoinColumn(name = "department_id")
     private Department department;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "skill_id")
+    private Skill skill;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "course_id")
+    private Course course;
+
     @Column(name = "start_date", nullable = false)
     private LocalDate startDate;
 
@@ -38,7 +46,7 @@ public class TrainingProgramme {
     private String trainerName;
 
     @Column(nullable = false, length = 20)
-    private String status = "UPCOMING"; // UPCOMING, ACTIVE, COMPLETED
+    private String status = "UPCOMING"; // UPCOMING, ACTIVE, COMPLETED, CANCELLED
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
@@ -78,6 +86,10 @@ public class TrainingProgramme {
     public void setDescription(String description) { this.description = description; }
     public Department getDepartment() { return department; }
     public void setDepartment(Department department) { this.department = department; }
+    public Skill getSkill() { return skill; }
+    public void setSkill(Skill skill) { this.skill = skill; }
+    public Course getCourse() { return course; }
+    public void setCourse(Course course) { this.course = course; }
     public LocalDate getStartDate() { return startDate; }
     public void setStartDate(LocalDate startDate) { this.startDate = startDate; }
     public LocalDate getEndDate() { return endDate; }

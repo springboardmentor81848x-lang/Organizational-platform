@@ -72,9 +72,14 @@ public class SkillController {
         return ResponseEntity.ok(dto);
     }
 
+    @GetMapping("/evidence/my")
+    public ResponseEntity<List<SkillEvidenceDto>> getMyEvidence(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(skillService.getUserEvidence(userDetails.getUsername()));
+    }
+
     @PostMapping("/evidence")
     public ResponseEntity<SkillEvidenceDto> submitEvidence(@AuthenticationPrincipal UserDetails userDetails,
-                                                           @Valid @RequestBody SubmitEvidenceRequest req) {
+                                                            @Valid @RequestBody SubmitEvidenceRequest req) {
         SkillEvidenceDto dto = skillService.submitEvidence(userDetails.getUsername(), req);
         return ResponseEntity.status(HttpStatus.CREATED).body(dto);
     }

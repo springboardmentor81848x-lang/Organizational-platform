@@ -19,6 +19,7 @@ export const setRoleRequirement = (payload) => api.post("/api/skills/requirement
 export const getMySkills = () => api.get("/api/skills/employee").then((r) => r.data);
 export const getEmployeeSkills = (userId) => api.get(`/api/skills/employee/${userId}`).then((r) => r.data);
 export const addOrUpdateSkill = (payload) => api.post("/api/skills/employee", payload).then((r) => r.data);
+export const getMyEvidence = () => api.get("/api/skills/evidence/my").then((r) => r.data);
 export const submitSkillEvidence = (payload) => api.post("/api/skills/evidence", payload).then((r) => r.data);
 export const getPendingEvidence = () => api.get("/api/skills/evidence/pending").then((r) => r.data);
 export const reviewEvidence = (evidenceId, status) => api.put(`/api/skills/evidence/${evidenceId}/review`, { status }).then((r) => r.data);
@@ -57,6 +58,7 @@ export const createMentorshipRequest = (payload) => api.post("/api/mentorship/re
 export const getMySentMentorshipRequests = () => api.get("/api/mentorship/requests/sent").then((r) => r.data);
 export const getMyIncomingMentorshipRequests = () => api.get("/api/mentorship/requests/incoming").then((r) => r.data);
 export const respondToMentorshipRequest = (requestId, payload) => api.put(`/api/mentorship/requests/${requestId}/respond`, payload).then((r) => r.data);
+export const cancelMentorshipRequest = (requestId) => api.patch(`/api/mentorship/requests/${requestId}/cancel`).then((r) => r.data);
 export const shareMentorshipResource = (payload) => api.post("/api/mentorship/resources", payload).then((r) => r.data);
 export const getMentorshipSharedResources = (assignmentId) => api.get(`/api/mentorship/assignments/${assignmentId}/resources`).then((r) => r.data);
 
@@ -89,7 +91,8 @@ export const getUnreadNotificationsCount = () => api.get("/api/notifications/unr
 export const markNotificationRead = (id) => api.patch(`/api/notifications/${id}/read`).then((r) => r.data);
 export const markAllNotificationsRead = () => api.post("/api/notifications/read-all").then((r) => r.data);
 
-// --- Reports ---
+// --- Reports & Dashboard Overview ---
+export const getEmployeeDashboardOverview = () => api.get("/api/dashboard/employee/overview").then((r) => r.data);
 export const getMyReport = () => api.get("/api/reports/my").then((r) => r.data);
 export const getTeamReport = (teamId) => api.get(`/api/reports/team/${teamId}`).then((r) => r.data);
 export const getDepartmentReport = (deptId) => api.get(`/api/reports/department/${deptId}`).then((r) => r.data);
@@ -99,6 +102,7 @@ export const getAdminReport = () => api.get("/api/reports/admin").then((r) => r.
 // --- Governance, Feedback, Tickets, Audit ---
 export const createSupportTicket = (payload) => api.post("/api/support/tickets", payload).then((r) => r.data);
 export const getMySupportTickets = () => api.get("/api/support/tickets/my").then((r) => r.data);
+export const closeSupportTicket = (id) => api.patch(`/api/support/tickets/${id}/close`).then((r) => r.data);
 export const getAllSupportTickets = () => api.get("/api/admin/support/tickets").then((r) => r.data);
 export const updateSupportTicket = (id, payload) => api.patch(`/api/admin/support/tickets/${id}`, payload).then((r) => r.data);
 export const submitPlatformFeedback = (payload) => api.post("/api/feedback", payload).then((r) => r.data);
@@ -106,6 +110,9 @@ export const getAllPlatformFeedback = () => api.get("/api/feedback/all").then((r
 export const getAuditLogs = () => api.get("/api/admin/audit-logs").then((r) => r.data);
 export const getSystemConfig = () => api.get("/api/admin/system-config").then((r) => r.data);
 export const updateSystemConfig = (key, value) => api.put(`/api/admin/system-config/${key}`, { value }).then((r) => r.data);
+
+// --- Auth & Account ---
+export const changePassword = (payload) => api.post("/api/auth/change-password", payload).then((r) => r.data);
 
 // --- Database Backup & Recovery (Admin) ---
 export const getBackups = () => api.get("/api/admin/backups").then((r) => r.data);

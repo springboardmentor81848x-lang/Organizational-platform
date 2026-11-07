@@ -10,5 +10,11 @@ public record MessageDto(
         String content,
         String attachmentUrl,
         String attachmentName,
-        Instant createdAt
-) {}
+        Instant createdAt,
+        boolean isRead
+) {
+    public MessageDto(Long id, Long conversationId, Long senderId, String senderName,
+                      String content, String attachmentUrl, String attachmentName, Instant createdAt) {
+        this(id, conversationId, senderId, senderName, content, attachmentUrl, attachmentName, createdAt, false);
+    }
+}

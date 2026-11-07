@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 /** Simple in-memory brute-force protection (per e-mail). Replace with Redis for multi-node deployments. */
@@ -47,5 +49,17 @@ public class LoginAttemptService {
 
     public void reset(String email) {
         attempts.remove(email);
+    }
+
+    public List<String> getCurrentlyLockedEmails() {
+        Instant now = Instant.now();
+        return attempts.entrySet().stream()
+                .filter(e -> e.getValue().lockedUntil() != null && now.isBefore(e.getValue().lockedUntil()))
+                .map(Map.Entry::getKey)
+                .toList();
+    }
+
+    public int getRecentFailedAttemptsCount() {
+        return attempts.values().stream().mapToInt(Attempt::failures).sum();
     }
 }

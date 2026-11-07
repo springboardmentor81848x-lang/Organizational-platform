@@ -1,6 +1,7 @@
 package com.skillsphere.controller;
 
 import com.skillsphere.dto.*;
+import com.skillsphere.exception.ApiException;
 import com.skillsphere.service.AuthService;
 import com.skillsphere.service.PasswordResetService;
 import com.skillsphere.service.UserService;
@@ -64,5 +65,15 @@ public class AuthController {
     public MessageResponse resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         passwordResetService.resetPassword(request);
         return new MessageResponse("Your password has been updated. You can sign in now.");
+    }
+
+    @PostMapping("/change-password")
+    public MessageResponse changePassword(Authentication authentication,
+                                          @Valid @RequestBody ChangePasswordRequest request) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Please sign in to continue.");
+        }
+        userService.changePassword(authentication.getName(), request);
+        return new MessageResponse("Password updated successfully.");
     }
 }

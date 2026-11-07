@@ -37,6 +37,12 @@ public class AdminGovernanceController {
         return ResponseEntity.ok(governanceService.getMyTickets(userDetails.getUsername()));
     }
 
+    @PatchMapping("/support/tickets/{id}/close")
+    public ResponseEntity<SupportTicketDto> closeMyTicket(@AuthenticationPrincipal UserDetails userDetails,
+                                                          @PathVariable Long id) {
+        return ResponseEntity.ok(governanceService.closeMyTicket(userDetails.getUsername(), id));
+    }
+
     @GetMapping("/admin/support/tickets")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<List<SupportTicketDto>> getAllTickets() {

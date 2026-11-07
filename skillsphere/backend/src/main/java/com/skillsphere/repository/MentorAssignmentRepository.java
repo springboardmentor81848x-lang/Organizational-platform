@@ -22,6 +22,10 @@ public interface MentorAssignmentRepository extends JpaRepository<MentorAssignme
                                                   @Param("status") AssignmentStatus status);
 
     @Query("select a from MentorAssignment a join fetch a.mentor join fetch a.employee join fetch a.assignedBy " +
+           "where a.mentor.id = :mentorId order by a.assignedAt desc")
+    List<MentorAssignment> findByMentorIdOrderByAssignedAtDesc(@Param("mentorId") Long mentorId);
+
+    @Query("select a from MentorAssignment a join fetch a.mentor join fetch a.employee join fetch a.assignedBy " +
            "where a.employee.id = :employeeId order by a.assignedAt desc")
     List<MentorAssignment> findByEmployeeIdOrderByAssignedAtDesc(@Param("employeeId") Long employeeId);
 

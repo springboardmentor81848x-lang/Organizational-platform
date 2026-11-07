@@ -13,8 +13,12 @@ import {
 } from "../../services/platformService.js";
 import { parseApiError } from "../../services/apiClient.js";
 
-export default function KnowledgeForumSection({ currentUserId }) {
-  const [subTab, setSubTab] = useState("articles"); // "articles" | "forum"
+export default function KnowledgeForumSection({ currentUserId, initialTab = "articles" }) {
+  const [subTab, setSubTab] = useState(initialTab);
+
+  useEffect(() => {
+    if (initialTab) setSubTab(initialTab);
+  }, [initialTab]);
   const [categories, setCategories] = useState([]);
   const [articles, setArticles] = useState([]);
   const [threads, setThreads] = useState([]);

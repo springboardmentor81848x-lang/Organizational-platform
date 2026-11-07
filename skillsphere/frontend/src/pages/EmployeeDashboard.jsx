@@ -10,6 +10,7 @@ import AssessmentRunner from "../components/AssessmentRunner.jsx";
 import SkillEvidenceSection from "./employee/SkillEvidenceSection.jsx";
 import KnowledgeForumSection from "./employee/KnowledgeForumSection.jsx";
 import HelpSupportSection from "./employee/HelpSupportSection.jsx";
+import MentorshipHub from "./employee/MentorshipHub.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 import { getAiRecommendations, parseApiError } from "../services/authService.js";
 import { getEmployeeProfile, updateEmployeeProfile } from "../services/mentorshipService.js";
@@ -27,7 +28,7 @@ import {
   updateCourseProgress,
 } from "../services/platformService.js";
 import {
-  Courses, Gaps, Mentorship, Notifications, Overview, Profile, Progress, Reports, Results, slug,
+  Courses, Gaps, Mentorship, MyLearning, Certificates, MyProgress, Notifications, Overview, Profile, Reports, Results, slug,
 } from "./employee/Pages.jsx";
 
 const NAV_ITEMS = [
@@ -35,16 +36,18 @@ const NAV_ITEMS = [
   { id: "profile", label: "My Profile Management", icon: "user" },
   { id: "skills", label: "My Skills & Evidence", icon: "clipboard" },
   { id: "assessment", label: "Skill Assessment", icon: "target" },
-  { id: "gaps", label: "Knowledge Gap Summary", icon: "chart" },
-  { id: "courses", label: "Course Recommendations", icon: "sparkles", tag: "AI" },
-  { id: "progress", label: "Learning & Certificates", icon: "award" },
-  { id: "mentorship", label: "Knowledge Sharing & Mentorship", icon: "users" },
+  { id: "gaps", label: "My Skill Gaps", icon: "chart" },
+  { id: "recommendations", label: "Learning Recommendations", icon: "sparkles", tag: "AI" },
+  { id: "learning", label: "My Learning", icon: "book" },
+  { id: "mentors", label: "Mentors Directory", icon: "users" },
+  { id: "mentorship-requests", label: "Mentorship Requests", icon: "clipboard" },
   { id: "chat", label: "Messages / Chatbox", icon: "message" },
-  { id: "knowledge", label: "Knowledge Hub & Forum", icon: "book" },
-  { id: "calendar", label: "Schedule & Calendar", icon: "calendar" },
+  { id: "knowledge", label: "Knowledge Hub", icon: "book" },
+  { id: "forum", label: "Discussion Forum", icon: "message" },
+  { id: "progress", label: "My Progress", icon: "trending" },
+  { id: "certificates", label: "Certificates", icon: "award" },
   { id: "notifications", label: "Notifications", icon: "bell" },
-  { id: "reports", label: "Reports", icon: "file" },
-  { id: "support", label: "Help & Feedback", icon: "help" },
+  { id: "support", label: "Help & Support", icon: "help" },
 ];
 
 const storageKey = (id) => `skillsphere.employee.${id}`;
@@ -104,128 +107,147 @@ export default function EmployeeDashboard() {
         getAllSkills().catch(() => []),
         getOngoingAttempt().catch(() => null),
       ]);
+
       setServerGaps(gaps);
       setServerAssessments(asms);
       setSubmissions(subs);
       setCertificates(certs);
       setServerLearnings(lrn);
       setAllCatalogueCourses(crs);
-      setAllSkills(skillsList || []);
-      if (skillsList && skillsList.length > 0 && !selectedSkillId) {
-        setSelectedSkillId(String(skillsList[0].id));
-      }
-      if (ongoing) {
+      setAllSkills(skillsList);
+
+      if (ongoing && ongoing.attemptId) {
         setActiveAttempt(ongoing);
         setRunningAssessmentId(ongoing.attemptId);
       }
-    } catch {
-      // Graceful local operation continues
+    } catch (e) {
+      console.warn("Failed to load backend employee dashboard data", e);
     }
-  }, [selectedSkillId]);
-
-  useEffect(() => {
-    loadBackendData();
-  }, [loadBackendData]);
-
-  // Sync profile from backend on mount
-  useEffect(() => {
-    getEmployeeProfile()
-      .then((p) => {
-        setProfile((prev) => ({
-          ...prev,
-          fullName: p.fullName || prev.fullName,
-          email: p.email || prev.email,
-          employeeId: p.employeeId || prev.employeeId,
-          jobRole: p.jobRole || prev.jobRole,
-          department: p.department || prev.department || "",
-          experience: p.experienceLevel || prev.experience,
-          bio: p.bio || prev.bio || "",
-          skills: p.skills || prev.skills || "",
-        }));
-      })
-      .catch(() => {});
   }, []);
 
   useEffect(() => {
+    loadBackendData();
+    getEmployeeProfile()
+      .then((p) => {
+        if (p) {
+          setProfile((prev) => ({
+            ...prev,
+            fullName: p.fullName || prev.fullName,
+            employeeId: p.employeeId || prev.employeeId,
+            department: p.department || prev.department,
+            jobRole: p.jobRole || prev.jobRole,
+            experience: p.experienceLevel || prev.experience,
+            bio: p.bio || prev.bio,
+            skills: p.skills || prev.skills,
+          }));
+        }
+      })
+      .catch(() => {});
+  }, [loadBackendData]);
+
+  // Sync state to local storage
+  useEffect(() => {
+    const toSave = { profile, recs: recs.data, completed };
     try {
-      localStorage.setItem(storageKey(user.id), JSON.stringify({ profile, recs: recs.data, completed }));
+      localStorage.setItem(storageKey(user.id), JSON.stringify(toSave));
     } catch {}
   }, [user.id, profile, recs.data, completed]);
 
-  const requestRecommendationsFromServerResults = useCallback(async (score, gaps, currentProfile) => {
-    if (!gaps || gaps.length === 0) return;
-    const ticket = ++latestRequest.current;
-    setRecs((r) => ({ ...r, status: "loading", error: "" }));
+  // Request recommendations whenever assessment submission or server gaps change
+  const fetchRecommendations = useCallback(async (sub, gaps) => {
+    const id = ++latestRequest.current;
+    setRecs((r) => ({ status: "loading", data: r.data, error: "" }));
+
+    const skillResults = (gaps && gaps.length > 0)
+      ? gaps.map((g) => ({
+          skill: g.skillName,
+          correct: Math.min(10, (g.currentLevel || 1) * 2),
+          total: 10,
+          level: g.currentLevel || 1,
+          required: g.requiredLevel || 3,
+        }))
+      : (sub?.skillResults || [
+          { skill: "Java", correct: 6, total: 10, level: 3, required: 4 },
+          { skill: "SQL", correct: 5, total: 10, level: 2, required: 4 },
+        ]);
+
     try {
-      const skillResults = gaps.map((g) => ({
-        skill: g.skillName || g.skill || "Technical Skill",
-        correct: Math.min(5, Math.max(0, g.currentLevel ?? 1)),
-        total: 5,
-        level: Math.min(5, Math.max(1, g.currentLevel ?? 1)),
-        required: Math.min(5, Math.max(1, g.requiredLevel ?? 4)),
-      }));
       const data = await getAiRecommendations({
-        jobRole: currentProfile.jobRole || "Software Developer",
-        experience: currentProfile.experience || "Entry level",
-        department: currentProfile.department || "",
-        overallScore: Math.min(100, Math.max(0, Math.round(score))),
-        skillResults: skillResults.slice(0, 12),
+        jobRole: profile.jobRole,
+        experience: profile.experience,
+        department: profile.department,
+        overallScore: sub?.score ?? 75,
+        skillResults,
       });
-      if (ticket !== latestRequest.current) return;
-      setRecs({ status: "done", data, error: "" });
-      setCompleted([]);
+      if (id === latestRequest.current) {
+        setRecs({ status: "done", data, error: "" });
+      }
     } catch (e) {
-      if (ticket !== latestRequest.current) return;
-      setRecs({ status: "error", error: parseApiError(e).message });
+      if (id === latestRequest.current) {
+        setRecs({ status: "error", data: null, error: parseApiError(e).message });
+      }
     }
-  }, []);
+  }, [profile.department, profile.experience, profile.jobRole]);
 
-  const handleAssessmentComplete = async (res) => {
-    setActiveAttempt(null);
-    setRunningAssessmentId(null);
-    await loadBackendData();
-    if (res && res.updatedGaps && res.updatedGaps.length > 0) {
-      requestRecommendationsFromServerResults(res.score, res.updatedGaps, profile);
+  useEffect(() => {
+    if ((submissions.length > 0 || serverGaps.length > 0) && recs.status === "idle") {
+      fetchRecommendations(submissions[0], serverGaps);
     }
+  }, [submissions, serverGaps, recs.status, fetchRecommendations]);
+
+  const retry = () => fetchRecommendations(submissions[0], serverGaps);
+
+  const toggleCourse = (cSlug) => {
+    setCompleted((prev) => (prev.includes(cSlug) ? prev.filter((s) => s !== cSlug) : [...prev, cSlug]));
   };
 
-  const handleAssessmentCancel = () => {
-    setActiveAttempt(null);
-    setRunningAssessmentId(null);
-    loadBackendData();
-  };
-
-  const handleStartDynamicAssessment = async (skillIdToStart = selectedSkillId, levelToStart = selectedLevel, assessmentIdToStart = null) => {
-    setStartingAssessment(true);
+  const handleStartDynamicAssessment = async (overrideSkillId = null, overrideLevel = null, overrideAssessmentId = null) => {
     setStartError("");
+    const targetSkillId = overrideSkillId || (selectedSkillId ? Number(selectedSkillId) : null);
+    const targetLevel = overrideLevel || selectedLevel;
+
+    if (!targetSkillId && !overrideAssessmentId) {
+      setStartError("Please choose a skill or assessment to begin.");
+      return;
+    }
+
+    setStartingAssessment(true);
     try {
       const attempt = await startAssessment({
-        skillId: skillIdToStart ? Number(skillIdToStart) : null,
-        assessmentId: assessmentIdToStart ? Number(assessmentIdToStart) : null,
-        proficiencyLevel: levelToStart,
+        skillId: targetSkillId,
+        proficiencyLevel: targetLevel,
+        assessmentId: overrideAssessmentId,
       });
       setActiveAttempt(attempt);
       setRunningAssessmentId(attempt.attemptId);
+      setActivePage("assessment");
     } catch (err) {
-      setStartError(parseApiError(err).message || "Failed to start assessment.");
+      setStartError(parseApiError(err).message);
     } finally {
       setStartingAssessment(false);
     }
   };
 
-  const retry = () => {
-    if (submissions.length > 0 && serverGaps.length > 0) {
-      requestRecommendationsFromServerResults(submissions[0].score, serverGaps, profile);
-    }
+  const handleAssessmentComplete = (result) => {
+    setRunningAssessmentId(null);
+    setActiveAttempt(null);
+    loadBackendData();
+    fetchRecommendations(result, serverGaps);
+    setActivePage("results");
   };
-  const toggleCourse = (id) => setCompleted((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
+
+  const handleAssessmentCancel = () => {
+    setRunningAssessmentId(null);
+    setActiveAttempt(null);
+    loadBackendData();
+  };
 
   const saveProfile = async () => {
     try {
       await updateEmployeeProfile({
-        jobRole: profile.jobRole || "Software Developer",
-        department: profile.department || null,
-        experienceLevel: profile.experience || "Entry level",
+        jobRole: profile.jobRole,
+        department: profile.department,
+        experienceLevel: profile.experience,
         bio: profile.bio || null,
         skills: profile.skills || null,
       });
@@ -234,21 +256,12 @@ export default function EmployeeDashboard() {
     setTimeout(() => setProfileSaved(false), 4000);
   };
 
-  const handleEnrollCourse = async (courseId) => {
+  const handleEnrollCourse = async (courseOrId) => {
+    const courseId = typeof courseOrId === "object" ? courseOrId.id : courseOrId;
+    if (!courseId) return;
     try {
       await enrollInCourse(courseId);
-      setFeedbackMsg("Enrolled in course successfully!");
-      loadBackendData();
-      setTimeout(() => setFeedbackMsg(""), 3000);
-    } catch (e) {
-      setFeedbackMsg(parseApiError(e).message);
-    }
-  };
-
-  const handleUpdateProgress = async (courseId, pct) => {
-    try {
-      await updateCourseProgress(courseId, pct);
-      setFeedbackMsg(pct >= 100 ? "Course completed! Certificate issued!" : "Progress updated.");
+      setFeedbackMsg("Enrolled in course successfully! Added to My Learning.");
       loadBackendData();
       setTimeout(() => setFeedbackMsg(""), 4000);
     } catch (e) {
@@ -256,10 +269,12 @@ export default function EmployeeDashboard() {
     }
   };
 
-  const courseList = recs.data?.recommendations || [];
-  const progress = courseList.length ? Math.round((courseList.filter((c) => completed.includes(slug(c.title))).length / courseList.length) * 100) : 0;
   const onSignOut = async () => { await signOut(); navigate("/login", { replace: true }); };
-  const goTo = (id) => { setRunningAssessmentId(null); setActivePage(id); window.scrollTo({ top: 0 }); };
+  const goTo = (id) => {
+    setRunningAssessmentId(null);
+    setActivePage(id);
+    window.scrollTo({ top: 0 });
+  };
 
   const latestSubmission = submissions.length > 0 ? submissions[0] : null;
   const shared = {
@@ -270,13 +285,17 @@ export default function EmployeeDashboard() {
     serverGaps,
     recs,
     completed,
-    progress,
     toggleCourse,
     setActivePage: goTo,
     onRetry: retry,
   };
-  const activeNav = activePage === "results" ? "assessment" : activePage;
-  const pageTitle = activePage === "results" ? "Assessment Results" : NAV_ITEMS.find((n) => n.id === activePage)?.label;
+
+  // Resolve current active nav highlighting
+  const activeNav = (activePage === "results") ? "assessment"
+    : (activePage === "courses" ? "recommendations"
+    : (activePage === "mentorship" ? "mentors" : activePage));
+
+  const pageTitle = activePage === "results" ? "Assessment Results" : NAV_ITEMS.find((n) => n.id === activeNav)?.label || "Workspace";
 
   return (
     <div className="employee-app">
@@ -328,16 +347,20 @@ export default function EmployeeDashboard() {
         <div className="employee-content">
           {feedbackMsg && <Alert type="success">{feedbackMsg}</Alert>}
 
+          {/* Module 1: Dashboard */}
           {activePage === "overview" && <Overview {...shared} />}
 
+          {/* Module 2: My Profile */}
           {activePage === "profile" && (
             <Profile profile={profile} setProfile={setProfile} onSave={saveProfile} saved={profileSaved} />
           )}
 
+          {/* Module 3: My Skills & Evidence */}
           {activePage === "skills" && (
             <SkillEvidenceSection />
           )}
 
+          {/* Module 4: Skill Assessment */}
           {activePage === "assessment" && (
             <div>
               {runningAssessmentId || activeAttempt ? (
@@ -369,7 +392,7 @@ export default function EmployeeDashboard() {
                         Start a New Skill Assessment
                       </h2>
                       <p className="muted" style={{ margin: 0, fontSize: "0.88rem" }}>
-                        Every attempt generates a fresh set of questions powered by Google Gemini, tailored specifically to your target proficiency level.
+                        Every attempt generates questions powered by Google Gemini, tailored specifically to your target proficiency level.
                       </p>
                     </div>
 
@@ -481,104 +504,55 @@ export default function EmployeeDashboard() {
                       </div>
                     )}
                   </div>
-
-                  {/* Assessment History with Type Badge */}
-                  <div className="panel">
-                    <h2>My Assessment History ({submissions.length})</h2>
-                    <p className="muted">Database-backed records of completed assessments and evaluated proficiency scores.</p>
-                    {submissions.length === 0 ? (
-                      <p className="muted" style={{ marginTop: "12px" }}>No assessments completed yet. Take an assessment above to verify your skills.</p>
-                    ) : (
-                      <div className="table-wrap" style={{ marginTop: "14px" }}>
-                        <table>
-                          <thead>
-                            <tr>
-                              <th>Assessment / Skill</th>
-                              <th>Type</th>
-                              <th>Date Completed</th>
-                              <th>Score</th>
-                              <th>Correct / Total</th>
-                              <th>Status</th>
-                              <th>Action</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {submissions.map((sub) => {
-                              const isAi = sub.generationSource === "AI_GENERATED";
-                              return (
-                                <tr key={sub.submissionId}>
-                                  <td><strong>{sub.assessmentTitle || `Assessment #${sub.assessmentId}`}</strong></td>
-                                  <td>
-                                    <span
-                                      className="badge"
-                                      style={{
-                                        fontSize: "0.72rem",
-                                        background: isAi ? "#eef2ff" : "#f1f5f9",
-                                        color: isAi ? "#4f46e5" : "#475569",
-                                        fontWeight: 600,
-                                      }}
-                                    >
-                                      {isAi ? "✨ AI-Generated" : "Standard"}
-                                    </span>
-                                  </td>
-                                  <td>{sub.completedAt ? new Date(sub.completedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "—"}</td>
-                                  <td><strong>{sub.score}%</strong></td>
-                                  <td>{sub.correctAnswers} / {sub.totalQuestions}</td>
-                                  <td>
-                                    <span
-                                      className="badge"
-                                      style={{
-                                        background: sub.passed ? "#e6f6ee" : "#fde9e7",
-                                        color: sub.passed ? "#17754f" : "#b42318",
-                                      }}
-                                    >
-                                      {sub.passed ? "PASSED" : "NOT PASSED"}
-                                    </span>
-                                  </td>
-                                  <td>
-                                    <button
-                                      type="button"
-                                      className="btn btn--ghost"
-                                      style={{ fontSize: "0.8rem", padding: "4px 10px" }}
-                                      onClick={() => handleStartDynamicAssessment(sub.skillId || null, sub.targetLevel || "Intermediate", sub.assessmentId || null)}
-                                    >
-                                      Retake
-                                    </button>
-                                  </td>
-                                </tr>
-                              );
-                            })}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
                 </div>
               )}
             </div>
           )}
 
-          {activePage === "results" && <Results {...shared} />}
+          {activePage === "results" && (
+            <Results
+              {...shared}
+              onEnroll={handleEnrollCourse}
+              enrolledCourseIds={serverLearnings.map((l) => l.courseId)}
+            />
+          )}
 
+          {/* Module 5: My Skill Gaps */}
           {activePage === "gaps" && <Gaps {...shared} />}
 
-          {activePage === "courses" && (
+          {/* Module 6: Learning Recommendations */}
+          {(activePage === "recommendations" || activePage === "courses") && (
             <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+              <Courses
+                {...shared}
+                onEnroll={handleEnrollCourse}
+                enrolledCourseIds={serverLearnings.map((l) => l.courseId)}
+              />
+
               {allCatalogueCourses.length > 0 && (
                 <div className="panel">
-                  <h2>Organization Learning Catalogue</h2>
-                  <p className="muted">Directly enroll in courses aligned with your identified skill gaps.</p>
+                  <h2>Full Verified Course Catalogue</h2>
+                  <p className="muted">Directly enroll in verified courses from NPTEL, SWAYAM, and Coursera covering all platform skills.</p>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "14px", marginTop: "16px" }}>
                     {allCatalogueCourses.map((c) => {
                       const enrolled = serverLearnings.some((l) => l.courseId === c.id);
                       return (
                         <div key={c.id} style={{ padding: "16px", borderRadius: "12px", border: "1.5px solid #e2e9f3", background: "#f9fbfe", display: "flex", flexDirection: "column", gap: "8px" }}>
-                          <span className="badge">{c.skillName} • {c.level}</span>
+                          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                            <span className="badge" style={{ background: "#e0edff", color: "#1d4ed8", fontWeight: 700 }}>
+                              {c.provider}
+                            </span>
+                            <span className="eyebrow">{c.skillName} • {c.level}</span>
+                          </div>
                           <strong style={{ fontSize: "1rem" }}>{c.title}</strong>
                           <p style={{ margin: 0, fontSize: "0.82rem", color: "#5b6d86" }}>{c.description}</p>
                           <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.78rem", color: "#8795a9", marginTop: "auto" }}>
                             <span>Duration: {c.durationHours} hrs</span>
-                            <span>{c.provider}</span>
+                            {c.courseUrl ? (
+                              <a href={c.courseUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb" }}>
+                                Provider Link <Icon name="external" size={13} />
+                              </a>
+                            ) : <span />}
                           </div>
                           {enrolled ? (
                             <span className="badge" style={{ background: "#e6f6ee", color: "#17754f", textAlign: "center", padding: "6px" }}>
@@ -591,7 +565,7 @@ export default function EmployeeDashboard() {
                               onClick={() => handleEnrollCourse(c.id)}
                               style={{ marginTop: "6px" }}
                             >
-                              Enroll in Course
+                              Enroll in Course &rarr;
                             </button>
                           )}
                         </div>
@@ -600,102 +574,48 @@ export default function EmployeeDashboard() {
                   </div>
                 </div>
               )}
-              <Courses {...shared} />
             </div>
           )}
 
-          {activePage === "progress" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              {/* Official Certificates */}
-              <div className="panel">
-                <h2>Issued SkillSphere Certificates ({certificates.length})</h2>
-                {certificates.length === 0 ? (
-                  <p className="muted">Complete any course to 100% progress to automatically earn and verify an official certificate.</p>
-                ) : (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: "14px", marginTop: "14px" }}>
-                    {certificates.map((cert) => (
-                      <div
-                        key={cert.id}
-                        style={{
-                          padding: "20px",
-                          borderRadius: "14px",
-                          border: "2px solid #2563eb",
-                          background: "linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%)",
-                          boxShadow: "0 4px 12px rgba(37,99,235,0.08)",
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: "8px",
-                        }}
-                      >
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                          <span className="badge" style={{ background: "#2563eb", color: "#fff" }}>CERTIFICATE OF COMPLETION</span>
-                          <Icon name="award" size={24} />
-                        </div>
-                        <strong style={{ fontSize: "1.1rem", color: "#0f2747", marginTop: "6px" }}>{cert.title}</strong>
-                        <div style={{ fontSize: "0.85rem", color: "#5b6d86" }}>
-                          Verification Code: <strong style={{ color: "#2563eb", fontFamily: "monospace" }}>{cert.certificateCode}</strong>
-                        </div>
-                        <div style={{ fontSize: "0.78rem", color: "#8795a9", marginTop: "auto" }}>
-                          Issued on {cert.issueDate} • Valid through {cert.expiryDate}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              {/* Active Enrolled Courses */}
-              {serverLearnings.length > 0 && (
-                <div className="panel">
-                  <h2>Active Enrolled Courses & Progress</h2>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "14px" }}>
-                    {serverLearnings.map((el) => (
-                      <div key={el.id} style={{ padding: "16px", borderRadius: "12px", border: "1.5px solid #e2e9f3", background: "#f9fbfe", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
-                        <div>
-                          <strong>{el.courseTitle}</strong>
-                          <div style={{ fontSize: "0.84rem", color: "#5b6d86" }}>
-                            Status: <span className="badge">{el.status}</span> • Progress: <strong>{el.progressPct}%</strong>
-                          </div>
-                        </div>
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <button
-                            type="button"
-                            className="btn btn--ghost"
-                            onClick={() => handleUpdateProgress(el.courseId, Math.min(100, el.progressPct + 25))}
-                          >
-                            +25% Progress
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn--complete"
-                            onClick={() => handleUpdateProgress(el.courseId, 100)}
-                          >
-                            Complete & Certify
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <Progress {...shared} />
-            </div>
+          {/* Module 7: My Learning */}
+          {activePage === "learning" && (
+            <MyLearning setActivePage={goTo} onCompleteRefresh={loadBackendData} />
           )}
 
-          {activePage === "mentorship" && <Mentorship />}
+          {/* Module 8: Mentors Directory */}
+          {(activePage === "mentors" || activePage === "mentorship") && (
+            <MentorshipHub initialTab="directory" />
+          )}
 
+          {/* Module 9: Mentorship Requests */}
+          {activePage === "mentorship-requests" && (
+            <MentorshipHub initialTab="requests" />
+          )}
+
+          {/* Module 10: Messages / Chatbox */}
           {activePage === "chat" && <ChatWidget currentUserId={user.id} />}
 
-          {activePage === "knowledge" && <KnowledgeForumSection currentUserId={user.id} />}
+          {/* Module 11: Knowledge Hub */}
+          {activePage === "knowledge" && <KnowledgeForumSection currentUserId={user.id} initialTab="articles" />}
 
-          {activePage === "calendar" && <CalendarWidget currentUserId={user.id} />}
+          {/* Module 12: Discussion Forum */}
+          {activePage === "forum" && <KnowledgeForumSection currentUserId={user.id} initialTab="forum" />}
 
+          {/* Module 13: My Progress */}
+          {activePage === "progress" && <MyProgress user={user} setActivePage={goTo} />}
+
+          {/* Module 14: Certificates */}
+          {activePage === "certificates" && <Certificates user={user} setActivePage={goTo} />}
+
+          {/* Module 15: Notifications */}
           {activePage === "notifications" && <Notifications {...shared} />}
 
-          {activePage === "reports" && <Reports {...shared} />}
-
+          {/* Module 16: Help & Support */}
           {activePage === "support" && <HelpSupportSection />}
+
+          {/* Additional Workspace Features */}
+          {activePage === "calendar" && <CalendarWidget currentUserId={user.id} />}
+          {activePage === "reports" && <Reports {...shared} />}
 
           <p className="demo-disclaimer">
             Live Spring Boot API, PostgreSQL and Gemini AI Recommendations fully connected.

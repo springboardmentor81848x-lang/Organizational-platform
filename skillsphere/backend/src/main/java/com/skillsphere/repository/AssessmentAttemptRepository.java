@@ -24,4 +24,7 @@ public interface AssessmentAttemptRepository extends JpaRepository<AssessmentAtt
 
     @Query("select a from AssessmentAttempt a join fetch a.skill join fetch a.user left join fetch a.assessment where a.user.id in :userIds order by a.startedAt desc")
     List<AssessmentAttempt> findByUserIdsOrderByStartedAtDesc(@Param("userIds") List<Long> userIds);
+
+    @Query("select a from AssessmentAttempt a join fetch a.skill join fetch a.user left join fetch a.assessment order by a.startedAt desc")
+    List<AssessmentAttempt> findAllWithDetails();
 }

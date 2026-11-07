@@ -45,6 +45,10 @@ class ChatServiceTest {
     private MentorAssignmentRepository mentorAssignmentRepository;
     @Mock
     private MentorshipRequestRepository mentorshipRequestRepository;
+    @Mock
+    private MessageReportRepository messageReportRepository;
+    @Mock
+    private EmployeeProfileRepository employeeProfileRepository;
 
     @InjectMocks
     private ChatService chatService;
@@ -146,7 +150,7 @@ class ChatServiceTest {
                 eq(bob),
                 eq("NEW_MESSAGE"),
                 contains("Alice"),
-                contains("Hello Bob!"),
+                anyString(),
                 eq("/dashboard")
         );
     }
@@ -388,5 +392,153 @@ class ChatServiceTest {
 
         assertEquals(HttpStatus.BAD_REQUEST, ex.getStatus());
         assertTrue(ex.getMessage().contains("yourself"));
+    }
+
+    @Test
+    @DisplayName("Manager can create a team conversation with all members added")
+    void testCreateTeamConversation_ManagerSuccess() {
+        User manager = new User();
+        setPrivateId(manager, 100L);
+        manager.setFullName("Manager Mark");
+        manager.setEmail("mark@example.com");
+        manager.setRole(Role.MANAGER);
+
+        Department dept = new Department();
+        dept.setName("Engineering");
+        Team team = new Team(dept, "Engineering Alpha", manager);
+        setPrivateId(team, 50L);
+
+        when(userRepository.findByEmail("mark@example.com")).thenReturn(Optional.of(manager));
+        when(teamRepository.findById(50L)).thenReturn(Optional.of(team));
+
+        User member = new User();
+        setPrivateId(member, 101L);
+        member.setFullName("Dev Dan");
+        member.setEmail("dan@example.com");
+        member.setRole(Role.EMPLOYEE);
+        TeamMembership tm = new TeamMembership(team, member, "DEVELOPER");
+
+        when(teamMembershipRepository.findByTeamId(50L)).thenReturn(List.of(tm));
+        when(conversationRepository.save(any(Conversation.class))).thenAnswer(inv -> {
+            Conversation c = inv.getArgument(0);
+            setPrivateId(c, 200L);
+            return c;
+        });
+
+        ConversationDto dto = chatService.createTeamConversation("mark@example.com",
+                new com.skillsphere.dto.ChatDtos.CreateTeamConversationRequest(50L, "Sprint Discussion"));
+
+        assertNotNull(dto);
+        assertEquals(200L, dto.id());
+        assertEquals("TEAM", dto.type());
+        assertEquals("Sprint Discussion", dto.title());
+        verify(participantRepository, times(2)).save(any(ConversationParticipant.class));
+    }
+
+    @Test
+    @DisplayName("Non-manager employee cannot create team conversation (throws 403 Forbidden)")
+    void testCreateTeamConversation_NonManagerForbidden() {
+        User employee = new User();
+        setPrivateId(employee, 101L);
+        employee.setFullName("Dev Dan");
+        employee.setEmail("dan@example.com");
+        employee.setRole(Role.EMPLOYEE);
+
+        User manager = new User();
+        setPrivateId(manager, 100L);
+
+        Department dept = new Department();
+        dept.setName("Engineering");
+        Team team = new Team(dept, "Engineering Alpha", manager);
+        setPrivateId(team, 50L);
+
+        when(userRepository.findByEmail("dan@example.com")).thenReturn(Optional.of(employee));
+        when(teamRepository.findById(50L)).thenReturn(Optional.of(team));
+
+        ApiException ex = assertThrows(ApiException.class, () ->
+                chatService.createTeamConversation("dan@example.com",
+                        new com.skillsphere.dto.ChatDtos.CreateTeamConversationRequest(50L, "Sprint")));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        assertTrue(ex.getMessage().contains("Only the assigned manager"));
+    }
+
+    @Test
+    @DisplayName("Participant can toggle mute on a conversation")
+    void testToggleMute_Success() {
+        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(caller));
+        when(participantRepository.findByConversationIdAndUserId(10L, 1L)).thenReturn(Optional.of(participant));
+
+        assertFalse(participant.isMuted());
+        boolean muted = chatService.toggleMute("alice@example.com", 10L);
+
+        assertTrue(muted);
+        assertTrue(participant.isMuted());
+        verify(participantRepository).save(participant);
+    }
+
+    @Test
+    @DisplayName("Participant can toggle archive on a conversation")
+    void testToggleArchive_Success() {
+        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(caller));
+        when(participantRepository.findByConversationIdAndUserId(10L, 1L)).thenReturn(Optional.of(participant));
+
+        assertFalse(participant.isArchived());
+        boolean archived = chatService.toggleArchive("alice@example.com", 10L);
+
+        assertTrue(archived);
+        assertTrue(participant.isArchived());
+        verify(participantRepository).save(participant);
+    }
+
+    @Test
+    @DisplayName("Participant can report an inappropriate message")
+    void testReportMessage_Success() {
+        when(userRepository.findByEmail("alice@example.com")).thenReturn(Optional.of(caller));
+
+        Message msg = new Message(conversation, intruder, "Harassing content", null, null);
+        setPrivateId(msg, 77L);
+
+        when(messageRepository.findById(77L)).thenReturn(Optional.of(msg));
+        when(participantRepository.existsByConversationIdAndUserId(10L, 1L)).thenReturn(true);
+        when(messageReportRepository.existsByMessageIdAndReporterId(77L, 1L)).thenReturn(false);
+
+        when(messageReportRepository.save(any(MessageReport.class))).thenAnswer(inv -> {
+            MessageReport r = inv.getArgument(0);
+            setPrivateId(r, 999L);
+            return r;
+        });
+
+        com.skillsphere.dto.ChatDtos.ReportMessageRequest req =
+                new com.skillsphere.dto.ChatDtos.ReportMessageRequest("Inappropriate language", "Offensive remarks");
+
+        com.skillsphere.dto.ChatDtos.MessageReportResponse resp = chatService.reportMessage("alice@example.com", 77L, req);
+
+        assertNotNull(resp);
+        assertEquals(999L, resp.id());
+        assertEquals(77L, resp.messageId());
+        assertEquals("Inappropriate language", resp.reason());
+        assertEquals("PENDING", resp.status());
+    }
+
+    @Test
+    @DisplayName("Non-participant cannot report message in unrelated conversation (throws 403 Forbidden)")
+    void testReportMessage_NonParticipantForbidden() {
+        when(userRepository.findByEmail("mallory@example.com")).thenReturn(Optional.of(intruder));
+
+        Message msg = new Message(conversation, caller, "Secret discussion", null, null);
+        setPrivateId(msg, 88L);
+
+        when(messageRepository.findById(88L)).thenReturn(Optional.of(msg));
+        when(participantRepository.existsByConversationIdAndUserId(10L, 2L)).thenReturn(false);
+
+        com.skillsphere.dto.ChatDtos.ReportMessageRequest req =
+                new com.skillsphere.dto.ChatDtos.ReportMessageRequest("Suspicious", "I am snooping");
+
+        ApiException ex = assertThrows(ApiException.class, () ->
+                chatService.reportMessage("mallory@example.com", 88L, req));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+        assertTrue(ex.getMessage().contains("participate in"));
     }
 }

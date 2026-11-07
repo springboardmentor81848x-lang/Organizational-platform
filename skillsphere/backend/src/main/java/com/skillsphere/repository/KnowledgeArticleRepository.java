@@ -16,4 +16,9 @@ public interface KnowledgeArticleRepository extends JpaRepository<KnowledgeArtic
     List<KnowledgeArticle> searchPublished(@Param("q") String query);
 
     List<KnowledgeArticle> findByAuthorId(Long authorId);
+
+    @Query("select a from KnowledgeArticle a join fetch a.author left join fetch a.category where a.author.id = :authorId order by a.createdAt desc")
+    List<KnowledgeArticle> findByAuthorIdOrderByCreatedAtDesc(@Param("authorId") Long authorId);
+
+    long countByAuthorIdAndStatus(Long authorId, String status);
 }

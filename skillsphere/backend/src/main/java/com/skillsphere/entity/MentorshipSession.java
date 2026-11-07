@@ -34,6 +34,12 @@ public class MentorshipSession {
     @Column(nullable = false, length = 20)
     private SessionStatus status = SessionStatus.SCHEDULED;
 
+    @Column(name = "shared_notes", columnDefinition = "TEXT")
+    private String sharedNotes;
+
+    @Column(name = "mentor_prep_notes", columnDefinition = "TEXT")
+    private String mentorPrepNotes;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 
@@ -80,6 +86,10 @@ public class MentorshipSession {
     public void setMeetingLink(String meetingLink) { this.meetingLink = meetingLink; }
     public SessionStatus getStatus() { return status; }
     public void setStatus(SessionStatus status) { this.status = status; }
+    public String getSharedNotes() { return sharedNotes; }
+    public void setSharedNotes(String sharedNotes) { this.sharedNotes = sharedNotes; }
+    public String getMentorPrepNotes() { return mentorPrepNotes; }
+    public void setMentorPrepNotes(String mentorPrepNotes) { this.mentorPrepNotes = mentorPrepNotes; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
 }

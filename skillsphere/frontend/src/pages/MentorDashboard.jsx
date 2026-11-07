@@ -1,153 +1,98 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
 import Logo from "../components/Logo.jsx";
 import Icon from "../components/Icons.jsx";
 import Alert from "../components/Alert.jsx";
 import NotificationsPopover from "../components/NotificationsPopover.jsx";
-import ChatWidget from "../components/ChatWidget.jsx";
-import CalendarWidget from "../components/CalendarWidget.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
-import {
-  getMyMentees,
-  getMentorStatus,
-  createMentorshipSession,
-  updateSessionStatus,
-  createMentorshipGoal,
-  updateGoalStatus,
-} from "../services/mentorshipService.js";
-import {
-  getMyIncomingMentorshipRequests,
-  respondToMentorshipRequest,
-  shareMentorshipResource,
-  getMentorshipSharedResources,
-} from "../services/platformService.js";
+
+// Import Mentor CSS
+import "../styles/mentor.css";
+
+// Import Subviews
+import DashboardOverviewView from "./mentor/DashboardOverviewView.jsx";
+import MentorProfileView from "./mentor/MentorProfileView.jsx";
+import MentorshipRequestsView from "./mentor/MentorshipRequestsView.jsx";
+import MyMenteesView from "./mentor/MyMenteesView.jsx";
+import MenteeSkillOverviewView from "./mentor/MenteeSkillOverviewView.jsx";
+import DevelopmentGoalsView from "./mentor/DevelopmentGoalsView.jsx";
+import MentoringSessionsView from "./mentor/MentoringSessionsView.jsx";
+import MentorChatView from "./mentor/MentorChatView.jsx";
+import SharedResourcesView from "./mentor/SharedResourcesView.jsx";
+import KnowledgeContributionsView from "./mentor/KnowledgeContributionsView.jsx";
+import MentoringFeedbackView from "./mentor/MentoringFeedbackView.jsx";
+import MentorNotificationsView from "./mentor/MentorNotificationsView.jsx";
+
+import { getMentorOverview, getMentorProfile } from "../services/mentorService.js";
 import { parseApiError } from "../services/apiClient.js";
 
 const NAV_ITEMS = [
-  { id: "overview", label: "Mentor Workspace", icon: "dashboard" },
-  { id: "requests", label: "Mentorship Requests", icon: "users" },
-  { id: "mentees", label: "My Mentees & Goals", icon: "clipboard" },
-  { id: "sessions", label: "Mentoring Sessions", icon: "clock" },
-  { id: "resources", label: "Shared Resources", icon: "book" },
-  { id: "chat", label: "Mentee Chatbox", icon: "message" },
-  { id: "calendar", label: "Schedule & Calendar", icon: "calendar" },
+  { id: "overview", label: "Dashboard", icon: "dashboard", path: "dashboard" },
+  { id: "profile", label: "Mentor Profile", icon: "user", path: "profile" },
+  { id: "requests", label: "Mentorship Requests", icon: "inbox", path: "requests" },
+  { id: "mentees", label: "My Mentees", icon: "users", path: "mentees" },
+  { id: "mentee-skills", label: "Mentee Skill Overview", icon: "target", path: "mentee-skills" },
+  { id: "goals", label: "Development Goals", icon: "clipboard", path: "goals" },
+  { id: "sessions", label: "Mentoring Sessions", icon: "clock", path: "sessions" },
+  { id: "chat", label: "Messages / Chatbox", icon: "message", path: "chat" },
+  { id: "resources", label: "Shared Resources", icon: "book", path: "resources" },
+  { id: "contributions", label: "Knowledge Contributions", icon: "award", path: "contributions" },
+  { id: "feedback", label: "Feedback", icon: "star", path: "feedback" },
+  { id: "notifications", label: "Notifications", icon: "bell", path: "notifications" },
 ];
 
 export default function MentorDashboard() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("overview");
+  const { tab } = useParams();
 
-  const [mentorStatus, setMentorStatus] = useState(null);
-  const [mentees, setMentees] = useState([]);
-  const [incomingRequests, setIncomingRequests] = useState([]);
+  // Active Tab state synced with URL
+  const [activeTab, setActiveTab] = useState(() => {
+    if (!tab) return "overview";
+    const found = NAV_ITEMS.find((n) => n.path === tab || n.id === tab);
+    return found ? found.id : "overview";
+  });
+
+  const [overview, setOverview] = useState(null);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const [triggerScheduleModal, setTriggerScheduleModal] = useState(false);
 
-  // Goal modal/form
-  const [goalTitle, setGoalTitle] = useState("");
-  const [goalDesc, setGoalDesc] = useState("");
-  const [targetDate, setTargetDate] = useState("");
-  const [selectedAssignmentId, setSelectedAssignmentId] = useState("");
-
-  // Session form
-  const [sessionTopic, setSessionTopic] = useState("");
-  const [sessionTime, setSessionTime] = useState("");
-  const [meetingLink, setMeetingLink] = useState("");
-
-  // Resource form
-  const [resTitle, setResTitle] = useState("");
-  const [resUrl, setResUrl] = useState("");
-
-  const loadData = async () => {
-    try {
-      const st = await getMentorStatus().catch(() => null);
-      if (st) setMentorStatus(st);
-
-      const m = await getMyMentees().catch(() => []);
-      setMentees(m);
-      if (m.length > 0 && !selectedAssignmentId) {
-        setSelectedAssignmentId(m[0].assignmentId);
+  useEffect(() => {
+    if (tab) {
+      const found = NAV_ITEMS.find((n) => n.path === tab || n.id === tab);
+      if (found && found.id !== activeTab) {
+        setActiveTab(found.id);
       }
+    }
+  }, [tab]);
 
-      const reqs = await getMyIncomingMentorshipRequests().catch(() => []);
-      setIncomingRequests(reqs);
-    } catch (e) {
-      setError(parseApiError(e).message);
+  const loadBaseData = async () => {
+    setLoading(true);
+    try {
+      const [ov, pr] = await Promise.all([
+        getMentorOverview().catch(() => null),
+        getMentorProfile().catch(() => null),
+      ]);
+      setOverview(ov);
+      setProfile(pr);
+    } catch (err) {
+      setError(parseApiError(err).message);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadBaseData();
   }, []);
 
-  const handleRespondRequest = async (reqId, status) => {
-    setError("");
-    setSuccess("");
-    try {
-      await respondToMentorshipRequest(reqId, { status, responseNote: "Looking forward to working with you!" });
-      setSuccess(`Mentorship request ${status.toLowerCase()}!`);
-      loadData();
-    } catch (e) {
-      setError(parseApiError(e).message);
-    }
-  };
-
-  const handleCreateGoal = async (e) => {
-    e.preventDefault();
-    if (!selectedAssignmentId || !goalTitle) return;
-    try {
-      await createMentorshipGoal({
-        assignmentId: Number(selectedAssignmentId),
-        title: goalTitle,
-        description: goalDesc,
-        targetDate: targetDate || null,
-      });
-      setSuccess("Development goal created!");
-      setGoalTitle("");
-      setGoalDesc("");
-      setTargetDate("");
-      loadData();
-    } catch (err) {
-      setError(parseApiError(err).message);
-    }
-  };
-
-  const handleCreateSession = async (e) => {
-    e.preventDefault();
-    if (!selectedAssignmentId || !sessionTopic || !sessionTime) return;
-    try {
-      await createMentorshipSession({
-        assignmentId: Number(selectedAssignmentId),
-        topic: sessionTopic,
-        scheduledAt: new Date(sessionTime).toISOString(),
-        durationMinutes: 45,
-        meetingLink: meetingLink || "https://meet.google.com/demo-session",
-      });
-      setSuccess("Mentoring session scheduled!");
-      setSessionTopic("");
-      setSessionTime("");
-      setMeetingLink("");
-      loadData();
-    } catch (err) {
-      setError(parseApiError(err).message);
-    }
-  };
-
-  const handleShareResource = async (e) => {
-    e.preventDefault();
-    if (!selectedAssignmentId || !resTitle || !resUrl) return;
-    try {
-      await shareMentorshipResource({
-        assignmentId: Number(selectedAssignmentId),
-        title: resTitle,
-        urlOrContent: resUrl,
-      });
-      setSuccess("Resource shared with mentee!");
-      setResTitle("");
-      setResUrl("");
-    } catch (err) {
-      setError(parseApiError(err).message);
+  const handleNavClick = (id) => {
+    setActiveTab(id);
+    const item = NAV_ITEMS.find((n) => n.id === id);
+    if (item) {
+      navigate(`/mentor/${item.path}`);
     }
   };
 
@@ -156,12 +101,18 @@ export default function MentorDashboard() {
     navigate("/login", { replace: true });
   };
 
+  const pendingRequestsCount = overview ? overview.pendingRequestsCount : 0;
+
   return (
-    <div className="employee-app">
-      <aside className="employee-sidebar">
+    <div className="mentor-app">
+      {/* 12-Module Sidebar */}
+      <aside className="mentor-sidebar">
         <div className="sidebar-brand">
           <Logo />
-          <span>MENTOR WORKSPACE</span>
+          <div>
+            <strong style={{ display: "block", fontSize: "0.92rem", letterSpacing: "0.02em" }}>SkillSphere</strong>
+            <span className="sidebar-brand-badge">MENTOR WORKSPACE</span>
+          </div>
         </div>
 
         <nav>
@@ -169,360 +120,136 @@ export default function MentorDashboard() {
             <button
               key={item.id}
               type="button"
-              className={`nav-item ${activeTab === item.id ? "is-active" : ""}`}
-              onClick={() => setActiveTab(item.id)}
+              className={`mentor-nav-item ${activeTab === item.id ? "is-active" : ""}`}
+              onClick={() => handleNavClick(item.id)}
             >
               <Icon name={item.icon} size={18} />
-              <span className="nav-label">{item.label}</span>
-              {item.id === "requests" && incomingRequests.filter((r) => r.status === "PENDING").length > 0 && (
-                <span className="nav-tag">{incomingRequests.filter((r) => r.status === "PENDING").length}</span>
+              <span>{item.label}</span>
+              {item.id === "requests" && pendingRequestsCount > 0 && (
+                <span className="mentor-nav-badge">{pendingRequestsCount}</span>
               )}
             </button>
           ))}
         </nav>
 
-        <div className="sidebar-bottom">
-          <div className="sidebar-avatar">{user.fullName.charAt(0)}</div>
-          <div>
-            <strong>{user.fullName}</strong>
-            <small>{user.email}</small>
+        <div className="mentor-sidebar-footer">
+          <div className="mentor-avatar">{user.fullName.charAt(0)}</div>
+          <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
+            <strong style={{ display: "block", fontSize: "0.85rem", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
+              {user.fullName}
+            </strong>
+            <small style={{ color: "var(--mt-faint)", fontSize: "0.75rem", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden", display: "block" }}>
+              {user.email}
+            </small>
           </div>
-          <button type="button" className="sidebar-signout" onClick={onSignOut} title="Sign out">
-            <Icon name="logout" size={18} />
+          <button
+            type="button"
+            className="mt-btn mt-btn--outline"
+            style={{ padding: "6px 8px" }}
+            onClick={onSignOut}
+            title="Sign out"
+          >
+            <Icon name="logout" size={16} />
           </button>
         </div>
       </aside>
 
-      <div className="employee-main">
-        <header className="employee-topbar">
-          <span className="topbar-title">Mentor Hub • {NAV_ITEMS.find((n) => n.id === activeTab)?.label}</span>
-          <div className="topbar-user">
-            <span className="badge">MENTOR</span>
+      {/* Main Workspace Area */}
+      <div className="mentor-main">
+        <header className="mentor-topbar">
+          <div className="mentor-topbar-title">
+            <span>Mentor Hub</span>
+            <span style={{ color: "var(--mt-faint)" }}>/</span>
+            <span style={{ color: "var(--mt-primary-dark)" }}>
+              {NAV_ITEMS.find((n) => n.id === activeTab)?.label}
+            </span>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <span className="mt-badge mt-badge--active">Role: MENTOR</span>
             <NotificationsPopover />
           </div>
         </header>
 
-        <main className="employee-content">
+        <main className="mentor-content">
           {error && <Alert type="error">{error}</Alert>}
-          {success && <Alert type="success">{success}</Alert>}
 
-          {/* OVERVIEW */}
+          {/* Module 1: Dashboard */}
           {activeTab === "overview" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div className="hero">
-                <div>
-                  <span className="eyebrow" style={{ color: "#dbe7ff" }}>Expert Network</span>
-                  <h1>Welcome, {user.fullName.split(" ")[0]}</h1>
-                  <p>
-                    Guide employees through skill development, review mentorship requests, and track goal completions.
-                  </p>
-                </div>
-              </div>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px" }}>
-                <div className="panel" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <span className="eyebrow">Active Mentees</span>
-                  <strong style={{ fontSize: "1.8rem" }}>{mentees.length}</strong>
-                  <span className="muted">Currently paired</span>
-                </div>
-                <div className="panel" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <span className="eyebrow">Pending Requests</span>
-                  <strong style={{ fontSize: "1.8rem", color: "#2563eb" }}>
-                    {incomingRequests.filter((r) => r.status === "PENDING").length}
-                  </strong>
-                  <span className="muted">Awaiting your response</span>
-                </div>
-                <div className="panel" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                  <span className="eyebrow">Expertise Areas</span>
-                  <strong style={{ fontSize: "1.2rem" }}>
-                    {mentorStatus && mentorStatus.mentorProfile ? mentorStatus.mentorProfile.expertiseAreas : "Full Stack & Architecture"}
-                  </strong>
-                  <span className="muted">Profile tags</span>
-                </div>
-              </div>
-
-              <div className="panel">
-                <h2>Active Mentees</h2>
-                {mentees.length === 0 ? (
-                  <p className="muted">No active mentees yet. Incoming mentorship requests will show in the requests tab.</p>
-                ) : (
-                  <div className="table-wrap">
-                    <table>
-                      <thead>
-                        <tr><th>Mentee</th><th>Job Role</th><th>Paired Since</th><th>Actions</th></tr>
-                      </thead>
-                      <tbody>
-                        {mentees.map((m) => (
-                          <tr key={m.assignmentId}>
-                            <td><strong>{m.employeeName}</strong></td>
-                            <td>{m.jobRole}</td>
-                            <td>{new Date(m.assignedAt).toLocaleDateString()}</td>
-                            <td>
-                              <button
-                                type="button"
-                                className="text-action"
-                                onClick={() => {
-                                  setSelectedAssignmentId(m.assignmentId);
-                                  setActiveTab("mentees");
-                                }}
-                              >
-                                View Goals & Sessions &rarr;
-                              </button>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
+            <DashboardOverviewView
+              overview={overview}
+              user={user}
+              onNavigateTab={handleNavClick}
+              onOpenScheduleModal={() => {
+                setTriggerScheduleModal(true);
+                handleNavClick("sessions");
+              }}
+            />
           )}
 
-          {/* REQUESTS */}
+          {/* Module 2: Mentor Profile */}
+          {activeTab === "profile" && (
+            <MentorProfileView
+              profile={profile}
+              onProfileUpdated={(updated) => {
+                setProfile(updated);
+                loadBaseData();
+              }}
+            />
+          )}
+
+          {/* Module 3: Mentorship Requests */}
           {activeTab === "requests" && (
-            <div className="panel">
-              <h2>Incoming Mentorship Requests</h2>
-              <p className="muted">Employees seeking guidance in specific areas.</p>
-
-              {incomingRequests.length === 0 ? (
-                <div style={{ textAlign: "center", padding: "40px", color: "#8795a9" }}>
-                  No mentorship requests at this time.
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "16px" }}>
-                  {incomingRequests.map((r) => (
-                    <div
-                      key={r.id}
-                      style={{
-                        padding: "16px 20px",
-                        borderRadius: "12px",
-                        border: "1.5px solid #e2e9f3",
-                        background: "#f9fbfe",
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "center",
-                        flexWrap: "wrap",
-                        gap: "12px",
-                      }}
-                    >
-                      <div>
-                        <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                          <strong>{r.employeeName}</strong>
-                          <span className="badge">{r.employeeJobRole || "Employee"}</span>
-                          <span
-                            className="badge"
-                            style={{
-                              background: r.status === "PENDING" ? "#fff4d6" : r.status === "ACCEPTED" ? "#e6f6ee" : "#fde9e7",
-                              color: r.status === "PENDING" ? "#8a5a00" : r.status === "ACCEPTED" ? "#17754f" : "#b42318",
-                            }}
-                          >
-                            {r.status}
-                          </span>
-                        </div>
-                        <p style={{ margin: "6px 0 0", fontSize: "0.86rem", color: "#5b6d86" }}>
-                          &ldquo;{r.message || "I would appreciate your mentorship."}&rdquo;
-                        </p>
-                        <small style={{ color: "#8795a9" }}>
-                          Received on {new Date(r.createdAt).toLocaleDateString()}
-                        </small>
-                      </div>
-
-                      {r.status === "PENDING" && (
-                        <div style={{ display: "flex", gap: "8px" }}>
-                          <button
-                            type="button"
-                            className="btn btn--complete"
-                            onClick={() => handleRespondRequest(r.id, "ACCEPTED")}
-                          >
-                            Accept
-                          </button>
-                          <button
-                            type="button"
-                            className="btn btn--ghost"
-                            onClick={() => handleRespondRequest(r.id, "DECLINED")}
-                          >
-                            Decline
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
+            <MentorshipRequestsView onRequestsUpdated={loadBaseData} />
           )}
 
-          {/* MENTEES & GOALS */}
+          {/* Module 4: My Mentees */}
           {activeTab === "mentees" && (
-            <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div className="panel">
-                <h2>Set Development Goal</h2>
-                <form onSubmit={handleCreateGoal} style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px", maxWidth: "600px" }}>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>Mentee Assignment</label>
-                    <select
-                      value={selectedAssignmentId}
-                      onChange={(e) => setSelectedAssignmentId(e.target.value)}
-                      style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
-                    >
-                      {mentees.map((m) => (
-                        <option key={m.assignmentId} value={m.assignmentId}>
-                          {m.employeeName} ({m.jobRole})
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>Goal Title</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. Master Spring Security & CSRF Architecture"
-                      value={goalTitle}
-                      onChange={(e) => setGoalTitle(e.target.value)}
-                      style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>Description & Success Criteria</label>
-                    <textarea
-                      rows={3}
-                      placeholder="Complete practical assignment and configure filter chain..."
-                      value={goalDesc}
-                      onChange={(e) => setGoalDesc(e.target.value)}
-                      style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>Target Date (Optional)</label>
-                    <input
-                      type="date"
-                      value={targetDate}
-                      onChange={(e) => setTargetDate(e.target.value)}
-                      style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
-                    />
-                  </div>
-                  <button type="submit" className="btn btn--primary" style={{ alignSelf: "flex-start" }}>
-                    Create Goal
-                  </button>
-                </form>
-              </div>
-            </div>
+            <MyMenteesView onNavigateTab={handleNavClick} />
           )}
 
-          {/* SESSIONS */}
+          {/* Module 5: Mentee Skill Overview */}
+          {activeTab === "mentee-skills" && (
+            <MenteeSkillOverviewView />
+          )}
+
+          {/* Module 6: Development Goals */}
+          {activeTab === "goals" && (
+            <DevelopmentGoalsView />
+          )}
+
+          {/* Module 7: Mentoring Sessions */}
           {activeTab === "sessions" && (
-            <div className="panel" style={{ maxWidth: "600px" }}>
-              <h2>Schedule Mentoring Session</h2>
-              <form onSubmit={handleCreateSession} style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" }}>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>Mentee</label>
-                  <select
-                    value={selectedAssignmentId}
-                    onChange={(e) => setSelectedAssignmentId(e.target.value)}
-                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
-                  >
-                    {mentees.map((m) => (
-                      <option key={m.assignmentId} value={m.assignmentId}>
-                        {m.employeeName} ({m.jobRole})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>Session Topic</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Code Review & Architecture Guidance"
-                    value={sessionTopic}
-                    onChange={(e) => setSessionTopic(e.target.value)}
-                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>Date & Time</label>
-                  <input
-                    type="datetime-local"
-                    required
-                    value={sessionTime}
-                    onChange={(e) => setSessionTime(e.target.value)}
-                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>Meeting Link</label>
-                  <input
-                    type="text"
-                    placeholder="https://meet.google.com/..."
-                    value={meetingLink}
-                    onChange={(e) => setMeetingLink(e.target.value)}
-                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
-                  />
-                </div>
-                <button type="submit" className="btn btn--primary">
-                  Schedule Session
-                </button>
-              </form>
-            </div>
+            <MentoringSessionsView
+              showScheduleModal={triggerScheduleModal}
+              onCloseScheduleModal={() => setTriggerScheduleModal(false)}
+            />
           )}
 
-          {/* SHARED RESOURCES */}
+          {/* Module 8: Messages / Chatbox */}
+          {activeTab === "chat" && (
+            <MentorChatView user={user} />
+          )}
+
+          {/* Module 9: Shared Resources */}
           {activeTab === "resources" && (
-            <div className="panel" style={{ maxWidth: "600px" }}>
-              <h2>Share Learning Resource</h2>
-              <p className="muted">Send curated documentation, repositories, or guides to your mentee.</p>
-
-              <form onSubmit={handleShareResource} style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "14px" }}>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>Mentee Assignment</label>
-                  <select
-                    value={selectedAssignmentId}
-                    onChange={(e) => setSelectedAssignmentId(e.target.value)}
-                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
-                  >
-                    {mentees.map((m) => (
-                      <option key={m.assignmentId} value={m.assignmentId}>
-                        {m.employeeName} ({m.jobRole})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>Resource Title</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Spring Boot Production Best Practices"
-                    value={resTitle}
-                    onChange={(e) => setResTitle(e.target.value)}
-                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
-                  />
-                </div>
-                <div>
-                  <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>URL / Documentation Link</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="https://spring.io/guides/tutorials/..."
-                    value={resUrl}
-                    onChange={(e) => setResUrl(e.target.value)}
-                    style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
-                  />
-                </div>
-                <button type="submit" className="btn btn--primary">
-                  Share Resource
-                </button>
-              </form>
-            </div>
+            <SharedResourcesView />
           )}
 
-          {/* CHAT */}
-          {activeTab === "chat" && <ChatWidget currentUserId={user.id} />}
+          {/* Module 10: Knowledge Contributions */}
+          {activeTab === "contributions" && (
+            <KnowledgeContributionsView />
+          )}
 
-          {/* CALENDAR */}
-          {activeTab === "calendar" && <CalendarWidget currentUserId={user.id} />}
+          {/* Module 11: Feedback */}
+          {activeTab === "feedback" && (
+            <MentoringFeedbackView />
+          )}
+
+          {/* Module 12: Notifications */}
+          {activeTab === "notifications" && (
+            <MentorNotificationsView onNavigateTab={handleNavClick} />
+          )}
         </main>
       </div>
     </div>

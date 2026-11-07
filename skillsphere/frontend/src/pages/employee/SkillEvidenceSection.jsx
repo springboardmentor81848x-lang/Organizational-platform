@@ -5,6 +5,7 @@ import {
   getMySkills,
   getAllSkills,
   addOrUpdateSkill,
+  getMyEvidence,
   submitSkillEvidence,
 } from "../../services/platformService.js";
 import { parseApiError } from "../../services/apiClient.js";
@@ -12,6 +13,7 @@ import { parseApiError } from "../../services/apiClient.js";
 export default function SkillEvidenceSection() {
   const [mySkills, setMySkills] = useState([]);
   const [allSkills, setAllSkills] = useState([]);
+  const [myEvidenceList, setMyEvidenceList] = useState([]);
   const [selectedSkillId, setSelectedSkillId] = useState("");
   const [proficiency, setProficiency] = useState("Intermediate");
   const [error, setError] = useState("");
@@ -26,11 +28,14 @@ export default function SkillEvidenceSection() {
 
   const loadData = async () => {
     try {
-      const ms = await getMySkills().catch(() => []);
+      const [ms, as, evList] = await Promise.all([
+        getMySkills().catch(() => []),
+        getAllSkills().catch(() => []),
+        getMyEvidence().catch(() => []),
+      ]);
       setMySkills(ms);
-
-      const as = await getAllSkills().catch(() => []);
       setAllSkills(as);
+      setMyEvidenceList(evList);
       if (as.length > 0 && !selectedSkillId) setSelectedSkillId(as[0].id);
     } catch (e) {
       setError(parseApiError(e).message);
@@ -50,7 +55,7 @@ export default function SkillEvidenceSection() {
         skillId: Number(selectedSkillId),
         proficiencyLevel: proficiency,
       });
-      setSuccess("Skill self-claim recorded!");
+      setSuccess("Skill self-claim recorded! Skill gaps have been recalculated.");
       loadData();
     } catch (err) {
       setError(parseApiError(err).message);
@@ -112,6 +117,7 @@ export default function SkillEvidenceSection() {
               onChange={(e) => setProficiency(e.target.value)}
               style={{ width: "100%", padding: "10px", borderRadius: "10px", border: "1.5px solid #e2e9f3" }}
             >
+              <option value="Unaware">Unaware (Level 1)</option>
               <option value="Beginner">Beginner (Level 2)</option>
               <option value="Intermediate">Intermediate (Level 3)</option>
               <option value="Advanced">Advanced (Level 4)</option>
@@ -178,6 +184,60 @@ export default function SkillEvidenceSection() {
                 )}
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* My Submitted Evidence Section */}
+      <div className="panel">
+        <h3>My Submitted Evidence ({myEvidenceList.length})</h3>
+        {myEvidenceList.length === 0 ? (
+          <p className="muted">No evidence submitted yet. Click "Submit Proof / Evidence" on any unverified skill to provide documentation.</p>
+        ) : (
+          <div className="table-wrap" style={{ marginTop: "12px" }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Skill</th>
+                  <th>Evidence Title & Description</th>
+                  <th>Artifact Link</th>
+                  <th>Status</th>
+                  <th>Reviewer</th>
+                  <th>Submitted At</th>
+                </tr>
+              </thead>
+              <tbody>
+                {myEvidenceList.map((ev) => (
+                  <tr key={ev.id}>
+                    <td><strong>{ev.skillName}</strong></td>
+                    <td>
+                      <div><strong>{ev.title}</strong></div>
+                      {ev.description && <div style={{ fontSize: "0.82rem", color: "#5b6d86" }}>{ev.description}</div>}
+                    </td>
+                    <td>
+                      {ev.evidenceUrl ? (
+                        <a href={ev.evidenceUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#0066cc", fontSize: "0.85rem" }}>
+                          View Artifact <Icon name="external" size={13} />
+                        </a>
+                      ) : "—"}
+                    </td>
+                    <td>
+                      <span
+                        className="badge"
+                        style={{
+                          background: ev.status === "APPROVED" ? "#e6f6ee" : (ev.status === "REJECTED" ? "#fde8e8" : "#fff4d6"),
+                          color: ev.status === "APPROVED" ? "#17754f" : (ev.status === "REJECTED" ? "#b91c1c" : "#8a5a00"),
+                        }}
+                      >
+                        {ev.status}
+                      </span>
+                    </td>
+                    <td>{ev.reviewedByName || "Pending Review"}</td>
+                    <td>{ev.createdAt ? new Date(ev.createdAt).toLocaleDateString() : "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

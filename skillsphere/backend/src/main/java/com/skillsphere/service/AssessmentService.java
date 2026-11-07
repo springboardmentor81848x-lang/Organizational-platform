@@ -29,6 +29,7 @@ public class AssessmentService {
     private final SkillGapRepository skillGapRepository;
     private final EmployeeSkillRepository employeeSkillRepository;
     private final RoleSkillRequirementRepository requirementRepository;
+    private final EmployeeProfileRepository profileRepository;
     private final UserRepository userRepository;
     private final SkillRepository skillRepository;
     private final TeamMembershipRepository teamMembershipRepository;
@@ -48,6 +49,7 @@ public class AssessmentService {
                              SkillGapRepository skillGapRepository,
                              EmployeeSkillRepository employeeSkillRepository,
                              RoleSkillRequirementRepository requirementRepository,
+                             EmployeeProfileRepository profileRepository,
                              UserRepository userRepository,
                              SkillRepository skillRepository,
                              TeamMembershipRepository teamMembershipRepository,
@@ -66,6 +68,7 @@ public class AssessmentService {
         this.skillGapRepository = skillGapRepository;
         this.employeeSkillRepository = employeeSkillRepository;
         this.requirementRepository = requirementRepository;
+        this.profileRepository = profileRepository;
         this.userRepository = userRepository;
         this.skillRepository = skillRepository;
         this.teamMembershipRepository = teamMembershipRepository;
@@ -689,13 +692,23 @@ public class AssessmentService {
 
     @Transactional
     public List<SkillGapDto> recalculateSkillGapsForUser(User user) {
-        String targetRole = user.getRequestedRole() != null
-                ? user.getRequestedRole().name()
-                : "Full Stack Developer";
+        String targetRole = null;
+        if (profileRepository != null) {
+            Optional<EmployeeProfile> profile = profileRepository.findByUserId(user.getId());
+            if (profile.isPresent() && profile.get().getJobRole() != null && !profile.get().getJobRole().isBlank()) {
+                targetRole = profile.get().getJobRole().trim();
+            }
+        }
+        if (targetRole == null && user.getRequestedRole() != null) {
+            targetRole = user.getRequestedRole().name();
+        }
+        if (targetRole == null) {
+            targetRole = "Software Developer";
+        }
 
         List<RoleSkillRequirement> requirements = requirementRepository.findByJobRole(targetRole);
         if (requirements.isEmpty()) {
-            requirements = requirementRepository.findByJobRole("Full Stack Developer");
+            requirements = requirementRepository.findByJobRole("Software Developer");
         }
         if (requirements.isEmpty()) {
             requirements = requirementRepository.findAll();

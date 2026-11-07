@@ -106,4 +106,39 @@ class MentorshipRequestServiceTest {
         verify(assignmentRepository, times(1)).save(any(MentorAssignment.class));
         verify(notificationService, times(1)).createNotification(eq(employee), anyString(), anyString(), anyString(), anyString());
     }
+
+    @Test
+    @DisplayName("Employee cancelling own pending request succeeds")
+    void testCancelRequest_Success() {
+        MentorshipRequest request = new MentorshipRequest(mentor, employee, "Looking for mentorship");
+        request.setStatus("PENDING");
+
+        when(userRepository.findByEmail("jane@example.com")).thenReturn(Optional.of(employee));
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+        when(requestRepository.save(any(MentorshipRequest.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        MentorshipRequestResponseDto res = mentorshipRequestService.cancelRequest("jane@example.com", 1L);
+
+        assertNotNull(res);
+        assertEquals("CANCELLED", res.status());
+        assertEquals("Cancelled by employee.", res.responseNote());
+    }
+
+    @Test
+    @DisplayName("Non-owner cannot cancel request")
+    void testCancelRequest_Forbidden() {
+        MentorshipRequest request = new MentorshipRequest(mentor, employee, "Looking for mentorship");
+        User otherUser = new User();
+        try {
+            Field idField = User.class.getDeclaredField("id");
+            idField.setAccessible(true);
+            idField.set(otherUser, 999L);
+        } catch (Exception ignored) {}
+
+        when(userRepository.findByEmail("other@example.com")).thenReturn(Optional.of(otherUser));
+        when(requestRepository.findById(1L)).thenReturn(Optional.of(request));
+
+        ApiException ex = assertThrows(ApiException.class, () -> mentorshipRequestService.cancelRequest("other@example.com", 1L));
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+    }
 }

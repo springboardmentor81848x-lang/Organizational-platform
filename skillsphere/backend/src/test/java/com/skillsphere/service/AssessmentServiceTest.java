@@ -40,6 +40,8 @@ class AssessmentServiceTest {
     @Mock
     private SkillGapRepository skillGapRepository;
     @Mock
+    private EmployeeProfileRepository profileRepository;
+    @Mock
     private EmployeeSkillRepository employeeSkillRepository;
     @Mock
     private RoleSkillRequirementRepository requirementRepository;

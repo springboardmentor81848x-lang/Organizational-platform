@@ -15,5 +15,8 @@ public interface EmployeeProfileRepository extends JpaRepository<EmployeeProfile
     @Query("select p from EmployeeProfile p join fetch p.user where lower(p.user.email) = lower(:email)")
     Optional<EmployeeProfile> findByUserEmail(@Param("email") String email);
 
+    @Query("select p from EmployeeProfile p join fetch p.user")
+    java.util.List<EmployeeProfile> findAllWithUser();
+
     boolean existsByUserId(Long userId);
 }

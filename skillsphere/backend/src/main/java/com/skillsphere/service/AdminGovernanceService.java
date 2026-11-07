@@ -94,6 +94,22 @@ public class AdminGovernanceService {
     }
 
     @Transactional
+    public SupportTicketDto closeMyTicket(String email, Long ticketId) {
+        User user = getUserByEmail(email);
+        SupportTicket t = supportTicketRepository.findById(ticketId)
+                .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Ticket not found."));
+
+        if (!t.getUser().getId().equals(user.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "You are not authorized to close this ticket.");
+        }
+
+        t.setStatus("CLOSED");
+        t.setUpdatedAt(Instant.now());
+        SupportTicket saved = supportTicketRepository.save(t);
+        return toTicketDto(saved);
+    }
+
+    @Transactional
     public PlatformFeedbackDto submitFeedback(String email, PlatformFeedbackDto.CreateRequest req) {
         User user = getUserByEmail(email);
         PlatformFeedback fb = new PlatformFeedback(

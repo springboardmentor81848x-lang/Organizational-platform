@@ -142,6 +142,13 @@ public class MentorshipController {
         return mentorshipRequestService.respondToRequest(auth.getName(), requestId, request);
     }
 
+    @PatchMapping("/requests/{requestId}/cancel")
+    public MentorshipRequestResponseDto cancelRequest(
+            @PathVariable Long requestId,
+            Authentication auth) {
+        return mentorshipRequestService.cancelRequest(auth.getName(), requestId);
+    }
+
     @PostMapping("/resources")
     @ResponseStatus(HttpStatus.CREATED)
     public SharedResourceDto shareResource(

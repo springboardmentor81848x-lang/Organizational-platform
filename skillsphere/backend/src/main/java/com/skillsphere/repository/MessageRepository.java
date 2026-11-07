@@ -18,4 +18,11 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     @Query("select count(m) from Message m where m.conversation.id = :convId and m.createdAt > :since and m.sender.id <> :userId")
     long countUnreadMessages(@Param("convId") Long convId, @Param("since") Instant since, @Param("userId") Long userId);
+
+    @Query("select count(m) from Message m join ConversationParticipant cp on cp.conversation.id = m.conversation.id " +
+           "where cp.user.id = :userId and m.sender.id <> :userId and (cp.lastReadAt is null or m.createdAt > cp.lastReadAt)")
+    long countTotalUnreadForUser(@Param("userId") Long userId);
+
+    @Query("select m from Message m join fetch m.sender where m.conversation.id = :convId order by m.createdAt desc")
+    List<Message> findByConversationIdPaged(@Param("convId") Long convId, Pageable pageable);
 }

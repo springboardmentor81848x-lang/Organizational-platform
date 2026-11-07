@@ -16,16 +16,23 @@ import {
   submitSessionFeedback,
   updateGoalStatus,
   updateSessionStatus,
+  createMentorshipRequest,
+  getMySentMentorshipRequests,
+  cancelMentorshipRequest,
 } from "../../services/mentorshipService.js";
 
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "—");
 const fmtShortDate = (iso) => (iso ? new Date(iso).toLocaleDateString([], { dateStyle: "medium" }) : "—");
 
-export default function MentorshipHub() {
-  const [tab, setTab] = useState("my-mentorship"); // "my-mentorship" | "directory" | "mentor-space"
+export default function MentorshipHub({ initialTab = "my-mentorship" }) {
+  const [tab, setTab] = useState(initialTab); // "my-mentorship" | "directory" | "requests" | "mentor-space"
   const [mentorStatus, setMentorStatus] = useState(null);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  useEffect(() => {
+    if (initialTab) setTab(initialTab);
+  }, [initialTab]);
 
   // Check mentor status
   useEffect(() => {
@@ -72,6 +79,15 @@ export default function MentorshipHub() {
         </button>
 
         <button
+          className={`tab-btn ${tab === "requests" ? "is-active" : ""}`}
+          onClick={() => { setTab("requests"); clearMessages(); }}
+          role="tab"
+          aria-selected={tab === "requests"}
+        >
+          <Icon name="clipboard" size={17} /> Mentorship Requests
+        </button>
+
+        <button
           className={`tab-btn ${tab === "mentor-space" ? "is-active" : ""}`}
           onClick={() => { setTab("mentor-space"); clearMessages(); }}
           role="tab"
@@ -94,7 +110,19 @@ export default function MentorshipHub() {
         )}
 
         {tab === "directory" && (
-          <ExpertDirectoryView setError={setError} />
+          <ExpertDirectoryView
+            setError={setError}
+            setSuccess={setSuccess}
+            onGoToRequests={() => setTab("requests")}
+          />
+        )}
+
+        {tab === "requests" && (
+          <MentorshipRequestsView
+            setError={setError}
+            setSuccess={setSuccess}
+            onGoToDirectory={() => setTab("directory")}
+          />
         )}
 
         {tab === "mentor-space" && (
@@ -392,11 +420,16 @@ function MyMentorshipView({ onGoToDirectory, setError, setSuccess }) {
 /* =====================================================================
    TAB 2: EXPERT DIRECTORY VIEW
    ===================================================================== */
-function ExpertDirectoryView({ setError }) {
+function ExpertDirectoryView({ setError, setSuccess, onGoToRequests }) {
   const [mentors, setMentors] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [deptFilter, setDeptFilter] = useState("");
+
+  // Request mentorship modal state
+  const [requestingMentor, setRequestingMentor] = useState(null);
+  const [requestMessage, setRequestMessage] = useState("");
+  const [sendingRequest, setSendingRequest] = useState(false);
 
   const fetchDirectory = useCallback(() => {
     setLoading(true);
@@ -412,6 +445,29 @@ function ExpertDirectoryView({ setError }) {
     }, 250);
     return () => clearTimeout(timer);
   }, [fetchDirectory]);
+
+  const handleSendRequest = async (e) => {
+    e.preventDefault();
+    if (!requestingMentor || !requestMessage.trim()) return;
+    setSendingRequest(true);
+    setError("");
+    try {
+      await createMentorshipRequest({
+        mentorId: requestingMentor.userId,
+        message: requestMessage.trim(),
+      });
+      if (setSuccess) {
+        setSuccess(`Mentorship request successfully sent to ${requestingMentor.fullName}!`);
+      }
+      setRequestingMentor(null);
+      setRequestMessage("");
+      if (onGoToRequests) onGoToRequests();
+    } catch (err) {
+      setError(parseApiError(err).message);
+    } finally {
+      setSendingRequest(false);
+    }
+  };
 
   return (
     <div>
@@ -482,14 +538,205 @@ function ExpertDirectoryView({ setError }) {
                 </div>
               </div>
 
-              <div className="expert-footer">
-                <small className="muted">Capacity: {m.currentMenteesCount} / {m.maxMentees} mentees</small>
-                <small className="muted">{m.email}</small>
+              <div className="expert-footer" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px", borderTop: "1px solid #eef2f6", paddingTop: "10px" }}>
+                <div>
+                  <small className="muted" style={{ display: "block" }}>Capacity: {m.currentMenteesCount} / {m.maxMentees} mentees</small>
+                  <small className="muted">{m.email}</small>
+                </div>
+                {m.isAvailable && (
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    style={{ fontSize: "0.82rem", padding: "6px 12px" }}
+                    onClick={() => {
+                      setRequestingMentor(m);
+                      setRequestMessage(`Hello ${m.fullName.split(" ")[0]}, I would like to request 1-on-1 mentorship to help strengthen my technical capabilities and development goals.`);
+                    }}
+                  >
+                    Request Mentorship &rarr;
+                  </button>
+                )}
               </div>
             </article>
           ))}
         </div>
       )}
+
+      {/* Request Mentorship Modal */}
+      {requestingMentor && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(11,37,69,0.45)",
+            backdropFilter: "blur(4px)",
+            display: "grid",
+            placeItems: "center",
+            zIndex: 999,
+            padding: "20px",
+          }}
+        >
+          <div className="panel" style={{ width: "100%", maxWidth: "480px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px" }}>
+              <h2 style={{ margin: 0, fontSize: "1.1rem" }}>Request Mentorship: {requestingMentor.fullName}</h2>
+              <button type="button" className="btn btn--ghost" onClick={() => setRequestingMentor(null)} style={{ padding: "4px 8px" }}>
+                <Icon name="x" size={18} />
+              </button>
+            </div>
+            <form onSubmit={handleSendRequest} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              <p style={{ fontSize: "0.88rem", color: "#64748b", margin: 0 }}>
+                {requestingMentor.jobRole} · {requestingMentor.department}
+              </p>
+              <div>
+                <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "4px" }}>
+                  Your Message to the Mentor
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  value={requestMessage}
+                  onChange={(e) => setRequestMessage(e.target.value)}
+                  placeholder="Introduce yourself and outline your learning goals..."
+                  style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1.5px solid #e2e9f3" }}
+                />
+              </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "8px" }}>
+                <button type="button" className="btn btn--ghost" onClick={() => setRequestingMentor(null)}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn--primary" disabled={sendingRequest}>
+                  {sendingRequest ? "Sending…" : "Send Request"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* =====================================================================
+   TAB: MENTORSHIP REQUESTS VIEW (EMPLOYEE SENT REQUESTS)
+   ===================================================================== */
+function MentorshipRequestsView({ setError, setSuccess, onGoToDirectory }) {
+  const [requests, setRequests] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchRequests = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await getMySentMentorshipRequests();
+      setRequests(data);
+    } catch (err) {
+      setError(parseApiError(err).message);
+    } finally {
+      setLoading(false);
+    }
+  }, [setError]);
+
+  useEffect(() => {
+    fetchRequests();
+  }, [fetchRequests]);
+
+  const handleCancel = async (id) => {
+    if (!window.confirm("Are you sure you want to cancel this mentorship request?")) return;
+    if (setError) setError("");
+    if (setSuccess) setSuccess("");
+    try {
+      await cancelMentorshipRequest(id);
+      if (setSuccess) setSuccess("Mentorship request cancelled.");
+      fetchRequests();
+    } catch (err) {
+      if (setError) setError(parseApiError(err).message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="panel" style={{ textAlign: "center", padding: "3rem" }}>
+        <Spinner /> Loading your mentorship requests…
+      </div>
+    );
+  }
+
+  if (requests.length === 0) {
+    return (
+      <section className="panel empty-state">
+        <span className="empty-state__icon"><Icon name="users" size={32} /></span>
+        <h2>No Mentorship Requests Sent</h2>
+        <p>You haven't requested mentorship from any experts yet. Browse the expert directory to find a mentor.</p>
+        <button className="btn btn--primary" onClick={onGoToDirectory} style={{ marginTop: "1rem" }}>
+          Browse Mentors <Icon name="arrow" size={16} />
+        </button>
+      </section>
+    );
+  }
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+      <div className="section-heading">
+        <div>
+          <h2>Sent Mentorship Requests ({requests.length})</h2>
+          <p className="muted">Track the review status of your direct 1-on-1 mentorship requests.</p>
+        </div>
+      </div>
+      <div className="table-wrap panel">
+        <table>
+          <thead>
+            <tr>
+              <th>Mentor</th>
+              <th>Your Message</th>
+              <th>Status</th>
+              <th>Sent Date</th>
+              <th>Response Note</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {requests.map((r) => (
+              <tr key={r.id}>
+                <td>
+                  <strong>{r.mentorName}</strong>
+                  <div style={{ fontSize: "0.82rem", color: "#64748b" }}>{r.mentorHeadline}</div>
+                </td>
+                <td><div style={{ maxWidth: "280px", whiteSpace: "pre-wrap", fontSize: "0.85rem" }}>{r.message}</div></td>
+                <td>
+                  <span
+                    className="badge"
+                    style={{
+                      background: r.status === "ACCEPTED" ? "#e6f6ee" : (r.status === "REJECTED" ? "#fde8e8" : (r.status === "CANCELLED" ? "#f1f5f9" : "#fff4d6")),
+                      color: r.status === "ACCEPTED" ? "#17754f" : (r.status === "REJECTED" ? "#b91c1c" : (r.status === "CANCELLED" ? "#64748b" : "#8a5a00")),
+                    }}
+                  >
+                    {r.status}
+                  </span>
+                </td>
+                <td>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</td>
+                <td>
+                  <div style={{ fontSize: "0.85rem", color: r.responseNote ? "#1e293b" : "#94a3b8" }}>
+                    {r.responseNote || "Awaiting mentor review"}
+                  </div>
+                </td>
+                <td>
+                  {r.status === "PENDING" ? (
+                    <button
+                      type="button"
+                      className="btn btn--ghost"
+                      onClick={() => handleCancel(r.id)}
+                      style={{ fontSize: "0.78rem", padding: "4px 8px" }}
+                    >
+                      Cancel Request
+                    </button>
+                  ) : (
+                    <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>—</span>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

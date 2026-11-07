@@ -17,6 +17,10 @@ public class Conversation {
     @Column(length = 140)
     private String title;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
+    private Team team;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -37,6 +41,8 @@ public class Conversation {
     public void setType(String type) { this.type = type; }
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }
+    public Team getTeam() { return team; }
+    public void setTeam(Team team) { this.team = team; }
     public Instant getCreatedAt() { return createdAt; }
     public Instant getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Instant updatedAt) { this.updatedAt = updatedAt; }

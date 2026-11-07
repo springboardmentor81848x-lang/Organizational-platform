@@ -334,7 +334,37 @@ public class ReportService {
 
     @Transactional(readOnly = true)
     public String generateSkillGapsCsv() {
-        List<SkillGap> gaps = skillGapRepository.findAll();
+        return generateSkillGapsCsv(null);
+    }
+
+    @Transactional(readOnly = true)
+    public String generateSkillGapsCsv(String callerEmail) {
+        List<SkillGap> gaps;
+        if (callerEmail == null || callerEmail.isBlank()) {
+            gaps = skillGapRepository.findAll();
+        } else {
+            User caller = getUserByEmail(callerEmail);
+            Role role = caller.getRole();
+            if (role == Role.ADMIN || role == Role.HR_SPECIALIST) {
+                gaps = skillGapRepository.findAll();
+            } else if (role == Role.DEPARTMENT_HEAD) {
+                Optional<Department> dept = departmentRepository.findByHeadUserId(caller.getId());
+                if (dept.isEmpty()) {
+                    gaps = Collections.emptyList();
+                } else {
+                    List<TeamMembership> memberships = membershipRepository.findByDepartmentId(dept.get().getId());
+                    List<Long> userIds = memberships.stream().map(m -> m.getUser().getId()).distinct().toList();
+                    gaps = userIds.isEmpty() ? Collections.emptyList() : skillGapRepository.findByUserIds(userIds);
+                }
+            } else if (role == Role.MANAGER) {
+                List<TeamMembership> memberships = membershipRepository.findByManagerUserId(caller.getId());
+                List<Long> userIds = memberships.stream().map(m -> m.getUser().getId()).distinct().toList();
+                gaps = userIds.isEmpty() ? Collections.emptyList() : skillGapRepository.findByUserIds(userIds);
+            } else {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Access denied. You are not authorized to export skill gaps.");
+            }
+        }
+
         StringBuilder csv = new StringBuilder();
         csv.append("User ID,User Name,Email,Skill Name,Category,Current Level,Required Level,Gap Size,Priority,Calculated At\n");
         for (SkillGap g : gaps) {

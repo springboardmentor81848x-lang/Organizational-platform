@@ -1,6 +1,9 @@
 package com.skillsphere.controller;
 
+import com.skillsphere.dto.EmployeeDashboardOverviewDto;
+import com.skillsphere.service.EmployeeDashboardService;
 import com.skillsphere.service.UserService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,15 +21,23 @@ import java.util.Map;
 public class DashboardController {
 
     private final UserService userService;
+    private final EmployeeDashboardService employeeDashboardService;
 
-    public DashboardController(UserService userService) {
+    public DashboardController(UserService userService, EmployeeDashboardService employeeDashboardService) {
         this.userService = userService;
+        this.employeeDashboardService = employeeDashboardService;
     }
 
     @GetMapping("/employee")
     @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
     public Map<String, String> employee(Authentication auth) {
         return payload(auth, "Employee Workspace", "Measure skills, track learning paths, and connect with peer mentors.");
+    }
+
+    @GetMapping("/employee/overview")
+    @PreAuthorize("hasAnyRole('EMPLOYEE','ADMIN')")
+    public ResponseEntity<EmployeeDashboardOverviewDto> employeeOverview(Authentication auth) {
+        return ResponseEntity.ok(employeeDashboardService.getOverview(auth.getName()));
     }
 
     @GetMapping("/manager")

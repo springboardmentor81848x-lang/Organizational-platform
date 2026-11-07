@@ -36,6 +36,9 @@ public class Course {
     @Column(name = "thumbnail_url", length = 500)
     private String thumbnailUrl;
 
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -49,6 +52,7 @@ public class Course {
         this.durationHours = durationHours;
         this.provider = provider;
         this.courseUrl = courseUrl;
+        this.isActive = true;
         this.createdAt = Instant.now();
     }
 
@@ -61,6 +65,7 @@ public class Course {
         this.provider = provider;
         this.courseUrl = courseUrl;
         this.thumbnailUrl = thumbnailUrl;
+        this.isActive = true;
         this.createdAt = Instant.now();
     }
 
@@ -81,5 +86,7 @@ public class Course {
     public void setCourseUrl(String courseUrl) { this.courseUrl = courseUrl; }
     public String getThumbnailUrl() { return thumbnailUrl; }
     public void setThumbnailUrl(String thumbnailUrl) { this.thumbnailUrl = thumbnailUrl; }
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
     public Instant getCreatedAt() { return createdAt; }
 }

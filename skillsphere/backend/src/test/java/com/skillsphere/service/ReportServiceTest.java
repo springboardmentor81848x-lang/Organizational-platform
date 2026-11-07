@@ -222,4 +222,63 @@ class ReportServiceTest {
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getStatus());
     }
+
+    @Test
+    @DisplayName("Manager exporting skill gaps CSV receives only scoped team members")
+    void testGenerateSkillGapsCsv_Manager_ScopedSuccess() throws Exception {
+        when(userRepository.findByEmail("manager1@example.com")).thenReturn(Optional.of(manager));
+
+        User emp = createUser(20L, "Team Employee", "emp@example.com", Role.EMPLOYEE);
+        TeamMembership tm = new TeamMembership(team, emp, "Software Developer");
+        when(membershipRepository.findByManagerUserId(manager.getId())).thenReturn(List.of(tm));
+
+        SkillCategory cat = new SkillCategory("Technical", "Technical Skills");
+        setPrivateId(cat, 1L);
+        Skill skill = new Skill(cat, "Java", "Core Java");
+        setPrivateId(skill, 10L);
+        SkillGap gap = new SkillGap(emp, skill, 2, 4, 2, "HIGH");
+
+        when(skillGapRepository.findByUserIds(List.of(20L))).thenReturn(List.of(gap));
+
+        String csv = reportService.generateSkillGapsCsv("manager1@example.com");
+
+        assertNotNull(csv);
+        assertTrue(csv.contains("User ID,User Name,Email,Skill Name"));
+        assertTrue(csv.contains("Team Employee"));
+        assertTrue(csv.contains("emp@example.com"));
+        assertTrue(csv.contains("Java"));
+    }
+
+    @Test
+    @DisplayName("Unauthorized role (Employee) attempting to export skill gaps CSV throws 403 Forbidden")
+    void testGenerateSkillGapsCsv_Employee_ThrowsForbidden() throws Exception {
+        User employee = createUser(30L, "Regular Employee", "employee@example.com", Role.EMPLOYEE);
+        when(userRepository.findByEmail("employee@example.com")).thenReturn(Optional.of(employee));
+
+        ApiException ex = assertThrows(ApiException.class, () ->
+                reportService.generateSkillGapsCsv("employee@example.com"));
+
+        assertEquals(HttpStatus.FORBIDDEN, ex.getStatus());
+    }
+
+    @Test
+    @DisplayName("Admin exporting skill gaps CSV receives organization-wide records")
+    void testGenerateSkillGapsCsv_Admin_ReceivesAll() throws Exception {
+        when(userRepository.findByEmail("admin@example.com")).thenReturn(Optional.of(admin));
+
+        User emp = createUser(20L, "Org Employee", "orgemp@example.com", Role.EMPLOYEE);
+        SkillCategory cat = new SkillCategory("Technical", "Technical Skills");
+        setPrivateId(cat, 1L);
+        Skill skill = new Skill(cat, "SQL", "Database");
+        setPrivateId(skill, 11L);
+        SkillGap gap = new SkillGap(emp, skill, 1, 3, 2, "HIGH");
+
+        when(skillGapRepository.findAll()).thenReturn(List.of(gap));
+
+        String csv = reportService.generateSkillGapsCsv("admin@example.com");
+
+        assertNotNull(csv);
+        assertTrue(csv.contains("Org Employee"));
+        assertTrue(csv.contains("SQL"));
+    }
 }

@@ -4,6 +4,7 @@ import com.skillsphere.dto.*;
 import com.skillsphere.entity.*;
 import com.skillsphere.exception.ApiException;
 import com.skillsphere.repository.*;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -38,6 +39,7 @@ public class SkillService {
     private final SkillEvidenceRepository evidenceRepository;
     private final UserRepository userRepository;
     private final NotificationService notificationService;
+    private final AssessmentService assessmentService;
 
     public SkillService(SkillCategoryRepository categoryRepository,
                         SkillRepository skillRepository,
@@ -45,7 +47,8 @@ public class SkillService {
                         EmployeeSkillRepository employeeSkillRepository,
                         SkillEvidenceRepository evidenceRepository,
                         UserRepository userRepository,
-                        NotificationService notificationService) {
+                        NotificationService notificationService,
+                        @Lazy AssessmentService assessmentService) {
         this.categoryRepository = categoryRepository;
         this.skillRepository = skillRepository;
         this.requirementRepository = requirementRepository;
@@ -53,6 +56,7 @@ public class SkillService {
         this.evidenceRepository = evidenceRepository;
         this.userRepository = userRepository;
         this.notificationService = notificationService;
+        this.assessmentService = assessmentService;
     }
 
     @Transactional(readOnly = true)
@@ -71,41 +75,44 @@ public class SkillService {
 
     @Transactional
     public SkillDto createSkill(Long categoryId, String name, String description) {
-        SkillCategory cat = categoryRepository.findById(categoryId)
+        SkillCategory category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Category not found."));
-        Skill s = new Skill(cat, name.trim(), description);
-        Skill saved = skillRepository.save(s);
-        return new SkillDto(saved.getId(), cat.getId(), cat.getName(), saved.getName(), saved.getDescription());
-    }
 
-    @Transactional(readOnly = true)
-    public List<RoleRequirementDto> getAllRoleRequirements() {
-        return requirementRepository.findAll().stream()
-                .map(r -> new RoleRequirementDto(
-                        r.getId(),
-                        r.getJobRole(),
-                        r.getSkill().getId(),
-                        r.getSkill().getName(),
-                        r.getSkill().getCategory().getName(),
-                        r.getRequiredProficiency(),
-                        PROFICIENCY_TO_NUMERIC.getOrDefault(r.getRequiredProficiency(), 3),
-                        r.getPriority()
-                )).toList();
+        if (skillRepository.existsByNameIgnoreCase(name)) {
+            throw new ApiException(HttpStatus.CONFLICT, "A skill with this name already exists.");
+        }
+
+        Skill skill = new Skill(category, name.trim(), description);
+        Skill saved = skillRepository.save(skill);
+        return new SkillDto(saved.getId(), category.getId(), category.getName(), saved.getName(), saved.getDescription());
     }
 
     @Transactional(readOnly = true)
     public List<RoleRequirementDto> getRequirementsForRole(String jobRole) {
-        return requirementRepository.findByJobRole(jobRole).stream()
-                .map(r -> new RoleRequirementDto(
-                        r.getId(),
-                        r.getJobRole(),
-                        r.getSkill().getId(),
-                        r.getSkill().getName(),
-                        r.getSkill().getCategory().getName(),
-                        r.getRequiredProficiency(),
-                        PROFICIENCY_TO_NUMERIC.getOrDefault(r.getRequiredProficiency(), 3),
-                        r.getPriority()
-                )).toList();
+        return requirementRepository.findByJobRole(jobRole).stream().map(r -> new RoleRequirementDto(
+                r.getId(),
+                r.getJobRole(),
+                r.getSkill().getId(),
+                r.getSkill().getName(),
+                r.getSkill().getCategory().getName(),
+                r.getRequiredProficiency(),
+                PROFICIENCY_TO_NUMERIC.getOrDefault(r.getRequiredProficiency(), 3),
+                r.getPriority()
+        )).toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RoleRequirementDto> getAllRoleRequirements() {
+        return requirementRepository.findAll().stream().map(r -> new RoleRequirementDto(
+                r.getId(),
+                r.getJobRole(),
+                r.getSkill().getId(),
+                r.getSkill().getName(),
+                r.getSkill().getCategory().getName(),
+                r.getRequiredProficiency(),
+                PROFICIENCY_TO_NUMERIC.getOrDefault(r.getRequiredProficiency(), 3),
+                r.getPriority()
+        )).toList();
     }
 
     @Transactional
@@ -157,6 +164,12 @@ public class SkillService {
         es.setProficiencyLevel(proficiencyLevel);
         es.setUpdatedAt(Instant.now());
         EmployeeSkill saved = employeeSkillRepository.save(es);
+
+        // Automatically trigger gap recalculation so skill gaps update dynamically in PostgreSQL
+        try {
+            assessmentService.recalculateSkillGapsForUser(user);
+        } catch (Exception ignored) {}
+
         return toEmployeeSkillDto(saved);
     }
 
@@ -187,6 +200,23 @@ public class SkillService {
     }
 
     @Transactional(readOnly = true)
+    public List<SkillEvidenceDto> getUserEvidence(String email) {
+        User user = getUserByEmail(email);
+        return evidenceRepository.findByUserId(user.getId()).stream()
+                .map(ev -> new SkillEvidenceDto(
+                        ev.getId(),
+                        ev.getEmployeeSkill().getId(),
+                        ev.getEmployeeSkill().getSkill().getName(),
+                        ev.getTitle(),
+                        ev.getDescription(),
+                        ev.getEvidenceUrl(),
+                        ev.getStatus(),
+                        ev.getReviewedBy() != null ? ev.getReviewedBy().getFullName() : null,
+                        ev.getCreatedAt()
+                )).toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<SkillEvidenceDto> getPendingEvidence() {
         return evidenceRepository.findByStatus("PENDING").stream().map(ev -> new SkillEvidenceDto(
                 ev.getId(),
@@ -214,6 +244,10 @@ public class SkillService {
             es.setVerified(true);
             es.setVerifiedBy(reviewer);
             employeeSkillRepository.save(es);
+
+            try {
+                assessmentService.recalculateSkillGapsForUser(es.getUser());
+            } catch (Exception ignored) {}
         }
 
         SkillEvidence saved = evidenceRepository.save(ev);

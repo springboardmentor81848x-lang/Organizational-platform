@@ -26,6 +26,9 @@ public class RoleSkillRequirement {
     @Column(nullable = false, length = 20)
     private String priority = "HIGH"; // HIGH, MEDIUM, LOW
 
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
@@ -36,6 +39,7 @@ public class RoleSkillRequirement {
         this.skill = skill;
         this.requiredProficiency = requiredProficiency;
         this.priority = priority;
+        this.isActive = true;
         this.createdAt = Instant.now();
     }
 
@@ -48,5 +52,7 @@ public class RoleSkillRequirement {
     public void setRequiredProficiency(String requiredProficiency) { this.requiredProficiency = requiredProficiency; }
     public String getPriority() { return priority; }
     public void setPriority(String priority) { this.priority = priority; }
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
     public Instant getCreatedAt() { return createdAt; }
 }

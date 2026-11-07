@@ -4,6 +4,7 @@ import Alert from "../../components/Alert.jsx";
 import {
   getMySupportTickets,
   createSupportTicket,
+  closeSupportTicket,
   submitPlatformFeedback,
 } from "../../services/platformService.js";
 import { parseApiError } from "../../services/apiClient.js";
@@ -48,13 +49,23 @@ export default function HelpSupportSection() {
     } catch (err) { setError(parseApiError(err).message); }
   };
 
+  const handleCloseTicket = async (ticketId) => {
+    if (!window.confirm("Are you sure you want to mark this support ticket as closed?")) return;
+    setError(""); setSuccess("");
+    try {
+      await closeSupportTicket(ticketId);
+      setSuccess("Support ticket marked as closed.");
+      loadTickets();
+    } catch (err) { setError(parseApiError(err).message); }
+  };
+
   const handleSubmitFeedback = async (e) => {
     e.preventDefault();
     if (!comments) return;
     setError(""); setSuccess("");
     try {
       await submitPlatformFeedback({ category, rating: Number(rating), comments });
-      setSuccess("Thank you for your feedback!");
+      setSuccess("Thank you for your feedback! Your review helps us improve SkillSphere.");
       setComments("");
     } catch (err) { setError(parseApiError(err).message); }
   };
@@ -176,7 +187,15 @@ export default function HelpSupportSection() {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>Ticket #</th><th>Subject</th><th>Priority</th><th>Status</th><th>Admin Notes</th><th>Submitted</th></tr>
+                <tr>
+                  <th>Ticket #</th>
+                  <th>Subject</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Admin Notes</th>
+                  <th>Submitted</th>
+                  <th>Actions</th>
+                </tr>
               </thead>
               <tbody>
                 {tickets.map((t) => (
@@ -184,9 +203,33 @@ export default function HelpSupportSection() {
                     <td>#{t.id}</td>
                     <td><strong>{t.subject}</strong><div style={{ fontSize: "0.82rem", color: "#5b6d86" }}>{t.description}</div></td>
                     <td><span className="badge">{t.priority}</span></td>
-                    <td><span className={`badge ${t.status === "OPEN" ? "badge--warn" : ""}`}>{t.status}</span></td>
+                    <td>
+                      <span
+                        className="badge"
+                        style={{
+                          background: t.status === "CLOSED" ? "#f1f5f9" : (t.status === "RESOLVED" ? "#e6f6ee" : "#fff4d6"),
+                          color: t.status === "CLOSED" ? "#64748b" : (t.status === "RESOLVED" ? "#17754f" : "#8a5a00"),
+                        }}
+                      >
+                        {t.status}
+                      </span>
+                    </td>
                     <td>{t.adminNotes || "—"}</td>
                     <td>{new Date(t.createdAt).toLocaleDateString()}</td>
+                    <td>
+                      {t.status !== "CLOSED" ? (
+                        <button
+                          type="button"
+                          className="btn btn--ghost"
+                          onClick={() => handleCloseTicket(t.id)}
+                          style={{ fontSize: "0.78rem", padding: "4px 8px" }}
+                        >
+                          Close Ticket
+                        </button>
+                      ) : (
+                        <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Closed</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

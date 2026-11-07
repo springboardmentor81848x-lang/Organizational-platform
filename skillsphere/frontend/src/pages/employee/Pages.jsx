@@ -8,6 +8,13 @@ import {
   markAllNotificationsRead,
   markNotificationRead,
   getMyReport,
+  getEmployeeDashboardOverview,
+  changePassword,
+  getMyLearning,
+  updateCourseProgress,
+  getMyCertificates,
+  enrollInCourse,
+  getMySubmissions,
 } from "../../services/platformService.js";
 import { parseApiError } from "../../services/apiClient.js";
 
@@ -26,33 +33,55 @@ function EmptyState({ icon = "clipboard", title, text, actionLabel, onAction }) 
 function AiBadge({ source }) {
   return source === "gemini"
     ? <span className="ai-badge"><Icon name="sparkles" size={14}/> Powered by Google Gemini</span>
-    : <span className="ai-badge ai-badge--rules">Standard recommendations</span>;
+    : <span className="ai-badge ai-badge--rules">Verified Catalogue Recommendations</span>;
 }
 
 function CourseSkeleton() {
   return <div className="ai-loading" role="status" aria-live="polite">
-    <div className="ai-loading__head"><span className="ai-spinner" aria-hidden="true"/><div><strong>Gemini is analysing your results…</strong><small>Building a learning path from your skill gaps. This usually takes a few seconds.</small></div></div>
+    <div className="ai-loading__head"><span className="ai-spinner" aria-hidden="true"/><div><strong>Gemini is analysing your results against verified course catalogue…</strong><small>Matching NPTEL, SWAYAM, and Coursera curriculum to your skill gaps. This takes a few seconds.</small></div></div>
     <div className="course-grid">{[0, 1, 2, 3].map((i) => <div className="course-card skeleton" key={i}><span className="sk sk--sm"/><span className="sk sk--lg"/><span className="sk"/><span className="sk sk--md"/></div>)}</div>
   </div>;
 }
 
-export function CourseCard({ course, done, onToggle }) {
-  const link = `https://www.google.com/search?q=${encodeURIComponent(course.searchQuery || course.title)}`;
+export function CourseCard({ course, onEnroll, isEnrolled }) {
+  const providerLink = course.courseUrl || `https://www.google.com/search?q=${encodeURIComponent(course.searchQuery || course.title)}`;
+  const providerClass = course.provider ? course.provider.toLowerCase().replace(/[^a-z0-9]/g, "") : "general";
+
   return <article className="course-card">
-    <div className="course-card__top"><span className={priorityClass(course.priority === "Low" ? "on-track" : course.priority)}>{course.priority} priority</span><span className="badge">{course.level}</span></div>
-    <p className="eyebrow">{course.skill}</p>
+    <div className="course-card__top">
+      <span className={priorityClass(course.priority === "Low" ? "on-track" : course.priority)}>{course.priority} priority</span>
+      <span className="badge" style={{ background: "#e0edff", color: "#1d4ed8", fontWeight: 700 }}>{course.provider || "Catalogue"}</span>
+    </div>
+    <p className="eyebrow">{course.skill} • {course.level}</p>
     <h3>{course.title}</h3>
     <p className="course-reason">{course.reason}</p>
     {course.topics?.length > 0 && <ul className="chips">{course.topics.map((t) => <li key={t}>{t}</li>)}</ul>}
-    <div className="course-meta"><span><Icon name="clock" size={15}/> {course.duration}</span><span><Icon name="book" size={15}/> {course.provider}</span></div>
+    <div className="course-meta">
+      <span><Icon name="clock" size={15}/> {course.duration}</span>
+      <span><Icon name="book" size={15}/> Level: {course.level}</span>
+    </div>
     <div className="course-actions">
-      <a className="btn btn--ghost" href={link} target="_blank" rel="noopener noreferrer">Find course <Icon name="external" size={15}/></a>
-      <button className={`btn ${done ? "btn--complete" : "btn--primary"}`} onClick={onToggle} aria-pressed={done}>{done ? <><Icon name="check" size={16}/> Completed</> : "Mark complete"}</button>
+      <a className="btn btn--ghost" href={providerLink} target="_blank" rel="noopener noreferrer">
+        View on {course.provider || "Web"} <Icon name="external" size={14}/>
+      </a>
+      {isEnrolled ? (
+        <span className="badge" style={{ background: "#e6f6ee", color: "#17754f", padding: "8px 12px", display: "inline-flex", alignItems: "center", gap: "6px" }}>
+          <Icon name="check" size={14} /> In My Learning
+        </span>
+      ) : (
+        <button
+          type="button"
+          className="btn btn--primary"
+          onClick={() => onEnroll && onEnroll(course)}
+        >
+          Enroll in Course &rarr;
+        </button>
+      )}
     </div>
   </article>;
 }
 
-function RecommendationBlock({ recs, completed, toggleCourse, onRetry, limit }) {
+function RecommendationBlock({ recs, onEnroll, enrolledCourseIds = [], onRetry, limit }) {
   if (recs.status === "loading") return <CourseSkeleton/>;
   if (recs.status === "error") return <div className="ai-error"><Icon name="alert" size={22}/><div><strong>We couldn't generate recommendations</strong><p>{recs.error}</p></div><button className="btn btn--primary" onClick={onRetry}><Icon name="refresh" size={16}/> Try again</button></div>;
   if (!recs.data) return null;
@@ -60,96 +89,293 @@ function RecommendationBlock({ recs, completed, toggleCourse, onRetry, limit }) 
   return <>
     <div className="ai-summary"><span className="ai-summary__icon"><Icon name="lightbulb" size={22}/></span><div><AiBadge source={recs.data.source}/><p>{recs.data.summary}</p></div></div>
     {recs.data.notice && <Alert type="success">{recs.data.notice}</Alert>}
-    <div className="course-grid">{list.map((c) => <CourseCard key={slug(c.title)} course={c} done={completed.includes(slug(c.title))} onToggle={() => toggleCourse(slug(c.title))}/>)}</div>
+    <div className="course-grid">
+      {list.map((c) => {
+        const isEnrolled = enrolledCourseIds.includes(c.id);
+        return <CourseCard key={c.id || slug(c.title)} course={c} isEnrolled={isEnrolled} onEnroll={onEnroll}/>;
+      })}
+    </div>
   </>;
 }
 
 /* ------------------------------------------------------------------ Overview */
-export function Overview({ user, assessment, latestSubmission, serverGaps = [], recs, progress, completed, setActivePage }) {
+export function Overview({ user, assessment, latestSubmission, serverGaps = [], recs, setActivePage }) {
+  const [overview, setOverview] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    getEmployeeDashboardOverview()
+      .then((data) => {
+        if (isMounted) setOverview(data);
+      })
+      .catch(() => {})
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
   const sub = latestSubmission || assessment;
-  const gapCount = serverGaps.length > 0
+  const gapCount = overview ? overview.activeGapsCount : (serverGaps.length > 0
     ? serverGaps.filter((s) => (s.gapSize ?? s.gap ?? 0) > 0).length
-    : (sub?.skillResults ? sub.skillResults.filter((s) => s.gap > 0).length : null);
+    : (sub?.skillResults ? sub.skillResults.filter((s) => s.gap > 0).length : null));
   const courseCount = recs.data?.recommendations?.length ?? 0;
-  const steps = [
-    { icon: "clipboard", title: "Take a skill assessment", text: "Official assessments calibrated to industry role targets." },
-    { icon: "sparkles", title: "AI analyses your gaps", text: "Google Gemini studies your results and role requirements." },
-    { icon: "book", title: "Follow your learning path", text: "Get courses ranked by what you need most." },
-  ];
+
   return <>
-    <section className="hero"><div><p className="eyebrow">SKILLSPHERE · EMPLOYEE WORKSPACE</p><h1>Welcome back, {user.fullName?.split(" ")[0] || "there"}</h1><p>Measure your skills, uncover knowledge gaps and get an AI-built learning path for your career.</p>
-      <button className="btn btn--light" onClick={() => setActivePage("assessment")}>{sub ? "Take assessment" : "Start assessment"} <Icon name="arrow" size={16}/></button></div>
-      <div className="hero__art" aria-hidden="true"><Icon name="sparkles" size={56} strokeWidth={1.4}/></div></section>
+    <section className="hero">
+      <div>
+        <p className="eyebrow">SKILLSPHERE · EMPLOYEE WORKSPACE</p>
+        <h1>Welcome back, {user.fullName?.split(" ")[0] || "there"}</h1>
+        <p>Measure your skills with AI-powered assessments, uncover real knowledge gaps, and follow catalogue courses calibrated for your role.</p>
+        <div style={{ display: "flex", gap: "10px", marginTop: "12px", flexWrap: "wrap" }}>
+          <button className="btn btn--light" onClick={() => setActivePage("assessment")}>
+            {sub ? "Take Assessment" : "Start First Assessment"} <Icon name="arrow" size={16}/>
+          </button>
+          <button className="btn btn--ghost" style={{ color: "#fff", borderColor: "rgba(255,255,255,0.4)" }} onClick={() => setActivePage("recommendations")}>
+            View Course Recommendations
+          </button>
+        </div>
+      </div>
+      <div className="hero__art" aria-hidden="true"><Icon name="sparkles" size={56} strokeWidth={1.4}/></div>
+    </section>
+
+    {/* Metric Cards - Backed by PostgreSQL */}
     <div className="stat-grid">
       <div className="stat-card">
         <span className="stat-icon"><Icon name="clipboard"/></span>
-        <span className="stat-label">Latest score</span>
-        <strong>{sub ? `${sub.score}%` : "—"}</strong>
-        <small>{sub ? (sub.correctAnswers !== undefined ? `${sub.correctAnswers} of ${sub.totalQuestions} correct (${sub.passed ? "Passed" : "Not passed"})` : `${sub.correct} of ${sub.total} correct`) : "No assessment taken yet"}</small>
+        <span className="stat-label">Latest Assessment</span>
+        <strong>{overview?.latestAssessmentScore !== null && overview?.latestAssessmentScore !== undefined ? `${overview.latestAssessmentScore}%` : (sub ? `${sub.score}%` : "—")}</strong>
+        <small>{overview?.latestAssessmentSkill ? `${overview.latestAssessmentSkill} evaluated` : (sub ? "Evaluated by server" : "No assessment taken yet")}</small>
       </div>
+
       <div className="stat-card">
         <span className="stat-icon"><Icon name="target"/></span>
-        <span className="stat-label">Knowledge gaps</span>
-        <strong>{gapCount !== null ? gapCount : "—"}</strong>
-        <small>{sub || serverGaps.length > 0 ? "Skills below target" : "Available after assessment"}</small>
+        <span className="stat-label">Active Skill Gaps</span>
+        <strong style={{ color: (gapCount || 0) > 0 ? "#b42318" : "#17754f" }}>{gapCount !== null ? gapCount : "—"}</strong>
+        <small>{gapCount === 0 ? "All skills on track!" : "Skills below target proficiency"}</small>
       </div>
+
       <div className="stat-card">
-        <span className="stat-icon"><Icon name="sparkles"/></span>
-        <span className="stat-label">AI recommendations</span>
-        <strong>{courseCount || "—"}</strong>
-        <small>{courseCount ? "Courses picked for you" : "Generated after assessment"}</small>
+        <span className="stat-icon"><Icon name="book"/></span>
+        <span className="stat-label">Active Learning</span>
+        <strong>{overview ? overview.activeLearningsCount : "0"}</strong>
+        <small>{overview ? `${overview.completedCoursesCount} completed courses` : "Courses in progress"}</small>
       </div>
+
       <div className="stat-card">
-        <span className="stat-icon"><Icon name="trending"/></span>
-        <span className="stat-label">Learning progress</span>
-        <strong>{progress}%</strong>
-        <small>{completed.length} course{completed.length === 1 ? "" : "s"} completed</small>
+        <span className="stat-icon"><Icon name="award"/></span>
+        <span className="stat-label">Certificates Earned</span>
+        <strong style={{ color: "#1d4ed8" }}>{overview ? overview.certificatesCount : "0"}</strong>
+        <small>Official verified credentials</small>
       </div>
     </div>
-    {(!sub && serverGaps.length === 0) ? (
-      <section className="panel"><div className="section-heading"><div><p className="eyebrow">HOW IT WORKS</p><h2>Your path in three steps</h2></div></div>
-        <div className="steps">{steps.map((s, i) => <div className="step" key={s.title}><span className="step__num">{i + 1}</span><span className="step__icon"><Icon name={s.icon}/></span><strong>{s.title}</strong><p>{s.text}</p></div>)}</div></section>
-    ) : (
-      <div className="two-col">
-        <section className="panel"><div className="section-heading"><div><p className="eyebrow">SKILL SNAPSHOT</p><h2>Where you stand</h2></div><button className="text-action" onClick={() => setActivePage("gaps")}>Full summary <Icon name="arrow" size={14}/></button></div>
-          <SkillBars results={serverGaps.length > 0 ? serverGaps : (sub?.skillResults || [])}/></section>
-        <section className="panel"><div className="section-heading"><div><p className="eyebrow">RECOMMENDED FOR YOU</p><h2>Next courses</h2></div><button className="text-action" onClick={() => setActivePage("courses")}>View all <Icon name="arrow" size={14}/></button></div>
-          {recs.status === "loading" && <p className="muted"><span className="ai-spinner ai-spinner--inline"/> Gemini is preparing your recommendations…</p>}
-          {recs.data?.recommendations?.slice(0, 3).map((c) => <div className="mini-course" key={slug(c.title)}><span className="course-dot"><Icon name="book" size={18}/></span><div><strong>{c.title}</strong><small>{c.skill} · {c.duration}</small></div><span className={priorityClass(c.priority === "Low" ? "on-track" : c.priority)}>{c.priority}</span></div>)}
-          {recs.status === "error" && <p className="muted">Recommendations are unavailable right now. Open the learning paths page to retry.</p>}
-        </section>
-      </div>
-    )}
+
+    {/* Two-Column Overview Content */}
+    <div className="two-col" style={{ marginTop: "24px" }}>
+      {/* Skill Gaps Snapshot */}
+      <section className="panel">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">SKILL BENCHMARK</p>
+            <h2>Proficiency vs Target</h2>
+          </div>
+          <button className="text-action" onClick={() => setActivePage("gaps")}>
+            Full Gap Summary <Icon name="arrow" size={14}/>
+          </button>
+        </div>
+        {serverGaps.length > 0 ? (
+          <SkillBars results={serverGaps}/>
+        ) : (
+          <p className="muted" style={{ padding: "12px 0" }}>
+            No skill gaps logged yet. Take a skill assessment to evaluate your technical competencies!
+          </p>
+        )}
+      </section>
+
+      {/* Recent PostgreSQL Activities */}
+      <section className="panel">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">ACTIVITY STREAM</p>
+            <h2>Recent Milestones</h2>
+          </div>
+          <button className="text-action" onClick={() => setActivePage("progress")}>
+            View Progress <Icon name="arrow" size={14}/>
+          </button>
+        </div>
+        {overview?.recentActivities?.length > 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "10px" }}>
+            {overview.recentActivities.map((act, idx) => (
+              <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: "12px", padding: "10px", borderRadius: "8px", background: "#f8faff", border: "1px solid #eef2f6" }}>
+                <span style={{ padding: "6px", borderRadius: "6px", background: act.type === "CERTIFICATE" ? "#e0edff" : (act.type === "ASSESSMENT" ? "#eff6ff" : "#e6f6ee"), color: act.type === "CERTIFICATE" ? "#1d4ed8" : (act.type === "ASSESSMENT" ? "#2563eb" : "#17754f") }}>
+                  <Icon name={act.type === "CERTIFICATE" ? "award" : (act.type === "ASSESSMENT" ? "clipboard" : "book")} size={16}/>
+                </span>
+                <div style={{ flex: 1 }}>
+                  <strong style={{ fontSize: "0.92rem", display: "block" }}>{act.title}</strong>
+                  <small style={{ color: "#64748b" }}>{act.description}</small>
+                </div>
+                <small style={{ color: "#94a3b8", fontSize: "0.75rem" }}>{act.timestamp ? new Date(act.timestamp).toLocaleDateString() : ""}</small>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{ padding: "16px 0", color: "#64748b", fontSize: "0.88rem" }}>
+            No recent activity recorded. Take an assessment or enroll in a recommended course to see your progress here!
+          </div>
+        )}
+      </section>
+    </div>
   </>;
 }
 
-/* -------------------------------------------------------------------- Profile */
+/* -------------------------------------------------------------------- Profile (+ Change Password) */
 export function Profile({ profile, setProfile, onSave, saved }) {
   const set = (k) => (e) => setProfile({ ...profile, [k]: e.target.value });
+
+  // Change Password State
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [pwSubmitting, setPwSubmitting] = useState(false);
+  const [pwError, setPwError] = useState("");
+  const [pwSuccess, setPwSuccess] = useState("");
+
+  // Live password validation
+  const hasMinLength = newPassword.length >= 8;
+  const hasLetter = /[A-Za-z]/.test(newPassword);
+  const hasNumber = /\d/.test(newPassword);
+  const hasSpecial = /[@$!%*#?&^_-]/.test(newPassword);
+  const passwordsMatch = newPassword.length > 0 && newPassword === confirmPassword;
+  const isPasswordValid = hasMinLength && hasLetter && hasNumber && hasSpecial && passwordsMatch;
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault();
+    if (!isPasswordValid || !currentPassword) return;
+    setPwSubmitting(true);
+    setPwError("");
+    setPwSuccess("");
+    try {
+      await changePassword({
+        currentPassword,
+        newPassword,
+        confirmPassword,
+      });
+      setPwSuccess("Password changed successfully! Your account security is up to date.");
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+    } catch (err) {
+      setPwError(parseApiError(err).message);
+    } finally {
+      setPwSubmitting(false);
+    }
+  };
+
   return <>
-    <PageHeader eyebrow="ACCOUNT" title="Employee Profile Management" subtitle="Your job role, department, and technical skills power personalized mentorship and course recommendations."/>
-    <section className="panel">
+    <PageHeader eyebrow="ACCOUNT SETTINGS" title="My Profile Management" subtitle="Manage your profile information, job role preferences, and account security."/>
+
+    {/* Profile Details Panel */}
+    <section className="panel" style={{ marginBottom: "24px" }}>
+      <h2>Personal & Professional Details</h2>
       {saved && <Alert type="success">Profile saved successfully to your SkillSphere account.</Alert>}
-      <div className="profile-grid">
-        <label className="field"><span>Full name</span><input value={profile.fullName || ""} onChange={set("fullName")}/></label>
+      <div className="profile-grid" style={{ marginTop: "14px" }}>
+        <label className="field"><span>Full Name</span><input value={profile.fullName || ""} onChange={set("fullName")}/></label>
         <label className="field"><span>Employee ID</span><input value={profile.employeeId || ""} placeholder="Enter employee ID" onChange={set("employeeId")}/></label>
-        <label className="field"><span>Email</span><input value={profile.email || ""} readOnly/></label>
+        <label className="field"><span>Email Address</span><input value={profile.email || ""} readOnly/></label>
         <label className="field"><span>Department</span><input value={profile.department || ""} placeholder="e.g. Engineering" maxLength={80} onChange={set("department")}/></label>
-        <label className="field"><span>Job role</span><select value={profile.jobRole || "Software Developer"} onChange={set("jobRole")}><option>Software Developer</option><option>Data Analyst</option><option>QA Engineer</option><option>Support Engineer</option></select></label>
-        <label className="field"><span>Experience level</span><select value={profile.experience || "Entry level"} onChange={set("experience")}><option>Entry level</option><option>Intermediate</option><option>Experienced</option></select></label>
+        <label className="field"><span>Job Role</span><select value={profile.jobRole || "Software Developer"} onChange={set("jobRole")}><option>Software Developer</option><option>Data Analyst</option><option>QA Engineer</option><option>Support Engineer</option></select></label>
+        <label className="field"><span>Experience Level</span><select value={profile.experience || "Entry level"} onChange={set("experience")}><option>Entry level</option><option>Intermediate</option><option>Experienced</option></select></label>
       </div>
       <div style={{ marginTop: "1rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem" }}>
         <label className="field">
-          <span>Technical Skills & Expertise (comma-separated)</span>
+          <span>Technical Skills (comma-separated)</span>
           <input value={profile.skills || ""} placeholder="e.g. Java, Spring Boot, SQL, Docker, React" onChange={set("skills")} />
         </label>
         <label className="field">
-          <span>Professional Bio / Growth Goals</span>
+          <span>Professional Bio / Growth Focus</span>
           <input value={profile.bio || ""} placeholder="Brief statement about your career or mentoring focus" onChange={set("bio")} />
         </label>
       </div>
-      <button className="btn btn--primary" style={{ marginTop: "1rem" }} onClick={onSave}>Save profile</button>
-    </section></>;
+      <button className="btn btn--primary" style={{ marginTop: "1rem" }} onClick={onSave}>Save Profile</button>
+    </section>
+
+    {/* Change Password Panel */}
+    <section className="panel" style={{ maxWidth: "600px" }}>
+      <div className="section-heading">
+        <div>
+          <h2>Change Password</h2>
+          <p className="muted">Ensure your account uses a secure password with letters, numbers, and special symbols.</p>
+        </div>
+      </div>
+
+      {pwError && <Alert type="error">{pwError}</Alert>}
+      {pwSuccess && <Alert type="success">{pwSuccess}</Alert>}
+
+      <form onSubmit={handleChangePassword} style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "12px" }}>
+        <label className="field">
+          <span>Current Password</span>
+          <input
+            type="password"
+            required
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            placeholder="Enter your current password"
+          />
+        </label>
+
+        <label className="field">
+          <span>New Password</span>
+          <input
+            type="password"
+            required
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            placeholder="Min 8 characters, letter, number, symbol"
+          />
+        </label>
+
+        <label className="field">
+          <span>Confirm New Password</span>
+          <input
+            type="password"
+            required
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            placeholder="Re-enter new password"
+          />
+        </label>
+
+        {/* Password Strength Checklist */}
+        <div style={{ background: "#f8faff", padding: "12px", borderRadius: "8px", border: "1px solid #eef2f6", fontSize: "0.82rem", display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+          <span style={{ color: hasMinLength ? "#17754f" : "#64748b" }}>
+            {hasMinLength ? "✓" : "○"} At least 8 characters
+          </span>
+          <span style={{ color: hasLetter ? "#17754f" : "#64748b" }}>
+            {hasLetter ? "✓" : "○"} At least one letter
+          </span>
+          <span style={{ color: hasNumber ? "#17754f" : "#64748b" }}>
+            {hasNumber ? "✓" : "○"} At least one number
+          </span>
+          <span style={{ color: hasSpecial ? "#17754f" : "#64748b" }}>
+            {hasSpecial ? "✓" : "○"} At least one symbol (@$!%*#?&^_-)
+          </span>
+          <span style={{ color: passwordsMatch ? "#17754f" : "#64748b", gridColumn: "span 2" }}>
+            {passwordsMatch ? "✓ Passwords match" : "○ Passwords must match"}
+          </span>
+        </div>
+
+        <button
+          type="submit"
+          className="btn btn--primary"
+          disabled={!isPasswordValid || !currentPassword || pwSubmitting}
+          style={{ alignSelf: "flex-start", marginTop: "4px" }}
+        >
+          {pwSubmitting ? "Updating Password…" : "Update Password"}
+        </button>
+      </form>
+    </section>
+  </>;
 }
 
 /* -------------------------------------------------------------------- Results */
@@ -170,7 +396,7 @@ export function SkillBars({ results = [] }) {
   })}</div>;
 }
 
-export function Results({ assessment, latestSubmission, serverGaps = [], recs, completed, toggleCourse, onRetry, setActivePage }) {
+export function Results({ assessment, latestSubmission, serverGaps = [], recs, onEnroll, enrolledCourseIds, onRetry, setActivePage }) {
   const sub = latestSubmission || assessment;
   if (!sub) {
     return (
@@ -207,14 +433,19 @@ export function Results({ assessment, latestSubmission, serverGaps = [], recs, c
               </span>
             )}
           </div>
-          <p>{sub.assessmentTitle ? `Assessment: ${sub.assessmentTitle}. ` : ""}The bars below compare your evaluated level with the role target for each skill.</p>
+          <p>{sub.assessmentTitle ? `Assessment: ${sub.assessmentTitle}. ` : ""}The comparison below demonstrates your evaluated proficiency against role targets.</p>
         </div>
       </div>
       <SkillBars results={serverGaps.length > 0 ? serverGaps : (sub.skillResults || [])}/>
     </section>
-    <section className="panel"><div className="section-heading"><div><p className="eyebrow">AI RECOMMENDATIONS</p><h2>Courses picked for you</h2></div>
-      {recs.status === "done" && <button className="text-action" onClick={() => setActivePage("courses")}>Open learning paths <Icon name="arrow" size={14}/></button>}</div>
-      <RecommendationBlock recs={recs} completed={completed} toggleCourse={toggleCourse} onRetry={onRetry} limit={3}/></section></>;
+    <section className="panel">
+      <div className="section-heading">
+        <div><p className="eyebrow">AI RECOMMENDATIONS</p><h2>Courses picked for you</h2></div>
+        {recs.status === "done" && <button className="text-action" onClick={() => setActivePage("recommendations")}>Open learning paths <Icon name="arrow" size={14}/></button>}
+      </div>
+      <RecommendationBlock recs={recs} onEnroll={onEnroll} enrolledCourseIds={enrolledCourseIds} onRetry={onRetry} limit={3}/>
+    </section>
+  </>;
 }
 
 /* ----------------------------------------------------------------------- Gaps */
@@ -223,12 +454,12 @@ export function Gaps({ assessment, serverGaps = [], setActivePage }) {
   if (!gaps.length) {
     return (
       <>
-        <PageHeader eyebrow="ANALYSIS" title="Knowledge Gap Summary"/>
+        <PageHeader eyebrow="ANALYSIS" title="My Skill Gaps"/>
         <section className="panel">
           <EmptyState
             icon="target"
-            title="No gaps calculated yet"
-            text="Complete an assessment and SkillSphere will compare your level with the target for each skill."
+            title="No skill gaps calculated yet"
+            text="Complete an assessment and SkillSphere will compare your proficiency with the role requirements for each skill."
             actionLabel="Take assessment"
             onAction={() => setActivePage("assessment")}
           />
@@ -237,7 +468,7 @@ export function Gaps({ assessment, serverGaps = [], setActivePage }) {
     );
   }
   return <>
-    <PageHeader eyebrow="ANALYSIS" title="Knowledge Gap Summary" subtitle="Your evaluated proficiency compared with the target requirement for each skill."/>
+    <PageHeader eyebrow="ANALYSIS" title="My Skill Gaps" subtitle="Your evaluated proficiency compared with the required benchmark for your role."/>
     <section className="panel">
       <div className="table-wrap">
         <table>
@@ -249,6 +480,7 @@ export function Gaps({ assessment, serverGaps = [], setActivePage }) {
               <th>Target Level</th>
               <th>Gap</th>
               <th>Priority</th>
+              <th>Action</th>
             </tr>
           </thead>
           <tbody>
@@ -265,11 +497,25 @@ export function Gaps({ assessment, serverGaps = [], setActivePage }) {
                   <td>{category}</td>
                   <td>{current}</td>
                   <td>{target}</td>
-                  <td>{gap}</td>
+                  <td><strong style={{ color: gap > 0 ? "#b42318" : "#17754f" }}>{gap > 0 ? `-${gap}` : "0"}</strong></td>
                   <td>
                     <span className={priorityClass(priority === "ON_TRACK" ? "on-track" : priority)}>
                       {priority}
                     </span>
+                  </td>
+                  <td>
+                    {gap > 0 ? (
+                      <button
+                        type="button"
+                        className="btn btn--primary"
+                        onClick={() => setActivePage("recommendations")}
+                        style={{ fontSize: "0.78rem", padding: "4px 10px" }}
+                      >
+                        Bridge Gap &rarr;
+                      </button>
+                    ) : (
+                      <span className="badge" style={{ background: "#e6f6ee", color: "#17754f" }}>Mastered</span>
+                    )}
                   </td>
                 </tr>
               );
@@ -277,33 +523,524 @@ export function Gaps({ assessment, serverGaps = [], setActivePage }) {
           </tbody>
         </table>
       </div>
-      <button className="btn btn--ghost" onClick={() => setActivePage("assessment")}>Take another assessment</button>
+      <div style={{ marginTop: "16px", display: "flex", gap: "10px" }}>
+        <button className="btn btn--ghost" onClick={() => setActivePage("assessment")}>Take Another Assessment</button>
+        <button className="btn btn--primary" onClick={() => setActivePage("recommendations")}>View Recommended Courses</button>
+      </div>
     </section>
   </>;
 }
 
-/* -------------------------------------------------------------------- Courses */
-export function Courses({ assessment, latestSubmission, recs, completed, toggleCourse, onRetry, setActivePage }) {
+/* -------------------------------------------------------------------- Recommendations */
+export function Courses({ assessment, latestSubmission, recs, onEnroll, enrolledCourseIds, onRetry, setActivePage }) {
   const sub = latestSubmission || assessment;
   const action = sub && recs.status !== "loading" && <button className="btn btn--ghost" onClick={onRetry}><Icon name="refresh" size={16}/> Regenerate</button>;
   return <>
-    <PageHeader eyebrow="AI-POWERED" title="Recommended Training and Learning Paths" subtitle="Courses chosen by Google Gemini from your assessment result and job role." action={action}/>
-    {!sub ? <section className="panel"><EmptyState icon="sparkles" title="Take an assessment to unlock recommendations" text="Gemini needs your assessment result to build a personalised learning path." actionLabel="Start assessment" onAction={() => setActivePage("assessment")}/></section>
-      : <section className="panel"><RecommendationBlock recs={recs} completed={completed} toggleCourse={toggleCourse} onRetry={onRetry}/></section>}
+    <PageHeader eyebrow="AI-POWERED" title="Learning Recommendations" subtitle="Courses chosen from verified catalogues (NPTEL, SWAYAM, Coursera) to resolve your specific skill gaps." action={action}/>
+    {!sub ? (
+      <section className="panel">
+        <EmptyState
+          icon="sparkles"
+          title="Take an assessment to unlock recommendations"
+          text="Gemini needs your assessment result to match verified curriculum courses to your exact gaps."
+          actionLabel="Start assessment"
+          onAction={() => setActivePage("assessment")}
+        />
+      </section>
+    ) : (
+      <section className="panel">
+        <RecommendationBlock recs={recs} onEnroll={onEnroll} enrolledCourseIds={enrolledCourseIds} onRetry={onRetry}/>
+      </section>
+    )}
   </>;
 }
 
-/* ------------------------------------------------------------------- Progress */
-export function Progress({ recs, completed, progress, toggleCourse, setActivePage }) {
-  const list = recs.data?.recommendations || [];
-  if (!list.length) return <><PageHeader eyebrow="TRACKING" title="Learning Progress Tracking"/><section className="panel"><EmptyState icon="trending" title="Nothing to track yet" text="Once you receive course recommendations, you can track your completion here." actionLabel="Start assessment" onAction={() => setActivePage("assessment")}/></section></>;
-  return <>
-    <PageHeader eyebrow="TRACKING" title="Learning Progress Tracking" subtitle="Mark courses as complete as you finish them."/>
-    <section className="panel"><div className="progress-summary"><div><p className="eyebrow">COURSE COMPLETION</p><strong>{progress}%</strong><p>{list.filter((c) => completed.includes(slug(c.title))).length} of {list.length} recommended courses completed</p></div><div className="progress-ring" style={{ "--progress": `${progress}%` }}><span>{progress}%</span></div></div>
-      <div className="progress-track"><span style={{ width: `${progress}%` }}/></div>
-      {list.map((c) => { const done = completed.includes(slug(c.title)); return <div className="progress-course" key={slug(c.title)}><div><strong>{c.title}</strong><small>{c.skill} · {c.duration}</small></div>
-        <button className={`btn ${done ? "btn--complete" : "btn--ghost"}`} onClick={() => toggleCourse(slug(c.title))}>{done ? <><Icon name="check" size={16}/> Completed</> : "Mark complete"}</button></div>; })}
-    </section></>;
+/* ------------------------------------------------------------------- My Learning */
+export function MyLearning({ setActivePage, onCompleteRefresh }) {
+  const [learnings, setLearnings] = useState([]);
+  const [filter, setFilter] = useState("ALL"); // ALL, IN_PROGRESS, COMPLETED
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const loadData = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await getMyLearning();
+      setLearnings(data);
+    } catch (e) {
+      setError(parseApiError(e).message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
+
+  const handleUpdate = async (courseId, newPct) => {
+    setError(""); setSuccess("");
+    try {
+      await updateCourseProgress(courseId, newPct);
+      if (newPct >= 100) {
+        setSuccess("🎉 Course 100% completed! An official verified Certificate of Completion has been issued to your profile.");
+      } else {
+        setSuccess(`Course progress updated to ${newPct}%.`);
+      }
+      loadData();
+      if (onCompleteRefresh) onCompleteRefresh();
+    } catch (e) {
+      setError(parseApiError(e).message);
+    }
+  };
+
+  const filtered = learnings.filter((l) => {
+    if (filter === "IN_PROGRESS") return l.progressPct < 100;
+    if (filter === "COMPLETED") return l.progressPct >= 100;
+    return true;
+  });
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <PageHeader
+        eyebrow="UPSKILLING"
+        title="My Learning"
+        subtitle="Manage enrolled courses, track real progress, and certify technical competencies."
+        action={
+          <button className="btn btn--primary" onClick={() => setActivePage("recommendations")}>
+            Browse Recommendations &rarr;
+          </button>
+        }
+      />
+
+      {error && <Alert type="error">{error}</Alert>}
+      {success && <Alert type="success">{success}</Alert>}
+
+      {/* Filter Tabs */}
+      <div className="tabs" role="tablist">
+        <button className={`tab-btn ${filter === "ALL" ? "is-active" : ""}`} onClick={() => setFilter("ALL")}>
+          All Courses ({learnings.length})
+        </button>
+        <button className={`tab-btn ${filter === "IN_PROGRESS" ? "is-active" : ""}`} onClick={() => setFilter("IN_PROGRESS")}>
+          In Progress ({learnings.filter((l) => l.progressPct < 100).length})
+        </button>
+        <button className={`tab-btn ${filter === "COMPLETED" ? "is-active" : ""}`} onClick={() => setFilter("COMPLETED")}>
+          Completed ({learnings.filter((l) => l.progressPct >= 100).length})
+        </button>
+      </div>
+
+      <section className="panel">
+        {loading ? (
+          <p className="muted" style={{ padding: "2rem", textAlign: "center" }}>Loading your enrolled courses from database…</p>
+        ) : filtered.length === 0 ? (
+          <EmptyState
+            icon="book"
+            title={filter === "COMPLETED" ? "No completed courses yet" : "No courses currently enrolled"}
+            text="Explore the learning recommendations or course catalogue to enroll in a course."
+            actionLabel="View Recommendations"
+            onAction={() => setActivePage("recommendations")}
+          />
+        ) : (
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            {filtered.map((l) => (
+              <div
+                key={l.id}
+                style={{
+                  padding: "18px",
+                  borderRadius: "12px",
+                  border: "1.5px solid #e2e9f3",
+                  background: l.progressPct >= 100 ? "#f9fcfb" : "#ffffff",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "12px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "10px" }}>
+                  <div>
+                    <span className="badge" style={{ background: "#e0edff", color: "#1d4ed8", fontWeight: 700, marginRight: "8px" }}>
+                      {l.provider || "Course"}
+                    </span>
+                    <span className="eyebrow">{l.skillName} • {l.level}</span>
+                    <h3 style={{ margin: "4px 0 0 0", fontSize: "1.15rem" }}>{l.courseTitle}</h3>
+                  </div>
+                  <div style={{ textAlign: "right" }}>
+                    <span className={`badge ${l.progressPct >= 100 ? "badge--success" : "badge--warn"}`}>
+                      {l.progressPct >= 100 ? "COMPLETED" : `${l.progressPct}% IN PROGRESS`}
+                    </span>
+                    <small style={{ display: "block", color: "#8795a9", marginTop: "4px" }}>
+                      Enrolled: {fmtDate(l.enrolledAt)}
+                    </small>
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                <div style={{ background: "#e2e8f0", height: "8px", borderRadius: "4px", overflow: "hidden" }}>
+                  <div
+                    style={{
+                      width: `${l.progressPct}%`,
+                      height: "100%",
+                      background: l.progressPct >= 100 ? "#10b981" : "#2563eb",
+                      transition: "width 0.4s ease",
+                    }}
+                  />
+                </div>
+
+                {/* Action controls */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "10px" }}>
+                  {l.courseUrl ? (
+                    <a className="btn btn--ghost" href={l.courseUrl} target="_blank" rel="noopener noreferrer" style={{ fontSize: "0.85rem" }}>
+                      Launch Course on Provider <Icon name="external" size={14} />
+                    </a>
+                  ) : <span />}
+
+                  <div style={{ display: "flex", gap: "8px" }}>
+                    {l.progressPct < 100 && (
+                      <>
+                        <button
+                          type="button"
+                          className="btn btn--ghost"
+                          onClick={() => handleUpdate(l.courseId, Math.min(100, l.progressPct + 25))}
+                          style={{ fontSize: "0.82rem", padding: "6px 12px" }}
+                        >
+                          +25% Progress
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn--complete"
+                          onClick={() => handleUpdate(l.courseId, 100)}
+                          style={{ fontSize: "0.82rem", padding: "6px 14px" }}
+                        >
+                          Complete & Certify &rarr;
+                        </button>
+                      </>
+                    )}
+                    {l.progressPct >= 100 && (
+                      <button
+                        type="button"
+                        className="btn btn--ghost"
+                        onClick={() => setActivePage("certificates")}
+                        style={{ fontSize: "0.82rem", color: "#17754f" }}
+                      >
+                        <Icon name="award" size={15} /> View Certificate
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  );
+}
+
+/* ----------------------------------------------------------------- Certificates */
+export function Certificates({ user, setActivePage }) {
+  const [certs, setCerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selectedCert, setSelectedCert] = useState(null);
+
+  useEffect(() => {
+    let isMounted = true;
+    getMyCertificates()
+      .then((data) => {
+        if (isMounted) setCerts(data);
+      })
+      .catch((e) => {
+        if (isMounted) setError(parseApiError(e).message);
+      })
+      .finally(() => {
+        if (isMounted) setLoading(false);
+      });
+    return () => { isMounted = false; };
+  }, []);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <PageHeader
+        eyebrow="CREDENTIALS"
+        title="Certificates"
+        subtitle="Verified SkillSphere certificates earned upon achieving 100% completion in curriculum courses."
+      />
+
+      {error && <Alert type="error">{error}</Alert>}
+
+      <section className="panel">
+        {loading ? (
+          <p className="muted" style={{ padding: "2rem", textAlign: "center" }}>Loading your credentials from database…</p>
+        ) : certs.length === 0 ? (
+          <EmptyState
+            icon="award"
+            title="No certificates earned yet"
+            text="Complete your enrolled courses to 100% progress and SkillSphere will automatically issue your verified certificate."
+            actionLabel="Go to My Learning"
+            onAction={() => setActivePage("learning")}
+          />
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "16px" }}>
+            {certs.map((c) => (
+              <div
+                key={c.id}
+                style={{
+                  padding: "20px",
+                  borderRadius: "14px",
+                  border: "2px solid #2563eb",
+                  background: "linear-gradient(135deg, #ffffff 0%, #f4f8ff 100%)",
+                  boxShadow: "0 4px 12px rgba(37,99,235,0.08)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "10px",
+                }}
+              >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span className="badge" style={{ background: "#2563eb", color: "#fff", fontWeight: 700 }}>
+                    CERTIFICATE OF COMPLETION
+                  </span>
+                  <Icon name="award" size={26} />
+                </div>
+                <strong style={{ fontSize: "1.12rem", color: "#0f2747", marginTop: "4px" }}>{c.title}</strong>
+                <div style={{ fontSize: "0.86rem", color: "#5b6d86" }}>
+                  Verification Code: <strong style={{ color: "#2563eb", fontFamily: "monospace" }}>{c.certificateCode}</strong>
+                </div>
+                <div style={{ fontSize: "0.8rem", color: "#8795a9" }}>
+                  Issued on: {c.issueDate} {c.expiryDate ? `• Valid through: ${c.expiryDate}` : ""}
+                </div>
+                <div style={{ marginTop: "auto", paddingTop: "10px", borderTop: "1px solid #e2e9f3" }}>
+                  <button
+                    type="button"
+                    className="btn btn--primary"
+                    style={{ width: "100%", justifyContent: "center" }}
+                    onClick={() => setSelectedCert(c)}
+                  >
+                    View / Print Certificate
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* Official Certificate Modal */}
+      {selectedCert && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(11,37,69,0.55)",
+            backdropFilter: "blur(4px)",
+            display: "grid",
+            placeItems: "center",
+            zIndex: 999,
+            padding: "20px",
+          }}
+        >
+          <div
+            className="panel"
+            style={{
+              width: "100%",
+              maxWidth: "680px",
+              padding: "40px",
+              border: "6px double #2563eb",
+              borderRadius: "16px",
+              background: "#ffffff",
+              textAlign: "center",
+              position: "relative",
+            }}
+          >
+            <button
+              type="button"
+              className="btn btn--ghost"
+              onClick={() => setSelectedCert(null)}
+              style={{ position: "absolute", top: "16px", right: "16px", padding: "4px 8px" }}
+            >
+              <Icon name="x" size={20} />
+            </button>
+
+            <div style={{ marginBottom: "20px" }}>
+              <span style={{ fontSize: "0.85rem", letterSpacing: "2px", color: "#64748b", textTransform: "uppercase", fontWeight: 700 }}>
+                SkillSphere Knowledge Platform
+              </span>
+              <h1 style={{ fontSize: "1.8rem", color: "#0f2747", margin: "10px 0" }}>
+                CERTIFICATE OF COMPLETION
+              </h1>
+              <p style={{ color: "#64748b", margin: 0 }}>This is to certify that</p>
+            </div>
+
+            <h2 style={{ fontSize: "1.6rem", color: "#1d4ed8", textDecoration: "underline", margin: "14px 0" }}>
+              {user.fullName || "Valued Employee"}
+            </h2>
+
+            <p style={{ color: "#334155", maxWidth: "480px", margin: "0 auto 16px auto", lineHeight: 1.5 }}>
+              has successfully completed all requirements, practical assessments, and verified milestones for
+            </p>
+
+            <h3 style={{ fontSize: "1.25rem", color: "#0f2747", margin: "10px 0 20px 0" }}>
+              {selectedCert.title}
+            </h3>
+
+            <div style={{ display: "flex", justifyContent: "space-around", marginTop: "30px", borderTop: "1px solid #e2e8f0", paddingTop: "20px", fontSize: "0.85rem" }}>
+              <div>
+                <strong>Issue Date:</strong>
+                <div>{selectedCert.issueDate}</div>
+              </div>
+              <div>
+                <strong>Verification Code:</strong>
+                <div style={{ fontFamily: "monospace", color: "#2563eb" }}>{selectedCert.certificateCode}</div>
+              </div>
+              <div>
+                <strong>Authority:</strong>
+                <div>SkillSphere Platform</div>
+              </div>
+            </div>
+
+            <div style={{ marginTop: "28px", display: "flex", justifyContent: "center", gap: "12px" }}>
+              <button type="button" className="btn btn--primary" onClick={() => window.print()}>
+                <Icon name="print" size={16} /> Print / Save PDF
+              </button>
+              <button type="button" className="btn btn--ghost" onClick={() => setSelectedCert(null)}>
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ------------------------------------------------------------------- My Progress */
+export function MyProgress({ user, setActivePage }) {
+  const [submissions, setSubmissions] = useState([]);
+  const [learnings, setLearnings] = useState([]);
+  const [certificates, setCertificates] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([
+      getMySubmissions().catch(() => []),
+      getMyLearning().catch(() => []),
+      getMyCertificates().catch(() => []),
+    ]).then(([subs, lrns, certs]) => {
+      if (isMounted) {
+        setSubmissions(subs);
+        setLearnings(lrns);
+        setCertificates(certs);
+      }
+    }).finally(() => {
+      if (isMounted) setLoading(false);
+    });
+    return () => { isMounted = false; };
+  }, []);
+
+  const totalSubs = submissions.length;
+  const passedSubs = submissions.filter((s) => s.passed).length;
+  const avgScore = totalSubs ? Math.round(submissions.reduce((acc, s) => acc + (s.score || 0), 0) / totalSubs) : 0;
+  const completedCourses = learnings.filter((l) => l.progressPct >= 100).length;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <PageHeader
+        eyebrow="ANALYTICS"
+        title="My Progress"
+        subtitle="Complete database records of your assessment scores, course completions, and capability milestones."
+      />
+
+      {/* Stats Overview */}
+      <div className="stat-grid">
+        <div className="stat-card">
+          <span className="stat-icon"><Icon name="clipboard"/></span>
+          <span className="stat-label">Assessments Completed</span>
+          <strong>{totalSubs}</strong>
+          <small>{passedSubs} passed ({totalSubs ? Math.round((passedSubs / totalSubs) * 100) : 0}%)</small>
+        </div>
+        <div className="stat-card">
+          <span className="stat-icon"><Icon name="trending"/></span>
+          <span className="stat-label">Average Score</span>
+          <strong>{avgScore}%</strong>
+          <small>Across all evaluations</small>
+        </div>
+        <div className="stat-card">
+          <span className="stat-icon"><Icon name="book"/></span>
+          <span className="stat-label">Courses Completed</span>
+          <strong>{completedCourses}</strong>
+          <small>{learnings.length} total enrolled</small>
+        </div>
+        <div className="stat-card">
+          <span className="stat-icon"><Icon name="award"/></span>
+          <span className="stat-label">Certificates</span>
+          <strong style={{ color: "#1d4ed8" }}>{certificates.length}</strong>
+          <small>Verified credentials</small>
+        </div>
+      </div>
+
+      {/* Historical Assessment Attempts Table */}
+      <section className="panel">
+        <div className="section-heading">
+          <div>
+            <h2>Historical Assessment Submissions ({submissions.length})</h2>
+            <p className="muted">Database-backed records of every dynamic AI and official assessment attempt.</p>
+          </div>
+          <button className="btn btn--primary" onClick={() => setActivePage("assessment")}>
+            New Assessment &rarr;
+          </button>
+        </div>
+
+        {loading ? (
+          <p className="muted" style={{ padding: "2rem", textAlign: "center" }}>Loading records from server…</p>
+        ) : submissions.length === 0 ? (
+          <EmptyState
+            icon="clipboard"
+            title="No assessments taken yet"
+            text="Take your first assessment to establish your technical benchmark."
+            actionLabel="Start Assessment"
+            onAction={() => setActivePage("assessment")}
+          />
+        ) : (
+          <div className="table-wrap" style={{ marginTop: "14px" }}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Skill / Assessment</th>
+                  <th>Target Level</th>
+                  <th>Date Completed</th>
+                  <th>Score</th>
+                  <th>Correct / Total</th>
+                  <th>Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                {submissions.map((sub) => (
+                  <tr key={sub.submissionId || sub.id}>
+                    <td><strong>{sub.assessmentTitle || `Assessment #${sub.assessmentId}`}</strong></td>
+                    <td>{sub.targetLevel || "Intermediate"}</td>
+                    <td>{sub.completedAt ? new Date(sub.completedAt).toLocaleString([], { dateStyle: "medium", timeStyle: "short" }) : "—"}</td>
+                    <td><strong>{sub.score}%</strong></td>
+                    <td>{sub.correctAnswers} / {sub.totalQuestions}</td>
+                    <td>
+                      <span
+                        className="badge"
+                        style={{
+                          background: sub.passed ? "#e6f6ee" : "#fde9e7",
+                          color: sub.passed ? "#17754f" : "#b42318",
+                        }}
+                      >
+                        {sub.passed ? "PASSED" : "RETAKE NEEDED"}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+    </div>
+  );
 }
 
 /* ----------------------------------------------------------------- Mentorship */
@@ -380,6 +1117,7 @@ export function Notifications() {
         return "target";
       case "COURSE":
       case "CERTIFICATE_ISSUED":
+      case "CERTIFICATE_EARNED":
         return "award";
       case "CALENDAR":
       case "EVENT_INVITE":

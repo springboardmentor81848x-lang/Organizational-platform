@@ -27,6 +27,12 @@ public class MentorProfile {
     @Column(name = "is_active", nullable = false)
     private boolean isActive = true;
 
+    @Column(name = "preferred_format", length = 30)
+    private String preferredFormat = "VIRTUAL";
+
+    @Column(columnDefinition = "TEXT")
+    private String bio;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "approved_by_id", nullable = false)
     private User approvedBy;
@@ -58,6 +64,7 @@ public class MentorProfile {
         this.maxMentees = maxMentees;
         this.approvedBy = approvedBy;
         this.isActive = true;
+        this.preferredFormat = "VIRTUAL";
     }
 
     public Long getId() { return id; }
@@ -71,6 +78,10 @@ public class MentorProfile {
     public void setMaxMentees(int maxMentees) { this.maxMentees = maxMentees; }
     public boolean isActive() { return isActive; }
     public void setActive(boolean active) { isActive = active; }
+    public String getPreferredFormat() { return preferredFormat; }
+    public void setPreferredFormat(String preferredFormat) { this.preferredFormat = preferredFormat; }
+    public String getBio() { return bio; }
+    public void setBio(String bio) { this.bio = bio; }
     public User getApprovedBy() { return approvedBy; }
     public void setApprovedBy(User approvedBy) { this.approvedBy = approvedBy; }
     public Instant getCreatedAt() { return createdAt; }
