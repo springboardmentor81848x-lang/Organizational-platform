@@ -81,6 +81,9 @@ export default function MentoringFeedbackView() {
     ));
   };
 
+  const receivedFeedback = feedbackData?.receivedFeedback || [];
+  const submittedEvaluations = feedbackData?.submittedEvaluations || [];
+
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
       {/* Analytics Summary */}
@@ -90,22 +93,22 @@ export default function MentoringFeedbackView() {
             <span className="mentor-kpi-label">Average Mentee Rating</span>
             <div style={{ display: "flex", alignItems: "center", gap: "10px", marginTop: "4px" }}>
               <span className="mentor-kpi-value" style={{ color: "#d97706" }}>
-                {feedbackData.averageRating > 0 ? feedbackData.averageRating.toFixed(1) : "N/A"}
+                {(feedbackData.averageRating || 0) > 0 ? feedbackData.averageRating.toFixed(1) : "N/A"}
               </span>
-              <div className="mt-stars">{renderStars(Math.round(feedbackData.averageRating))}</div>
+              <div className="mt-stars">{renderStars(Math.round(feedbackData.averageRating || 0))}</div>
             </div>
-            <span className="mentor-kpi-sub">Based on {feedbackData.totalReviewsReceived} mentee reviews</span>
+            <span className="mentor-kpi-sub">Based on {feedbackData.totalReviewsReceived || 0} mentee reviews</span>
           </div>
 
           <div className="mentor-kpi-card">
             <span className="mentor-kpi-label">Reviews Received</span>
-            <span className="mentor-kpi-value">{feedbackData.totalReviewsReceived}</span>
+            <span className="mentor-kpi-value">{feedbackData.totalReviewsReceived || 0}</span>
             <span className="mentor-kpi-sub">Feedback on completed mentoring sessions</span>
           </div>
 
           <div className="mentor-kpi-card">
             <span className="mentor-kpi-label">Evaluations Delivered</span>
-            <span className="mentor-kpi-value">{feedbackData.submittedEvaluations.length}</span>
+            <span className="mentor-kpi-value">{submittedEvaluations.length}</span>
             <span className="mentor-kpi-sub">Performance & growth reviews given to mentees</span>
           </div>
         </div>
@@ -128,14 +131,14 @@ export default function MentoringFeedbackView() {
                 className={`mentor-pill-btn ${activeTab === "RECEIVED" ? "is-active" : ""}`}
                 onClick={() => setActiveTab("RECEIVED")}
               >
-                Mentee Feedback Received ({feedbackData?.receivedFeedback?.length || 0})
+                Mentee Feedback Received ({receivedFeedback.length})
               </button>
               <button
                 type="button"
                 className={`mentor-pill-btn ${activeTab === "SUBMITTED" ? "is-active" : ""}`}
                 onClick={() => setActiveTab("SUBMITTED")}
               >
-                My Mentee Evaluations ({feedbackData?.submittedEvaluations?.length || 0})
+                My Mentee Evaluations ({submittedEvaluations.length})
               </button>
             </div>
 
@@ -156,14 +159,14 @@ export default function MentoringFeedbackView() {
           <p style={{ color: "var(--mt-soft)" }}>Loading feedback...</p>
         ) : activeTab === "RECEIVED" ? (
           /* Received Feedback List */
-          feedbackData?.receivedFeedback?.length === 0 ? (
+          receivedFeedback.length === 0 ? (
             <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--mt-soft)" }}>
               <p style={{ fontSize: "1.05rem", fontWeight: 600 }}>No feedback received from mentees yet.</p>
               <p style={{ fontSize: "0.86rem", color: "var(--mt-faint)" }}>Session feedback submitted by mentees after completed sessions will appear here.</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {feedbackData.receivedFeedback.map((f) => (
+              {receivedFeedback.map((f) => (
                 <div
                   key={f.id}
                   style={{
@@ -196,14 +199,14 @@ export default function MentoringFeedbackView() {
           )
         ) : (
           /* Submitted Evaluations List */
-          feedbackData?.submittedEvaluations?.length === 0 ? (
+          submittedEvaluations.length === 0 ? (
             <div style={{ textAlign: "center", padding: "48px 20px", color: "var(--mt-soft)" }}>
               <p style={{ fontSize: "1.05rem", fontWeight: 600 }}>No evaluations submitted yet.</p>
               <p style={{ fontSize: "0.86rem", color: "var(--mt-faint)" }}>Click "+ Evaluate Mentee" to record structured performance feedback for your mentees.</p>
             </div>
           ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
-              {feedbackData.submittedEvaluations.map((ev) => (
+              {submittedEvaluations.map((ev) => (
                 <div
                   key={ev.id}
                   style={{
@@ -273,12 +276,17 @@ export default function MentoringFeedbackView() {
                     required
                     value={employeeId}
                     onChange={(e) => setEmployeeId(e.target.value)}
+                    disabled={mentees.length === 0}
                   >
-                    {mentees.map((m) => (
-                      <option key={m.employeeId} value={m.employeeId}>
-                        {m.employeeName} ({m.jobRole})
-                      </option>
-                    ))}
+                    {mentees.length === 0 ? (
+                      <option value="">No active mentees available to evaluate</option>
+                    ) : (
+                      mentees.map((m) => (
+                        <option key={m.employeeId} value={m.employeeId}>
+                          {m.employeeName} ({m.jobRole})
+                        </option>
+                      ))
+                    )}
                   </select>
                 </div>
 
@@ -344,7 +352,7 @@ export default function MentoringFeedbackView() {
                 <button
                   type="submit"
                   className="mt-btn mt-btn--primary"
-                  disabled={submittingEval}
+                  disabled={submittingEval || mentees.length === 0}
                 >
                   {submittingEval ? "Submitting..." : "Submit Evaluation"}
                 </button>

@@ -223,7 +223,7 @@ class HrDashboardServiceTest {
                 "Cloud Security Bootcamp", "Hands-on", engineeringDept,
                 LocalDate.now().plusDays(7), LocalDate.now().plusDays(10), 10, "Sec Lead"
         );
-        when(trainingProgrammeRepository.findById(1L)).thenReturn(Optional.of(prog));
+        when(trainingProgrammeRepository.findByIdWithLock(1L)).thenReturn(Optional.of(prog));
         when(userRepository.findById(2L)).thenReturn(Optional.of(employeeUser));
         when(trainingEnrollmentRepository.findByProgrammeIdAndUserId(1L, 2L)).thenReturn(Optional.empty());
         when(trainingEnrollmentRepository.save(any(TrainingEnrollment.class))).thenAnswer(invocation -> invocation.getArgument(0));

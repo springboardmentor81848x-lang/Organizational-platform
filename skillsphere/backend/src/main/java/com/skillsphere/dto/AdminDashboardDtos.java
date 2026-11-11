@@ -77,11 +77,16 @@ public class AdminDashboardDtos {
             Role role,
 
             String department,
+            String jobRole,
 
             @NotBlank(message = "Password is required")
             @Size(min = 8, message = "Password must be at least 8 characters")
             String password
-    ) {}
+    ) {
+        public CreateUserAdminRequest(String fullName, String email, String employeeId, Role role, String department, String password) {
+            this(fullName, email, employeeId, role, department, null, password);
+        }
+    }
 
     public record UpdateUserAdminRequest(
             @NotBlank(message = "Full name is required")
@@ -90,8 +95,13 @@ public class AdminDashboardDtos {
 
             String employeeId,
             String department,
+            String jobRole,
             AccountStatus accountStatus
-    ) {}
+    ) {
+        public UpdateUserAdminRequest(String fullName, String employeeId, String department, AccountStatus accountStatus) {
+            this(fullName, employeeId, department, null, accountStatus);
+        }
+    }
 
     // ==========================================
     // 3. Roles & Permissions

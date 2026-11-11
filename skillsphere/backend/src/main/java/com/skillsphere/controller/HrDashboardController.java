@@ -293,7 +293,7 @@ public class HrDashboardController {
             @RequestParam(required = false) Long departmentId,
             Authentication auth) {
         User user = getAuthenticatedUser(auth);
-        return ResponseEntity.ok(hrDashboardService.getSharedLeadershipReports(user.getRole().name(), departmentId));
+        return ResponseEntity.ok(hrDashboardService.getSharedLeadershipReports(user, departmentId));
     }
 
     // =========================================================================

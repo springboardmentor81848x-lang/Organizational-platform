@@ -8,6 +8,8 @@ public record EmployeeProfileDto(
         String jobRole,
         String department,
         String experienceLevel,
+        String teamName,
+        String reportingManagerName,
         String bio,
         String skills
 ) {}

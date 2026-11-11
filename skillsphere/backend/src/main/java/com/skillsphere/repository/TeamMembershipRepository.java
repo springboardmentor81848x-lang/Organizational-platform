@@ -19,4 +19,7 @@ public interface TeamMembershipRepository extends JpaRepository<TeamMembership, 
 
     @Query("select tm from TeamMembership tm join fetch tm.user join fetch tm.team t where t.department.id = :deptId")
     List<TeamMembership> findByDepartmentId(@Param("deptId") Long deptId);
+
+    @Query("select tm from TeamMembership tm join fetch tm.team t left join fetch t.manager where tm.user.id = :userId")
+    List<TeamMembership> findByUserIdWithTeamAndManager(@Param("userId") Long userId);
 }

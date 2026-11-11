@@ -13,4 +13,10 @@ public interface CourseRepository extends JpaRepository<Course, Long> {
 
     @Query("select c from Course c join fetch c.skill s where s.id in :skillIds")
     List<Course> findBySkillIds(@Param("skillIds") List<Long> skillIds);
+
+    @Query("select c from Course c left join fetch c.skill s where c.isActive = true")
+    List<Course> findAllActiveWithSkill();
+
+    @Query("select c from Course c left join fetch c.skill s")
+    List<Course> findAllWithSkill();
 }

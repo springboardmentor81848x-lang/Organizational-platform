@@ -9,11 +9,18 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.net.http.HttpClient;
+import java.net.http.HttpHeaders;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @SpringBootTest
 @Transactional
@@ -55,6 +62,8 @@ public class TargetedAcceptanceVerificationIntegrationTest {
     private ManagerService managerService;
     @Autowired
     private DepartmentHeadService departmentHeadService;
+    @Autowired
+    private GeminiRecommendationService geminiRecommendationService;
 
     private User createTestUser(String email, String name, Role role) {
         User u = new User();
@@ -319,5 +328,63 @@ public class TargetedAcceptanceVerificationIntegrationTest {
         String adminCsv = reportService.generateSkillGapsCsv(admin.getEmail());
         assertNotNull(adminCsv);
         assertTrue(adminCsv.contains("Emp Eve"));
+    }
+
+    @Test
+    @DisplayName("Gemini Recommendations: Upstream 429 Fallback, Real PostgreSQL Catalogue, and Employee Data Isolation Integration")
+    void testGeminiRecommendation_Upstream429Fallback_AndDataIsolation_Integration() throws Exception {
+        User empA = createTestUser("emp_a_rec_" + UUID.randomUUID() + "@skillsphere.com", "Employee Alice", Role.EMPLOYEE);
+        User empB = createTestUser("emp_b_rec_" + UUID.randomUUID() + "@skillsphere.com", "Employee Bob", Role.EMPLOYEE);
+
+        Skill skill = skillRepository.findAll().stream().findFirst().orElseThrow();
+        Course course = courseRepository.findAll().stream().findFirst()
+                .orElseGet(() -> courseRepository.save(new Course("Integration Cloud Architecture", "Cloud", skill, "Intermediate", 25, "NPTEL", "https://nptel.ac.in/java")));
+
+        RecommendationRequest req = new RecommendationRequest(
+                "Software Engineer",
+                "Intermediate",
+                "Engineering",
+                70,
+                List.of(new RecommendationRequest.SkillResult(skill.getName(), 3, 5, 2, 4))
+        );
+
+        Object originalHttp = ReflectionTestUtils.getField(geminiRecommendationService, "http");
+        Object originalApiKey = ReflectionTestUtils.getField(geminiRecommendationService, "apiKey");
+
+        HttpClient mockHttp = mock(HttpClient.class);
+        @SuppressWarnings("unchecked")
+        HttpResponse<String> mockResponse = mock(HttpResponse.class);
+        HttpHeaders headers = HttpHeaders.of(Map.of("Retry-After", List.of("45")), (k, v) -> true);
+
+        when(mockResponse.statusCode()).thenReturn(429);
+        when(mockResponse.headers()).thenReturn(headers);
+        when(mockHttp.send(any(HttpRequest.class), any(HttpResponse.BodyHandler.class)))
+                .thenReturn(mockResponse);
+
+        try {
+            ReflectionTestUtils.setField(geminiRecommendationService, "http", mockHttp);
+            ReflectionTestUtils.setField(geminiRecommendationService, "apiKey", "test-api-key");
+
+            // 1. Employee A calls recommend() -> Upstream returns 429 -> Falls back to PostgreSQL catalogue
+            RecommendationResponse resA = geminiRecommendationService.recommend(empA.getEmail(), req);
+            assertNotNull(resA, "Recommendation response must not be null");
+            assertEquals("rules", resA.source(), "Source must fall back to rules");
+            assertTrue(resA.notice().contains("Gemini rate limit reached"), "Notice must inform about rate limit fallback");
+            assertNotNull(resA.recommendations(), "Course recommendations list must be present");
+            assertFalse(resA.recommendations().isEmpty(), "Recommendations from real PostgreSQL course catalogue must be returned");
+
+            // 2. Employee B calls recommend() with the same request -> Must receive distinct execution (no cross-employee cache leak)
+            RecommendationResponse resB = geminiRecommendationService.recommend(empB.getEmail(), req);
+            assertNotNull(resB);
+            assertEquals("rules", resB.source());
+            assertNotSame(resA, resB, "User B must not receive User A's cached response instance");
+
+            // 3. Employee A calls again immediately with identical request -> Serves cached response
+            RecommendationResponse resACached = geminiRecommendationService.recommend(empA.getEmail(), req);
+            assertSame(resA, resACached, "Immediate identical repeat call for User A must serve cached response");
+        } finally {
+            ReflectionTestUtils.setField(geminiRecommendationService, "http", originalHttp);
+            ReflectionTestUtils.setField(geminiRecommendationService, "apiKey", originalApiKey);
+        }
     }
 }

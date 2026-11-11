@@ -4,12 +4,15 @@ import Icon from "../../components/Icons.jsx";
 export default function AssessmentsView({
   assessments = [],
   reassessments = [],
+  pendingEvidence = [],
   onRequestReassessment,
   onCancelReassessment,
+  onReviewEvidence,
 }) {
   const [activeSubTab, setActiveSubTab] = useState("attempts");
 
   const pendingCount = reassessments.filter((r) => r.status === "PENDING").length;
+  const pendingEvidenceCount = pendingEvidence.length;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -65,6 +68,30 @@ export default function AssessmentsView({
           {pendingCount > 0 && (
             <span className="badge" style={{ background: "#fee2e2", color: "#991b1b" }}>
               {pendingCount} Pending
+            </span>
+          )}
+        </button>
+
+        <button
+          style={{
+            padding: "12px 20px",
+            border: "none",
+            borderBottom: activeSubTab === "evidence" ? "2px solid #2563eb" : "2px solid transparent",
+            background: "transparent",
+            fontWeight: 700,
+            fontSize: "0.9rem",
+            color: activeSubTab === "evidence" ? "#2563eb" : "#64748b",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+          }}
+          onClick={() => setActiveSubTab("evidence")}
+        >
+          Skill Evidence Review ({pendingEvidence.length})
+          {pendingEvidenceCount > 0 && (
+            <span className="badge" style={{ background: "#fef3c7", color: "#92400e" }}>
+              {pendingEvidenceCount} Pending
             </span>
           )}
         </button>
@@ -217,6 +244,125 @@ export default function AssessmentsView({
                             Cancel Request
                           </button>
                         )}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Sub Tab 3: Pending Evidence Review */}
+      {activeSubTab === "evidence" && (
+        <div className="panel" style={{ padding: 0 }}>
+          <div className="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Evidence ID</th>
+                  <th>Employee</th>
+                  <th>Skill & Proficiency</th>
+                  <th>Evidence Type</th>
+                  <th>Verification Evidence</th>
+                  <th>Submitted Date</th>
+                  <th style={{ textAlign: "right" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendingEvidence.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ textAlign: "center", padding: "36px", color: "#64748b" }}>
+                      No pending skill evidence submissions from your team.
+                    </td>
+                  </tr>
+                ) : (
+                  pendingEvidence.map((ev) => (
+                    <tr key={ev.id}>
+                      <td>
+                        <span style={{ fontFamily: "monospace", fontWeight: 600 }}>#{ev.id}</span>
+                      </td>
+                      <td>
+                        <div>
+                          <strong>{ev.employeeName || "Team Member"}</strong>
+                        </div>
+                      </td>
+                      <td>
+                        <div>
+                          <strong>{ev.skillName}</strong>
+                          {ev.currentLevel && (
+                            <small className="muted" style={{ display: "block" }}>
+                              Level: {ev.currentLevel}
+                            </small>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <span className="badge" style={{ background: "#f5f3ff", color: "#7c3aed" }}>
+                          {ev.evidenceType || "CERTIFICATE"}
+                        </span>
+                      </td>
+                      <td>
+                        {ev.evidenceUrl ? (
+                          <a
+                            href={ev.evidenceUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "4px",
+                              color: "#2563eb",
+                              textDecoration: "underline",
+                              fontSize: "0.85rem",
+                              maxWidth: "220px",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            <Icon name="link" size={14} />
+                            {ev.evidenceUrl}
+                          </a>
+                        ) : (
+                          <span className="muted">No URL provided</span>
+                        )}
+                      </td>
+                      <td>
+                        <small className="muted">
+                          {ev.createdAt ? new Date(ev.createdAt).toLocaleDateString() : "N/A"}
+                        </small>
+                      </td>
+                      <td style={{ textAlign: "right" }}>
+                        <div style={{ display: "inline-flex", gap: "8px" }}>
+                          <button
+                            className="btn btn--primary"
+                            style={{
+                              padding: "4px 12px",
+                              minHeight: "28px",
+                              fontSize: "0.78rem",
+                              background: "#059669",
+                              borderColor: "#059669",
+                            }}
+                            onClick={() => onReviewEvidence && onReviewEvidence(ev.id, "APPROVED")}
+                          >
+                            <Icon name="check" size={14} /> Approve
+                          </button>
+                          <button
+                            className="btn btn--ghost"
+                            style={{
+                              padding: "4px 12px",
+                              minHeight: "28px",
+                              fontSize: "0.78rem",
+                              color: "#dc2626",
+                              borderColor: "#fecaca",
+                            }}
+                            onClick={() => onReviewEvidence && onReviewEvidence(ev.id, "REJECTED")}
+                          >
+                            Reject
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

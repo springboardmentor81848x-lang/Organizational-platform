@@ -56,8 +56,8 @@ export const updateUserRole = (id, role) => api.patch(`/api/admin/users/${id}/ro
 export const updateUserStatus = (id, status) => api.patch(`/api/admin/users/${id}/status`, { status }).then((r) => r.data);
 
 /** Asks the backend (which calls Google Gemini) to recommend courses for an assessment result. */
-export const getAiRecommendations = (payload) =>
-  api.post("/api/ai/recommendations", payload, { timeout: 70000 }).then((r) => r.data);
+export const getAiRecommendations = (payload, config = {}) =>
+  api.post("/api/ai/recommendations", payload, { timeout: 70000, ...config }).then((r) => r.data);
 
 export const dashboardPath = (role) => {
   const r = String(role || "employee").toUpperCase();

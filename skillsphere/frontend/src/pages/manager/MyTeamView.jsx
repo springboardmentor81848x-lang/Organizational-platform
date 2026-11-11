@@ -19,10 +19,10 @@ export default function MyTeamView({
     if (!search.trim()) return true;
     const q = search.trim().toLowerCase();
     return (
-      m.fullName.toLowerCase().contains(q) ||
-      m.email.toLowerCase().contains(q) ||
-      (m.employeeId && m.employeeId.toLowerCase().contains(q)) ||
-      (m.jobRole && m.jobRole.toLowerCase().contains(q))
+      (m.fullName && m.fullName.toLowerCase().includes(q)) ||
+      (m.email && m.email.toLowerCase().includes(q)) ||
+      (m.employeeId && m.employeeId.toLowerCase().includes(q)) ||
+      (m.jobRole && m.jobRole.toLowerCase().includes(q))
     );
   });
 

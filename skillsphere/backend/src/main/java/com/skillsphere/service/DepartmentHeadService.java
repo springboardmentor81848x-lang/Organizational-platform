@@ -96,11 +96,14 @@ public class DepartmentHeadService {
                 return departmentRepository.findById(requestedDeptId)
                         .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Department not found: " + requestedDeptId));
             }
-            List<Department> allDepts = departmentRepository.findAll();
-            if (allDepts.isEmpty()) {
-                throw new ApiException(HttpStatus.NOT_FOUND, "No departments exist in system");
+            EmployeeProfile profile = employeeProfileRepository.findByUserId(caller.getId()).orElse(null);
+            if (profile != null && profile.getDepartment() != null && !profile.getDepartment().isBlank()) {
+                Department adminDept = departmentRepository.findByName(profile.getDepartment())
+                        .or(() -> departmentRepository.findByCode(profile.getDepartment()))
+                        .orElse(null);
+                if (adminDept != null) return adminDept;
             }
-            return allDepts.get(0);
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Department ID parameter is required for administrator queries");
         }
 
         if (caller.getRole() != Role.DEPARTMENT_HEAD) {
@@ -110,7 +113,7 @@ public class DepartmentHeadService {
         // Look up department by head_user_id
         Department authorizedDept = departmentRepository.findByHeadUserId(caller.getId()).orElse(null);
 
-        // Fallback: match by employee profile department name
+        // Fallback 1: match by employee profile department name or code
         if (authorizedDept == null) {
             EmployeeProfile profile = employeeProfileRepository.findByUserId(caller.getId()).orElse(null);
             if (profile != null && profile.getDepartment() != null && !profile.getDepartment().isBlank()) {
@@ -120,6 +123,7 @@ public class DepartmentHeadService {
             }
         }
 
+        // Strict Fail-Closed: Never select first department or arbitrary fallback
         if (authorizedDept == null) {
             throw new ApiException(HttpStatus.FORBIDDEN, "No authorized department assigned to your Department Head account");
         }
@@ -809,9 +813,16 @@ public class DepartmentHeadService {
                 .orElse(4.8);
         avgRating = Math.round(avgRating * 10.0) / 10.0;
 
+        List<Long> assignmentIds = assignments.stream().map(MentorAssignment::getId).toList();
+        long completedSessions = assignmentIds.isEmpty() ? 0L :
+                mentorshipSessionRepository.findAll().stream()
+                        .filter(s -> s.getAssignment() != null && assignmentIds.contains(s.getAssignment().getId()) &&
+                                     s.getStatus() == SessionStatus.COMPLETED)
+                        .count();
+
         DeptMentoringSummaryDto mentoringSummary = new DeptMentoringSummaryDto(
                 activeAssignments,
-                assignments.size() * 2L, // completed sessions estimate
+                completedSessions,
                 avgRating,
                 activeMentees,
                 activeMentors,
@@ -938,6 +949,22 @@ public class DepartmentHeadService {
         List<Long> userIdList = new ArrayList<>(deptUserIds);
 
         switch (type) {
+            case "EXECUTIVE_SUMMARY" -> {
+                title = "Department Strategic Executive Summary Report";
+                DepartmentHeadOverviewDto overview = getDashboardOverview(callerEmail, dept.getId());
+                summary.put("Total Workforce", overview.totalEmployees());
+                summary.put("Baseline Assessment Coverage", overview.skillCoveragePercentage() + "%");
+                summary.put("Assessed Workforce", overview.assessedEmployeesCount());
+                summary.put("Critical Skill Shortages", overview.criticalShortagesCount());
+                summary.put("Course Completion Rate", overview.avgCompletionRate() + "%");
+                summary.put("Active Mentorships", overview.activeMentorshipsCount());
+                headers = List.of("Strategic Indicator", "Department Metric", "Status Assessment");
+                rows.add(Map.of("Strategic Indicator", "Total Workforce", "Department Metric", String.valueOf(overview.totalEmployees()), "Status Assessment", "Active assigned personnel"));
+                rows.add(Map.of("Strategic Indicator", "Baseline Evaluation Coverage", "Department Metric", overview.skillCoveragePercentage() + "%", "Status Assessment", overview.skillCoveragePercentage() >= 75.0 ? "Healthy" : "Needs Review"));
+                rows.add(Map.of("Strategic Indicator", "Critical Skill Shortages", "Department Metric", String.valueOf(overview.criticalShortagesCount()), "Status Assessment", overview.criticalShortagesCount() == 0 ? "Optimal" : "Targeted Upskilling Required"));
+                rows.add(Map.of("Strategic Indicator", "Course Completion Rate", "Department Metric", overview.avgCompletionRate() + "%", "Status Assessment", overview.avgCompletionRate() >= 60.0 ? "Good" : "Action Required"));
+                rows.add(Map.of("Strategic Indicator", "Active Mentorship Pairs", "Department Metric", String.valueOf(overview.activeMentorshipsCount()), "Status Assessment", overview.activeMentorshipsCount() > 0 ? "Active" : "None"));
+            }
             case "SKILL_COVERAGE" -> {
                 title = "Department Competency & Skill Coverage Report";
                 DeptSkillMatrixDto matrix = getDepartmentSkillMatrix(callerEmail, dept.getId(), null, null);
@@ -1102,6 +1129,19 @@ public class DepartmentHeadService {
 
         HrAnnouncement a = hrAnnouncementRepository.findById(announcementId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Announcement not found: " + announcementId));
+
+        if (caller.getRole() != Role.ADMIN) {
+            if ("DEPARTMENT".equalsIgnoreCase(a.getTargetType())) {
+                Department dept = resolveAuthorizedDepartment(callerEmail, null);
+                if (a.getDepartment() != null && !a.getDepartment().getId().equals(dept.getId())) {
+                    throw new ApiException(HttpStatus.FORBIDDEN, "Access denied: Announcement belongs to another department");
+                }
+            } else if ("ROLE".equalsIgnoreCase(a.getTargetType())) {
+                if (a.getTargetRole() != null && !caller.getRole().name().equalsIgnoreCase(a.getTargetRole())) {
+                    throw new ApiException(HttpStatus.FORBIDDEN, "Access denied: Announcement targeted to a different role");
+                }
+            }
+        }
 
         if (!hrAnnouncementReadRepository.existsByAnnouncementIdAndUserId(announcementId, caller.getId())) {
             HrAnnouncementRead read = new HrAnnouncementRead(a, caller);

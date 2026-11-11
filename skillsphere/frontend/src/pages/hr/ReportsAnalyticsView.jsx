@@ -106,6 +106,64 @@ export default function ReportsAnalyticsView() {
     }
   };
 
+  const handleExportCsv = () => {
+    if (!reportResult || !reportResult.data) return;
+
+    const escapeCsv = (val) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+
+    let csvContent = "";
+    csvContent += `Report Title,${escapeCsv(reportResult.title)}\n`;
+    csvContent += `Report Type,${escapeCsv(reportResult.reportType)}\n`;
+    csvContent += `Generated At,${escapeCsv(reportResult.generatedAt)}\n\n`;
+
+    // Summary metrics
+    csvContent += "Metric,Value\n";
+    Object.entries(reportResult.data).forEach(([k, v]) => {
+      if (typeof v !== "object" || v === null) {
+        csvContent += `${escapeCsv(k)},${escapeCsv(v)}\n`;
+      }
+    });
+
+    // Detailed table if present
+    const dataObj = reportResult.data;
+    const arrayKey = Object.keys(dataObj).find((k) => Array.isArray(dataObj[k]));
+    if (arrayKey && dataObj[arrayKey].length > 0) {
+      const items = dataObj[arrayKey];
+      csvContent += `\nDetailed Breakdown: ${escapeCsv(arrayKey)}\n`;
+      const first = items[0];
+      if (typeof first === "object" && first !== null) {
+        const headers = Object.keys(first);
+        csvContent += headers.map(escapeCsv).join(",") + "\n";
+        items.forEach((row) => {
+          csvContent += headers.map((h) => escapeCsv(row[h])).join(",") + "\n";
+        });
+      } else {
+        csvContent += "Item\n";
+        items.forEach((item) => {
+          csvContent += `${escapeCsv(item)}\n`;
+        });
+      }
+    }
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const filename = `hr_report_${reportResult.reportType.toLowerCase()}_${new Date().toISOString().slice(0, 10)}.csv`;
+    link.setAttribute("href", url);
+    link.setAttribute("download", filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div>
       <div className="hr-card">
@@ -117,6 +175,13 @@ export default function ReportsAnalyticsView() {
             </p>
           </div>
           <div style={{ display: "flex", gap: "10px" }}>
+            <button
+              className="btn-secondary btn-sm"
+              onClick={handleExportCsv}
+              disabled={!reportResult || loading}
+            >
+              <Icon name="file" size={14} /> Export CSV
+            </button>
             <button
               className="btn-primary btn-sm"
               onClick={handleOpenShare}

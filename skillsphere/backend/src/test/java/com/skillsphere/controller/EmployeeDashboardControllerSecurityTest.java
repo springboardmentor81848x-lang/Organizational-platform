@@ -70,6 +70,7 @@ class EmployeeDashboardControllerSecurityTest {
     void testOverview_Employee_ReturnsOk() throws Exception {
         EmployeeDashboardOverviewDto dto = new EmployeeDashboardOverviewDto(
                 1L, "Alice Employee", "emp@skillsphere.com", "EMP-001", "Developer", "IT", "Mid-Level",
+                "Frontend Guild", "Bob Manager",
                 5, 3, 3.8, 2, 4, 85, "Java",
                 1, 3, 2, true, "Jane Mentor", "Engineering",
                 2, 3L, Collections.emptyList()

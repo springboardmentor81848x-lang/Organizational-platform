@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
@@ -27,6 +28,7 @@ public class EmployeeDashboardService {
     private final MentorAssignmentRepository mentorAssignmentRepository;
     private final MentorshipGoalRepository goalRepository;
     private final NotificationRepository notificationRepository;
+    private final TeamMembershipRepository teamMembershipRepository;
 
     public EmployeeDashboardService(UserRepository userRepository,
                                   EmployeeProfileRepository profileRepository,
@@ -37,7 +39,8 @@ public class EmployeeDashboardService {
                                   CertificateRepository certificateRepository,
                                   MentorAssignmentRepository mentorAssignmentRepository,
                                   MentorshipGoalRepository goalRepository,
-                                  NotificationRepository notificationRepository) {
+                                  NotificationRepository notificationRepository,
+                                  TeamMembershipRepository teamMembershipRepository) {
         this.userRepository = userRepository;
         this.profileRepository = profileRepository;
         this.employeeSkillRepository = employeeSkillRepository;
@@ -48,6 +51,7 @@ public class EmployeeDashboardService {
         this.mentorAssignmentRepository = mentorAssignmentRepository;
         this.goalRepository = goalRepository;
         this.notificationRepository = notificationRepository;
+        this.teamMembershipRepository = teamMembershipRepository;
     }
 
     @Transactional(readOnly = true)
@@ -59,6 +63,19 @@ public class EmployeeDashboardService {
         String jobRole = profile != null && profile.getJobRole() != null ? profile.getJobRole() : "Software Engineer";
         String department = profile != null && profile.getDepartment() != null ? profile.getDepartment() : "Engineering";
         String experienceLevel = profile != null && profile.getExperienceLevel() != null ? profile.getExperienceLevel() : "Mid";
+
+        List<TeamMembership> memberships = teamMembershipRepository.findByUserIdWithTeamAndManager(user.getId());
+        String teamName = null;
+        String reportingManagerName = null;
+        if (!memberships.isEmpty()) {
+            Team team = memberships.get(0).getTeam();
+            if (team != null) {
+                teamName = team.getName();
+                if (team.getManager() != null) {
+                    reportingManagerName = team.getManager().getFullName();
+                }
+            }
+        }
 
         List<EmployeeSkill> employeeSkills = employeeSkillRepository.findByUserId(user.getId());
         int skillsCount = employeeSkills.size();
@@ -111,31 +128,37 @@ public class EmployeeDashboardService {
 
         for (AssessmentAttempt a : attempts) {
             if (recentActivities.size() >= 5) break;
+            String ts = a.getCompletedAt() != null ? dtf.format(a.getCompletedAt())
+                    : (a.getStartedAt() != null ? dtf.format(a.getStartedAt()) : Instant.now().toString());
             recentActivities.add(new RecentActivityItem(
                     "ASSESSMENT",
                     "Completed " + (a.getSkill() != null ? a.getSkill().getName() : "Skill") + " Assessment",
                     "Score: " + (a.getScore() != null ? a.getScore() : 0) + "% (" + (Boolean.TRUE.equals(a.getPassed()) ? "Passed" : "Retake recommended") + ")",
-                    a.getCompletedAt() != null ? dtf.format(a.getCompletedAt()) : dtf.format(a.getStartedAt())
+                    ts
             ));
         }
 
         for (Certificate c : certs) {
             if (recentActivities.size() >= 8) break;
+            String issueDateStr = c.getIssueDate() != null
+                    ? c.getIssueDate().atStartOfDay(java.time.ZoneOffset.UTC).toInstant().toString()
+                    : (c.getCreatedAt() != null ? dtf.format(c.getCreatedAt()) : Instant.now().toString());
             recentActivities.add(new RecentActivityItem(
                     "CERTIFICATE",
                     "Earned Certificate: " + c.getTitle(),
                     "Code: " + c.getCertificateCode(),
-                    dtf.format(c.getIssueDate())
+                    issueDateStr
             ));
         }
 
         for (EmployeeLearning l : learnings) {
             if (recentActivities.size() >= 10) break;
+            String enrolledStr = l.getEnrolledAt() != null ? dtf.format(l.getEnrolledAt()) : Instant.now().toString();
             recentActivities.add(new RecentActivityItem(
                     "COURSE",
                     (l.getProgressPct() >= 100 ? "Completed: " : "Enrolled in: ") + (l.getCourse() != null ? l.getCourse().getTitle() : "Course"),
                     "Progress: " + l.getProgressPct() + "%",
-                    dtf.format(l.getEnrolledAt())
+                    enrolledStr
             ));
         }
 
@@ -147,6 +170,8 @@ public class EmployeeDashboardService {
                 jobRole,
                 department,
                 experienceLevel,
+                teamName,
+                reportingManagerName,
                 skillsCount,
                 verifiedSkillsCount,
                 averageProficiency,

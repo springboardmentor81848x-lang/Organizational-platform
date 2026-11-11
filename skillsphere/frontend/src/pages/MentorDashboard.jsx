@@ -133,13 +133,13 @@ export default function MentorDashboard() {
         </nav>
 
         <div className="mentor-sidebar-footer">
-          <div className="mentor-avatar">{user.fullName.charAt(0)}</div>
+          <div className="mentor-avatar">{user?.fullName ? user.fullName.charAt(0) : "M"}</div>
           <div style={{ flex: 1, minWidth: 0, overflow: "hidden" }}>
             <strong style={{ display: "block", fontSize: "0.85rem", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden" }}>
-              {user.fullName}
+              {user?.fullName || "Mentor"}
             </strong>
             <small style={{ color: "var(--mt-faint)", fontSize: "0.75rem", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden", display: "block" }}>
-              {user.email}
+              {user?.email || ""}
             </small>
           </div>
           <button

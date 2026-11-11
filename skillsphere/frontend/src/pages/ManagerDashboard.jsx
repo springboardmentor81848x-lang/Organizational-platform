@@ -26,6 +26,8 @@ import {
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
+  getPendingEvidence,
+  reviewEvidence,
 } from "../services/platformService.js";
 import { parseApiError } from "../services/apiClient.js";
 
@@ -86,6 +88,7 @@ export default function ManagerDashboard() {
   const [heatmapData, setHeatmapData] = useState(null);
   const [assessments, setAssessments] = useState([]);
   const [reassessments, setReassessments] = useState([]);
+  const [pendingEvidence, setPendingEvidence] = useState([]);
   const [aiRecs, setAiRecs] = useState(null);
   const [courseRecs, setCourseRecs] = useState([]);
   const [learnings, setLearnings] = useState([]);
@@ -133,6 +136,7 @@ export default function ManagerDashboard() {
         lrn,
         ment,
         notifs,
+        pEv,
       ] = await Promise.all([
         getManagerOverview(teamIdParam).catch(() => null),
         getManagerTeamMembers({ teamId: teamIdParam }).catch(() => []),
@@ -146,6 +150,7 @@ export default function ManagerDashboard() {
         getTeamLearningProgress({ teamId: teamIdParam }).catch(() => []),
         getManagerMentorshipStatus(teamIdParam).catch(() => null),
         getNotifications().catch(() => []),
+        getPendingEvidence().catch(() => []),
       ]);
 
       setOverview(ov);
@@ -155,6 +160,7 @@ export default function ManagerDashboard() {
       setHeatmapData(heat);
       setAssessments(asms);
       setReassessments(reasm);
+      setPendingEvidence(pEv);
       setAiRecs(ai);
       setCourseRecs(cRecs);
       setLearnings(lrn);
@@ -185,6 +191,19 @@ export default function ManagerDashboard() {
       setReassessments((prev) =>
         prev.map((r) => (r.id === id ? { ...r, status: "CANCELLED" } : r))
       );
+    } catch (err) {
+      setError(parseApiError(err).message);
+    }
+  };
+
+  const handleReviewEvidence = async (evidenceId, status) => {
+    setError("");
+    setSuccess("");
+    try {
+      await reviewEvidence(evidenceId, status);
+      setSuccess(`Evidence ${status.toLowerCase()} successfully.`);
+      setPendingEvidence((prev) => prev.filter((e) => e.id !== evidenceId));
+      loadScopedData();
     } catch (err) {
       setError(parseApiError(err).message);
     }
@@ -339,13 +358,15 @@ export default function ManagerDashboard() {
             />
           )}
 
-          {/* Module 6: Employee Assessments & Reassessments */}
+          {/* Module 6: Employee Assessments & Evidence Review */}
           {activeTab === "assessments" && (
             <AssessmentsView
               assessments={assessments}
               reassessments={reassessments}
+              pendingEvidence={pendingEvidence}
               onRequestReassessment={(data) => setReassessmentModal({ open: true, data: data || {} })}
               onCancelReassessment={handleCancelReassessment}
+              onReviewEvidence={handleReviewEvidence}
             />
           )}
 

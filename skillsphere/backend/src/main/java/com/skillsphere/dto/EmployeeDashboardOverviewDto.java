@@ -10,6 +10,8 @@ public record EmployeeDashboardOverviewDto(
         String jobRole,
         String department,
         String experienceLevel,
+        String teamName,
+        String reportingManagerName,
         int skillsCount,
         int verifiedSkillsCount,
         double averageProficiency,

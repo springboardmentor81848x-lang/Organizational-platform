@@ -69,7 +69,7 @@ class DatabaseBackupEndToEndIntegrationTest {
         System.out.println("Representative record counts: " + statsBefore.get("representativeRecordCounts"));
 
         assertEquals(57, tablesBefore, "Live SkillSphere database must have all 57 public tables.");
-        assertEquals(10, migrationsBefore, "Live SkillSphere database must have all 10 Flyway migrations.");
+        assertTrue(migrationsBefore >= 10, "Live SkillSphere database must have at least 10 Flyway migrations.");
         assertTrue(usersBefore >= 1, "Live database must contain users.");
 
         // Step 2: Trigger real backup

@@ -16,7 +16,7 @@ public interface LeadershipReportShareRepository extends JpaRepository<Leadershi
 
     @Query("select s from LeadershipReportShare s join fetch s.sharedBy left join fetch s.department " +
            "where s.sharedWithRole in (:roles) " +
-           "or (:deptId is not null and s.department.id = :deptId) " +
+           "and (s.department is null or (:deptId is not null and s.department.id = :deptId)) " +
            "order by s.createdAt desc")
     List<LeadershipReportShare> findForLeadership(@Param("roles") List<String> roles, @Param("deptId") Long deptId);
 }

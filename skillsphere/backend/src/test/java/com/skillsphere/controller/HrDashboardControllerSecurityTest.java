@@ -164,7 +164,7 @@ class HrDashboardControllerSecurityTest {
                 hrUser.getId(), "Helen HR", "MANAGER", null, "All Departments",
                 "Review team gaps", "{}", Instant.now()
         );
-        when(hrDashboardService.getSharedLeadershipReports(eq("MANAGER"), any())).thenReturn(List.of(share));
+        when(hrDashboardService.getSharedLeadershipReports(any(User.class), any())).thenReturn(List.of(share));
 
         mockMvc.perform(get("/api/hr/leadership-reports/shared"))
                 .andExpect(status().isOk())

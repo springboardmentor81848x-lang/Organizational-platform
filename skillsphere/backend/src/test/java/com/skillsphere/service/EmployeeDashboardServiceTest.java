@@ -25,6 +25,7 @@ class EmployeeDashboardServiceTest {
     private MentorAssignmentRepository mentorAssignmentRepository;
     private MentorshipGoalRepository goalRepository;
     private NotificationRepository notificationRepository;
+    private TeamMembershipRepository teamMembershipRepository;
 
     private EmployeeDashboardService dashboardService;
 
@@ -40,6 +41,7 @@ class EmployeeDashboardServiceTest {
         mentorAssignmentRepository = mock(MentorAssignmentRepository.class);
         goalRepository = mock(MentorshipGoalRepository.class);
         notificationRepository = mock(NotificationRepository.class);
+        teamMembershipRepository = mock(TeamMembershipRepository.class);
 
         dashboardService = new EmployeeDashboardService(
                 userRepository,
@@ -51,7 +53,8 @@ class EmployeeDashboardServiceTest {
                 certificateRepository,
                 mentorAssignmentRepository,
                 goalRepository,
-                notificationRepository
+                notificationRepository,
+                teamMembershipRepository
         );
     }
 
@@ -91,6 +94,7 @@ class EmployeeDashboardServiceTest {
         when(certificateRepository.findByUserId(42L)).thenReturn(List.of());
         when(mentorAssignmentRepository.findByEmployeeIdAndStatus(42L, AssignmentStatus.ACTIVE)).thenReturn(Optional.empty());
         when(notificationRepository.countByRecipientIdAndIsReadFalse(42L)).thenReturn(3L);
+        when(teamMembershipRepository.findByUserIdWithTeamAndManager(42L)).thenReturn(List.of());
 
         EmployeeDashboardOverviewDto overview = dashboardService.getOverview("employee@skillsphere.com");
 

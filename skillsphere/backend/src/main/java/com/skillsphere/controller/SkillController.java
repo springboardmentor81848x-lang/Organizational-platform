@@ -86,8 +86,8 @@ public class SkillController {
 
     @GetMapping("/evidence/pending")
     @PreAuthorize("hasAnyRole('MANAGER', 'HR_SPECIALIST', 'ADMIN')")
-    public ResponseEntity<List<SkillEvidenceDto>> getPendingEvidence() {
-        return ResponseEntity.ok(skillService.getPendingEvidence());
+    public ResponseEntity<List<SkillEvidenceDto>> getPendingEvidence(@AuthenticationPrincipal UserDetails userDetails) {
+        return ResponseEntity.ok(skillService.getPendingEvidence(userDetails.getUsername()));
     }
 
     @PutMapping("/evidence/{evidenceId}/review")

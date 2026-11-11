@@ -21,13 +21,15 @@ class UserServicePasswordTest {
 
     private UserRepository userRepository;
     private PasswordEncoder passwordEncoder;
+    private AdminGovernanceService adminGovernanceService;
     private UserService userService;
 
     @BeforeEach
     void setUp() {
         userRepository = mock(UserRepository.class);
         passwordEncoder = mock(PasswordEncoder.class);
-        userService = new UserService(userRepository, passwordEncoder);
+        adminGovernanceService = mock(AdminGovernanceService.class);
+        userService = new UserService(userRepository, passwordEncoder, adminGovernanceService);
     }
 
     @Test

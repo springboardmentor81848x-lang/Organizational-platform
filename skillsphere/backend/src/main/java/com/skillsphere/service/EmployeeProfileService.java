@@ -3,23 +3,32 @@ package com.skillsphere.service;
 import com.skillsphere.dto.EmployeeProfileDto;
 import com.skillsphere.dto.UpdateProfileRequest;
 import com.skillsphere.entity.EmployeeProfile;
+import com.skillsphere.entity.Team;
+import com.skillsphere.entity.TeamMembership;
 import com.skillsphere.entity.User;
 import com.skillsphere.exception.ApiException;
 import com.skillsphere.repository.EmployeeProfileRepository;
+import com.skillsphere.repository.TeamMembershipRepository;
 import com.skillsphere.repository.UserRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
 
 @Service
 public class EmployeeProfileService {
 
     private final EmployeeProfileRepository profileRepository;
     private final UserRepository userRepository;
+    private final TeamMembershipRepository teamMembershipRepository;
 
-    public EmployeeProfileService(EmployeeProfileRepository profileRepository, UserRepository userRepository) {
+    public EmployeeProfileService(EmployeeProfileRepository profileRepository,
+                                  UserRepository userRepository,
+                                  TeamMembershipRepository teamMembershipRepository) {
         this.profileRepository = profileRepository;
         this.userRepository = userRepository;
+        this.teamMembershipRepository = teamMembershipRepository;
     }
 
     @Transactional
@@ -59,6 +68,19 @@ public class EmployeeProfileService {
     }
 
     private EmployeeProfileDto toDto(User u, EmployeeProfile p) {
+        List<TeamMembership> memberships = teamMembershipRepository.findByUserIdWithTeamAndManager(u.getId());
+        String teamName = null;
+        String reportingManagerName = null;
+        if (!memberships.isEmpty()) {
+            Team team = memberships.get(0).getTeam();
+            if (team != null) {
+                teamName = team.getName();
+                if (team.getManager() != null) {
+                    reportingManagerName = team.getManager().getFullName();
+                }
+            }
+        }
+
         return new EmployeeProfileDto(
                 u.getId(),
                 u.getFullName(),
@@ -67,6 +89,8 @@ public class EmployeeProfileService {
                 p.getJobRole() != null ? p.getJobRole() : "Software Developer",
                 p.getDepartment(),
                 p.getExperienceLevel() != null ? p.getExperienceLevel() : "Entry level",
+                teamName,
+                reportingManagerName,
                 p.getBio(),
                 p.getSkills()
         );

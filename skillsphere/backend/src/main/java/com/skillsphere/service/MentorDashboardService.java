@@ -97,7 +97,11 @@ public class MentorDashboardService {
     private MentorProfile getOrCreateMentorProfile(User mentor) {
         return mentorProfileRepository.findByUserId(mentor.getId())
                 .orElseGet(() -> {
-                    MentorProfile mp = new MentorProfile(mentor, "Expert Mentor & Technical Advisor", "General Engineering", 5, mentor);
+                    User approvedBy = userRepository.findAll().stream()
+                            .filter(u -> u.getRole() == Role.ADMIN)
+                            .findFirst()
+                            .orElse(mentor);
+                    MentorProfile mp = new MentorProfile(mentor, "Expert Mentor & Technical Advisor", "General Engineering", 5, approvedBy);
                     return mentorProfileRepository.save(mp);
                 });
     }
@@ -115,7 +119,7 @@ public class MentorDashboardService {
     // 1. Dashboard Overview
     // -------------------------------------------------------------------------
 
-    @Transactional(readOnly = true)
+    @Transactional
     public MentorDashboardOverviewDto getOverview(String mentorEmail) {
         User mentor = getUserByEmail(mentorEmail);
         MentorProfile mp = getOrCreateMentorProfile(mentor);
@@ -199,7 +203,7 @@ public class MentorDashboardService {
     // 2. Mentor Profile & Availability
     // -------------------------------------------------------------------------
 
-    @Transactional(readOnly = true)
+    @Transactional
     public MentorProfileDto getProfile(String mentorEmail) {
         User mentor = getUserByEmail(mentorEmail);
         MentorProfile mp = getOrCreateMentorProfile(mentor);

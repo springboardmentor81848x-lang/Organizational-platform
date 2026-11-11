@@ -5,6 +5,7 @@ import com.skillsphere.dto.RecommendationRequest.SkillResult;
 import com.skillsphere.entity.*;
 import com.skillsphere.exception.ApiException;
 import com.skillsphere.repository.*;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -36,6 +37,50 @@ public class ManagerService {
     private final NotificationRepository notificationRepository;
     private final NotificationService notificationService;
     private final GeminiRecommendationService geminiRecommendationService;
+    private final MentorshipRequestRepository mentorshipRequestRepository;
+
+    @Autowired
+    public ManagerService(UserRepository userRepository,
+                          EmployeeProfileRepository profileRepository,
+                          TeamRepository teamRepository,
+                          TeamMembershipRepository membershipRepository,
+                          SkillRepository skillRepository,
+                          SkillCategoryRepository categoryRepository,
+                          RoleSkillRequirementRepository requirementRepository,
+                          EmployeeSkillRepository employeeSkillRepository,
+                          SkillGapRepository skillGapRepository,
+                          AssessmentAttemptRepository assessmentAttemptRepository,
+                          CourseRepository courseRepository,
+                          EmployeeLearningRepository learningRepository,
+                          MentorAssignmentRepository mentorAssignmentRepository,
+                          AdminMentorshipService adminMentorshipService,
+                          ReassessmentRequestRepository reassessmentRequestRepository,
+                          ManagerCourseRecommendationRepository managerCourseRecommendationRepository,
+                          NotificationRepository notificationRepository,
+                          NotificationService notificationService,
+                          GeminiRecommendationService geminiRecommendationService,
+                          MentorshipRequestRepository mentorshipRequestRepository) {
+        this.userRepository = userRepository;
+        this.profileRepository = profileRepository;
+        this.teamRepository = teamRepository;
+        this.membershipRepository = membershipRepository;
+        this.skillRepository = skillRepository;
+        this.categoryRepository = categoryRepository;
+        this.requirementRepository = requirementRepository;
+        this.employeeSkillRepository = employeeSkillRepository;
+        this.skillGapRepository = skillGapRepository;
+        this.assessmentAttemptRepository = assessmentAttemptRepository;
+        this.courseRepository = courseRepository;
+        this.learningRepository = learningRepository;
+        this.mentorAssignmentRepository = mentorAssignmentRepository;
+        this.adminMentorshipService = adminMentorshipService;
+        this.reassessmentRequestRepository = reassessmentRequestRepository;
+        this.managerCourseRecommendationRepository = managerCourseRecommendationRepository;
+        this.notificationRepository = notificationRepository;
+        this.notificationService = notificationService;
+        this.geminiRecommendationService = geminiRecommendationService;
+        this.mentorshipRequestRepository = mentorshipRequestRepository;
+    }
 
     public ManagerService(UserRepository userRepository,
                           EmployeeProfileRepository profileRepository,
@@ -56,25 +101,12 @@ public class ManagerService {
                           NotificationRepository notificationRepository,
                           NotificationService notificationService,
                           GeminiRecommendationService geminiRecommendationService) {
-        this.userRepository = userRepository;
-        this.profileRepository = profileRepository;
-        this.teamRepository = teamRepository;
-        this.membershipRepository = membershipRepository;
-        this.skillRepository = skillRepository;
-        this.categoryRepository = categoryRepository;
-        this.requirementRepository = requirementRepository;
-        this.employeeSkillRepository = employeeSkillRepository;
-        this.skillGapRepository = skillGapRepository;
-        this.assessmentAttemptRepository = assessmentAttemptRepository;
-        this.courseRepository = courseRepository;
-        this.learningRepository = learningRepository;
-        this.mentorAssignmentRepository = mentorAssignmentRepository;
-        this.adminMentorshipService = adminMentorshipService;
-        this.reassessmentRequestRepository = reassessmentRequestRepository;
-        this.managerCourseRecommendationRepository = managerCourseRecommendationRepository;
-        this.notificationRepository = notificationRepository;
-        this.notificationService = notificationService;
-        this.geminiRecommendationService = geminiRecommendationService;
+        this(userRepository, profileRepository, teamRepository, membershipRepository,
+                skillRepository, categoryRepository, requirementRepository, employeeSkillRepository,
+                skillGapRepository, assessmentAttemptRepository, courseRepository, learningRepository,
+                mentorAssignmentRepository, adminMentorshipService, reassessmentRequestRepository,
+                managerCourseRecommendationRepository, notificationRepository, notificationService,
+                geminiRecommendationService, null);
     }
 
     // -------------------------------------------------------------
@@ -806,6 +838,14 @@ public class ManagerService {
         ReassessmentRequest r = reassessmentRequestRepository.findById(requestId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Reassessment request not found."));
 
+        if (!"PENDING".equalsIgnoreCase(r.getStatus())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot cancel a reassessment request that is already " + r.getStatus());
+        }
+
+        if (caller.getRole() != Role.ADMIN && !r.getManager().getId().equals(caller.getId())) {
+            throw new ApiException(HttpStatus.FORBIDDEN, "Access denied. You can only cancel reassessment requests that you initiated.");
+        }
+
         validateEmployeeAccess(caller, r.getEmployee().getId());
         r.setStatus("CANCELLED");
         r.setUpdatedAt(Instant.now());
@@ -1010,9 +1050,32 @@ public class ManagerService {
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Employee not found."));
         User mentor = userRepository.findById(req.mentorId())
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Mentor not found."));
+        if (mentor.getRole() != Role.MENTOR) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "The selected user is not a registered Mentor.");
+        }
         Skill skill = req.skillId() != null ? skillRepository.findById(req.skillId()).orElse(null) : null;
 
         String skillText = (skill != null) ? skill.getName() : "skill advancement";
+
+        // Create persisted mentorship request for the mentor to review and process
+        if (mentorshipRequestRepository != null) {
+            boolean activeExists = mentorAssignmentRepository.existsByMentorIdAndEmployeeIdAndStatus(
+                    mentor.getId(), employee.getId(), AssignmentStatus.ACTIVE);
+            if (activeExists) {
+                throw new ApiException(HttpStatus.CONFLICT, "Employee is already actively paired with this mentor.");
+            }
+
+            boolean pendingExists = mentorshipRequestRepository.existsByMentorIdAndEmployeeIdAndStatus(
+                    mentor.getId(), employee.getId(), "PENDING");
+            if (pendingExists) {
+                throw new ApiException(HttpStatus.CONFLICT, "A pending mentorship request to this mentor already exists for this employee.");
+            }
+
+            String refMessage = "[Manager Referral from " + caller.getFullName() + "] Note: " + req.note().trim()
+                    + (skill != null ? " (Target Skill: " + skill.getName() + ")" : "");
+            MentorshipRequest mReq = new MentorshipRequest(mentor, employee, refMessage);
+            mentorshipRequestRepository.save(mReq);
+        }
 
         // Notify mentor
         notificationService.createNotification(

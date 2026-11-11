@@ -10,6 +10,7 @@ import com.skillsphere.entity.User;
 import com.skillsphere.exception.ApiException;
 import com.skillsphere.repository.UserRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,10 +24,15 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final AdminGovernanceService adminGovernanceService;
 
-    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    @Autowired
+    public UserService(UserRepository userRepository, PasswordEncoder passwordEncoder,
+                       AdminGovernanceService adminGovernanceService) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+        this.adminGovernanceService = java.util.Objects.requireNonNull(adminGovernanceService,
+                "AdminGovernanceService is required for secure administrator audit logging");
     }
 
     /**
@@ -119,24 +125,64 @@ public class UserService {
     @Transactional
     public UserResponse changeRole(Long id, Role newRole, String actingAdminEmail) {
         User target = find(id);
-        if (target.getEmail().equals(actingAdminEmail)) {
+        if (target.getEmail().equalsIgnoreCase(actingAdminEmail)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "You cannot change your own role.");
         }
+        if (target.getRole() == Role.ADMIN && newRole != Role.ADMIN) {
+            long activeAdminCount = userRepository.findAll().stream()
+                    .filter(u -> u.getRole() == Role.ADMIN && u.getAccountStatus() == AccountStatus.ACTIVE)
+                    .count();
+            if (activeAdminCount <= 1) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot demote the last remaining active platform administrator.");
+            }
+        }
+        Role oldRole = target.getRole();
         target.setRole(newRole);
         if (target.getRequestedRole() == newRole) {
             target.setRequestedRole(null);                 // request fulfilled
         }
-        return UserResponse.from(userRepository.save(target));
+        target = userRepository.save(target);
+
+        User actingAdmin = userRepository.findByEmail(actingAdminEmail.trim().toLowerCase()).orElse(null);
+        adminGovernanceService.recordAuditLog(
+                actingAdmin,
+                "CHANGE_ROLE",
+                "User",
+                target.getId().toString(),
+                "Changed role of " + target.getEmail() + " from " + oldRole + " to " + newRole,
+                "127.0.0.1"
+        );
+        return UserResponse.from(target);
     }
 
     @Transactional
     public UserResponse changeStatus(Long id, AccountStatus status, String actingAdminEmail) {
         User target = find(id);
-        if (target.getEmail().equals(actingAdminEmail)) {
+        if (target.getEmail().equalsIgnoreCase(actingAdminEmail)) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "You cannot change your own account status.");
         }
+        if (status != AccountStatus.ACTIVE && target.getRole() == Role.ADMIN && target.getAccountStatus() == AccountStatus.ACTIVE) {
+            long activeAdminCount = userRepository.findAll().stream()
+                    .filter(u -> u.getRole() == Role.ADMIN && u.getAccountStatus() == AccountStatus.ACTIVE)
+                    .count();
+            if (activeAdminCount <= 1) {
+                throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot deactivate the last remaining active platform administrator.");
+            }
+        }
+        AccountStatus oldStatus = target.getAccountStatus();
         target.setAccountStatus(status);
-        return UserResponse.from(userRepository.save(target));
+        target = userRepository.save(target);
+
+        User actingAdmin = userRepository.findByEmail(actingAdminEmail.trim().toLowerCase()).orElse(null);
+        adminGovernanceService.recordAuditLog(
+                actingAdmin,
+                "CHANGE_STATUS",
+                "User",
+                target.getId().toString(),
+                "Changed account status of " + target.getEmail() + " from " + oldStatus + " to " + status,
+                "127.0.0.1"
+        );
+        return UserResponse.from(target);
     }
 
     private User find(Long id) {

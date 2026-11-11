@@ -34,8 +34,17 @@ public class AdminGovernanceService {
 
     @Transactional
     public void recordAuditLog(User user, String action, String entityName, String entityId, String details, String ipAddress) {
-        AuditLog log = new AuditLog(user, action, entityName, entityId, details, ipAddress);
+        String sanitized = sanitizeAuditDetails(details);
+        AuditLog log = new AuditLog(user, action, entityName, entityId, sanitized, ipAddress);
         auditLogRepository.save(log);
+    }
+
+    private String sanitizeAuditDetails(String details) {
+        if (details == null) return null;
+        String sanitized = details.replaceAll("(?i)(password(?:_hash)?\\s*[=:]\\s*)[^\\s,;]+", "$1[MASKED]");
+        sanitized = sanitized.replaceAll("\\$2[aby]?\\$\\d{2}\\$[./A-Za-z0-9]{53}", "[BCRYPT_HASH_MASKED]");
+        sanitized = sanitized.replaceAll("(?i)(token\\s*[=:]\\s*)[^\\s,;]+", "$1[MASKED]");
+        return sanitized;
     }
 
     @Transactional(readOnly = true)

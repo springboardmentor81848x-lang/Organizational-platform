@@ -140,6 +140,34 @@ export function Overview({ user, assessment, latestSubmission, serverGaps = [], 
       <div className="hero__art" aria-hidden="true"><Icon name="sparkles" size={56} strokeWidth={1.4}/></div>
     </section>
 
+    {/* Organizational Context & Identity Strip */}
+    <div className="panel" style={{ marginBottom: "20px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", padding: "16px 20px" }}>
+      <div>
+        <small className="muted" style={{ display: "block", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Employee ID</small>
+        <strong>{overview?.employeeId || user.employeeId || "EMP-001"}</strong>
+      </div>
+      <div>
+        <small className="muted" style={{ display: "block", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Department</small>
+        <strong>{overview?.department || user.department || "Engineering"}</strong>
+      </div>
+      <div>
+        <small className="muted" style={{ display: "block", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Role & Level</small>
+        <strong>{overview?.jobRole || "Software Developer"} ({overview?.experienceLevel || "Entry level"})</strong>
+      </div>
+      <div>
+        <small className="muted" style={{ display: "block", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Assigned Team</small>
+        <strong>{overview?.teamName || "Unassigned"}</strong>
+      </div>
+      <div>
+        <small className="muted" style={{ display: "block", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Reporting Manager</small>
+        <strong>{overview?.reportingManagerName || "Unassigned"}</strong>
+      </div>
+      <div>
+        <small className="muted" style={{ display: "block", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>Assigned Mentor</small>
+        <strong>{overview?.hasMentor ? `${overview.mentorName}` : "None assigned"}</strong>
+      </div>
+    </div>
+
     {/* Metric Cards - Backed by PostgreSQL */}
     <div className="stat-grid">
       <div className="stat-card">
@@ -230,7 +258,7 @@ export function Overview({ user, assessment, latestSubmission, serverGaps = [], 
 }
 
 /* -------------------------------------------------------------------- Profile (+ Change Password) */
-export function Profile({ profile, setProfile, onSave, saved }) {
+export function Profile({ profile, setProfile, onSave, saved, error }) {
   const set = (k) => (e) => setProfile({ ...profile, [k]: e.target.value });
 
   // Change Password State
@@ -279,10 +307,13 @@ export function Profile({ profile, setProfile, onSave, saved }) {
     <section className="panel" style={{ marginBottom: "24px" }}>
       <h2>Personal & Professional Details</h2>
       {saved && <Alert type="success">Profile saved successfully to your SkillSphere account.</Alert>}
+      {error && <Alert type="error">{error}</Alert>}
       <div className="profile-grid" style={{ marginTop: "14px" }}>
-        <label className="field"><span>Full Name</span><input value={profile.fullName || ""} onChange={set("fullName")}/></label>
-        <label className="field"><span>Employee ID</span><input value={profile.employeeId || ""} placeholder="Enter employee ID" onChange={set("employeeId")}/></label>
-        <label className="field"><span>Email Address</span><input value={profile.email || ""} readOnly/></label>
+        <label className="field"><span>Full Name</span><input value={profile.fullName || ""} readOnly style={{ background: "#f8faff", color: "#64748b" }}/></label>
+        <label className="field"><span>Employee ID</span><input value={profile.employeeId || ""} readOnly style={{ background: "#f8faff", color: "#64748b" }}/></label>
+        <label className="field"><span>Email Address</span><input value={profile.email || ""} readOnly style={{ background: "#f8faff", color: "#64748b" }}/></label>
+        <label className="field"><span>Assigned Team</span><input value={profile.teamName || "Unassigned"} readOnly style={{ background: "#f8faff", color: "#64748b" }}/></label>
+        <label className="field"><span>Reporting Manager</span><input value={profile.reportingManagerName || "Unassigned"} readOnly style={{ background: "#f8faff", color: "#64748b" }}/></label>
         <label className="field"><span>Department</span><input value={profile.department || ""} placeholder="e.g. Engineering" maxLength={80} onChange={set("department")}/></label>
         <label className="field"><span>Job Role</span><select value={profile.jobRole || "Software Developer"} onChange={set("jobRole")}><option>Software Developer</option><option>Data Analyst</option><option>QA Engineer</option><option>Support Engineer</option></select></label>
         <label className="field"><span>Experience Level</span><select value={profile.experience || "Entry level"} onChange={set("experience")}><option>Entry level</option><option>Intermediate</option><option>Experienced</option></select></label>

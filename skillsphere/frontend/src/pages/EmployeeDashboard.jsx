@@ -72,13 +72,21 @@ export default function EmployeeDashboard() {
   const [activePage, setActivePage] = useState("overview");
   const [profile, setProfile] = useState(saved.profile || {
     fullName: user.fullName || "", employeeId: user.employeeId || "", email: user.email || "",
-    department: "", jobRole: "Software Developer", experience: "Entry level", bio: "", skills: "",
+    department: "", jobRole: "Software Developer", experience: "Entry level", teamName: "", reportingManagerName: "", bio: "", skills: "",
   });
   const [profileSaved, setProfileSaved] = useState(false);
+  const [profileSaveError, setProfileSaveError] = useState("");
   const [submissions, setSubmissions] = useState([]);
   const [recs, setRecs] = useState(saved.recs ? { status: "done", data: saved.recs, error: "" } : { status: "idle", data: null, error: "" });
   const [completed, setCompleted] = useState(saved.completed || []);
   const latestRequest = useRef(0);
+  const inFlightRef = useRef(false);
+  const abortControllerRef = useRef(null);
+  const lastFetchKeyRef = useRef("");
+  const profileRef = useRef(profile);
+  profileRef.current = profile;
+  const recsRef = useRef(recs);
+  recsRef.current = recs;
 
   // Live backend states
   const [serverGaps, setServerGaps] = useState([]);
@@ -134,9 +142,12 @@ export default function EmployeeDashboard() {
             ...prev,
             fullName: p.fullName || prev.fullName,
             employeeId: p.employeeId || prev.employeeId,
+            email: p.email || prev.email,
             department: p.department || prev.department,
             jobRole: p.jobRole || prev.jobRole,
             experience: p.experienceLevel || prev.experience,
+            teamName: p.teamName || prev.teamName,
+            reportingManagerName: p.reportingManagerName || prev.reportingManagerName,
             bio: p.bio || prev.bio,
             skills: p.skills || prev.skills,
           }));
@@ -153,13 +164,20 @@ export default function EmployeeDashboard() {
     } catch {}
   }, [user.id, profile, recs.data, completed]);
 
-  // Request recommendations whenever assessment submission or server gaps change
-  const fetchRecommendations = useCallback(async (sub, gaps) => {
-    const id = ++latestRequest.current;
-    setRecs((r) => ({ status: "loading", data: r.data, error: "" }));
+  // Abort any pending recommendations request on unmount
+  useEffect(() => {
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
+  // Request recommendations whenever assessment submission or server gaps change
+  const fetchRecommendations = useCallback(async (sub, gaps, force = false) => {
+    const currentProfile = profileRef.current;
     const skillResults = (gaps && gaps.length > 0)
-      ? gaps.map((g) => ({
+      ? gaps.slice(0, 10).map((g) => ({
           skill: g.skillName,
           correct: Math.min(10, (g.currentLevel || 1) * 2),
           total: 10,
@@ -171,23 +189,51 @@ export default function EmployeeDashboard() {
           { skill: "SQL", correct: 5, total: 10, level: 2, required: 4 },
         ]);
 
+    const payload = {
+      jobRole: currentProfile.jobRole,
+      experience: currentProfile.experience,
+      department: currentProfile.department,
+      overallScore: sub?.score ?? 75,
+      skillResults,
+    };
+
+    const requestKey = JSON.stringify(payload);
+
+    // Guard against duplicate requests in-flight or re-fetching identical data unless forced
+    if (!force) {
+      if (inFlightRef.current) return;
+      if (lastFetchKeyRef.current === requestKey && recsRef.current.status === "done") return;
+    }
+
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    inFlightRef.current = true;
+    lastFetchKeyRef.current = requestKey;
+
+    const id = ++latestRequest.current;
+    setRecs((r) => ({ status: "loading", data: r.data, error: "" }));
+
     try {
-      const data = await getAiRecommendations({
-        jobRole: profile.jobRole,
-        experience: profile.experience,
-        department: profile.department,
-        overallScore: sub?.score ?? 75,
-        skillResults,
-      });
+      const data = await getAiRecommendations(payload, { signal: controller.signal });
       if (id === latestRequest.current) {
         setRecs({ status: "done", data, error: "" });
       }
     } catch (e) {
+      if (controller.signal.aborted || e?.name === "CanceledError" || e?.name === "AbortError" || e?.code === "ERR_CANCELED") {
+        return;
+      }
       if (id === latestRequest.current) {
         setRecs({ status: "error", data: null, error: parseApiError(e).message });
       }
+    } finally {
+      if (id === latestRequest.current) {
+        inFlightRef.current = false;
+      }
     }
-  }, [profile.department, profile.experience, profile.jobRole]);
+  }, []);
 
   useEffect(() => {
     if ((submissions.length > 0 || serverGaps.length > 0) && recs.status === "idle") {
@@ -195,7 +241,7 @@ export default function EmployeeDashboard() {
     }
   }, [submissions, serverGaps, recs.status, fetchRecommendations]);
 
-  const retry = () => fetchRecommendations(submissions[0], serverGaps);
+  const retry = () => fetchRecommendations(submissions[0], serverGaps, true);
 
   const toggleCourse = (cSlug) => {
     setCompleted((prev) => (prev.includes(cSlug) ? prev.filter((s) => s !== cSlug) : [...prev, cSlug]));
@@ -232,7 +278,7 @@ export default function EmployeeDashboard() {
     setRunningAssessmentId(null);
     setActiveAttempt(null);
     loadBackendData();
-    fetchRecommendations(result, serverGaps);
+    fetchRecommendations(result, serverGaps, true);
     setActivePage("results");
   };
 
@@ -243,17 +289,33 @@ export default function EmployeeDashboard() {
   };
 
   const saveProfile = async () => {
+    setProfileSaveError("");
     try {
-      await updateEmployeeProfile({
+      const updated = await updateEmployeeProfile({
         jobRole: profile.jobRole,
         department: profile.department,
         experienceLevel: profile.experience,
         bio: profile.bio || null,
         skills: profile.skills || null,
       });
-    } catch {}
-    setProfileSaved(true);
-    setTimeout(() => setProfileSaved(false), 4000);
+      if (updated) {
+        setProfile((prev) => ({
+          ...prev,
+          department: updated.department || prev.department,
+          jobRole: updated.jobRole || prev.jobRole,
+          experience: updated.experienceLevel || prev.experience,
+          teamName: updated.teamName || prev.teamName,
+          reportingManagerName: updated.reportingManagerName || prev.reportingManagerName,
+          bio: updated.bio || prev.bio,
+          skills: updated.skills || prev.skills,
+        }));
+      }
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 4000);
+      loadBackendData();
+    } catch (e) {
+      setProfileSaveError(parseApiError(e).message);
+    }
   };
 
   const handleEnrollCourse = async (courseOrId) => {
@@ -352,7 +414,7 @@ export default function EmployeeDashboard() {
 
           {/* Module 2: My Profile */}
           {activePage === "profile" && (
-            <Profile profile={profile} setProfile={setProfile} onSave={saveProfile} saved={profileSaved} />
+            <Profile profile={profile} setProfile={setProfile} onSave={saveProfile} saved={profileSaved} error={profileSaveError} />
           )}
 
           {/* Module 3: My Skills & Evidence */}

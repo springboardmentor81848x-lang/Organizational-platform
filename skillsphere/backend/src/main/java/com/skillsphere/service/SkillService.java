@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 public class SkillService {
@@ -40,6 +42,7 @@ public class SkillService {
     private final UserRepository userRepository;
     private final NotificationService notificationService;
     private final AssessmentService assessmentService;
+    private final TeamMembershipRepository teamMembershipRepository;
 
     public SkillService(SkillCategoryRepository categoryRepository,
                         SkillRepository skillRepository,
@@ -48,7 +51,8 @@ public class SkillService {
                         SkillEvidenceRepository evidenceRepository,
                         UserRepository userRepository,
                         NotificationService notificationService,
-                        @Lazy AssessmentService assessmentService) {
+                        @Lazy AssessmentService assessmentService,
+                        TeamMembershipRepository teamMembershipRepository) {
         this.categoryRepository = categoryRepository;
         this.skillRepository = skillRepository;
         this.requirementRepository = requirementRepository;
@@ -57,6 +61,7 @@ public class SkillService {
         this.userRepository = userRepository;
         this.notificationService = notificationService;
         this.assessmentService = assessmentService;
+        this.teamMembershipRepository = teamMembershipRepository;
     }
 
     @Transactional(readOnly = true)
@@ -217,18 +222,25 @@ public class SkillService {
     }
 
     @Transactional(readOnly = true)
+    public List<SkillEvidenceDto> getPendingEvidence(String callerEmail) {
+        User caller = getUserByEmail(callerEmail);
+        List<SkillEvidence> list = evidenceRepository.findByStatus("PENDING");
+        if (caller.getRole() == Role.MANAGER) {
+            Set<Long> managedUserIds = teamMembershipRepository.findByManagerUserId(caller.getId()).stream()
+                    .map(m -> m.getUser().getId())
+                    .collect(Collectors.toSet());
+            list = list.stream()
+                    .filter(ev -> managedUserIds.contains(ev.getEmployeeSkill().getUser().getId()))
+                    .toList();
+        }
+        return list.stream().map(this::toSkillEvidenceDto).toList();
+    }
+
+    @Transactional(readOnly = true)
     public List<SkillEvidenceDto> getPendingEvidence() {
-        return evidenceRepository.findByStatus("PENDING").stream().map(ev -> new SkillEvidenceDto(
-                ev.getId(),
-                ev.getEmployeeSkill().getId(),
-                ev.getEmployeeSkill().getSkill().getName(),
-                ev.getTitle(),
-                ev.getDescription(),
-                ev.getEvidenceUrl(),
-                ev.getStatus(),
-                null,
-                ev.getCreatedAt()
-        )).toList();
+        return evidenceRepository.findByStatus("PENDING").stream()
+                .map(this::toSkillEvidenceDto)
+                .toList();
     }
 
     @Transactional
@@ -237,9 +249,28 @@ public class SkillService {
         SkillEvidence ev = evidenceRepository.findById(evidenceId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Evidence not found."));
 
-        ev.setStatus(status);
+        if (!"PENDING".equalsIgnoreCase(ev.getStatus())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Evidence has already been reviewed (current status: " + ev.getStatus() + ").");
+        }
+
+        if (!"APPROVED".equalsIgnoreCase(status) && !"REJECTED".equalsIgnoreCase(status)) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Invalid review status. Must be APPROVED or REJECTED.");
+        }
+
+        if (reviewer.getRole() == Role.MANAGER) {
+            Long employeeUserId = ev.getEmployeeSkill().getUser().getId();
+            boolean belongs = teamMembershipRepository.findByManagerUserId(reviewer.getId()).stream()
+                    .anyMatch(m -> m.getUser().getId().equals(employeeUserId));
+            if (!belongs) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Access denied. You can only review evidence for employees in your managed teams.");
+            }
+        }
+
+        String canonicalStatus = status.trim().toUpperCase();
+        ev.setStatus(canonicalStatus);
         ev.setReviewedBy(reviewer);
-        if ("APPROVED".equalsIgnoreCase(status)) {
+
+        if ("APPROVED".equals(canonicalStatus)) {
             EmployeeSkill es = ev.getEmployeeSkill();
             es.setVerified(true);
             es.setVerifiedBy(reviewer);
@@ -248,27 +279,39 @@ public class SkillService {
             try {
                 assessmentService.recalculateSkillGapsForUser(es.getUser());
             } catch (Exception ignored) {}
+        } else if ("REJECTED".equals(canonicalStatus)) {
+            EmployeeSkill es = ev.getEmployeeSkill();
+            es.setVerified(false);
+            employeeSkillRepository.save(es);
         }
 
         SkillEvidence saved = evidenceRepository.save(ev);
         notificationService.createNotification(
                 ev.getEmployeeSkill().getUser(),
                 "SKILL_VERIFICATION",
-                "Skill Evidence " + status,
-                "Your evidence for " + ev.getEmployeeSkill().getSkill().getName() + " was reviewed: " + status,
+                "Skill Evidence " + canonicalStatus,
+                "Your evidence for " + ev.getEmployeeSkill().getSkill().getName() + " was reviewed: " + canonicalStatus,
                 "/dashboard/employee"
         );
 
+        return toSkillEvidenceDto(saved);
+    }
+
+    private SkillEvidenceDto toSkillEvidenceDto(SkillEvidence ev) {
+        String employeeName = (ev.getEmployeeSkill() != null && ev.getEmployeeSkill().getUser() != null)
+                ? ev.getEmployeeSkill().getUser().getFullName() : null;
+        String reviewerName = ev.getReviewedBy() != null ? ev.getReviewedBy().getFullName() : null;
         return new SkillEvidenceDto(
-                saved.getId(),
-                saved.getEmployeeSkill().getId(),
-                saved.getEmployeeSkill().getSkill().getName(),
-                saved.getTitle(),
-                saved.getDescription(),
-                saved.getEvidenceUrl(),
-                saved.getStatus(),
-                reviewer.getFullName(),
-                saved.getCreatedAt()
+                ev.getId(),
+                ev.getEmployeeSkill().getId(),
+                ev.getEmployeeSkill().getSkill().getName(),
+                ev.getTitle(),
+                ev.getDescription(),
+                ev.getEvidenceUrl(),
+                ev.getStatus(),
+                reviewerName,
+                ev.getCreatedAt(),
+                employeeName
         );
     }
 

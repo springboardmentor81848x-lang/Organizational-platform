@@ -1121,6 +1121,10 @@ public class HrDashboardService {
             course = courseRepository.findById(req.courseId()).orElse(null);
         }
 
+        if (req.startDate() != null && req.endDate() != null && req.endDate().isBefore(req.startDate())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "End date cannot be before start date");
+        }
+
         TrainingProgramme p = new TrainingProgramme(
                 req.title().trim(),
                 req.description(),
@@ -1159,6 +1163,19 @@ public class HrDashboardService {
     public HrTrainingProgrammeDto updateTrainingProgramme(Long id, CreateOrUpdateTrainingProgrammeRequest req) {
         TrainingProgramme p = trainingProgrammeRepository.findById(id)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Programme not found: " + id));
+
+        if (req.startDate() != null && req.endDate() != null && req.endDate().isBefore(req.startDate())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "End date cannot be before start date");
+        }
+        if ("COMPLETED".equalsIgnoreCase(p.getStatus()) && req.status() != null && !"COMPLETED".equalsIgnoreCase(req.status())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Completed programmes cannot be reopened");
+        }
+        if ("CANCELLED".equalsIgnoreCase(p.getStatus()) && req.status() != null && !"CANCELLED".equalsIgnoreCase(req.status())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Cancelled programmes cannot be reopened");
+        }
+        if ("ACTIVE".equalsIgnoreCase(p.getStatus()) && req.status() != null && "UPCOMING".equalsIgnoreCase(req.status())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Active programmes cannot be reverted to upcoming");
+        }
 
         Department dept = null;
         if (req.departmentId() != null) {
@@ -1236,11 +1253,19 @@ public class HrDashboardService {
 
     @Transactional
     public ProgrammeEnrollmentDetailDto enrollEmployee(Long programmeId, Long userId) {
-        TrainingProgramme programme = trainingProgrammeRepository.findById(programmeId)
+        TrainingProgramme programme = trainingProgrammeRepository.findByIdWithLock(programmeId)
+                .or(() -> trainingProgrammeRepository.findById(programmeId))
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "Programme not found: " + programmeId));
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found: " + userId));
+
+        if ("CANCELLED".equalsIgnoreCase(programme.getStatus())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot enroll in a cancelled programme");
+        }
+        if ("COMPLETED".equalsIgnoreCase(programme.getStatus())) {
+            throw new ApiException(HttpStatus.BAD_REQUEST, "Cannot enroll in a completed programme");
+        }
 
         if (trainingEnrollmentRepository.findByProgrammeIdAndUserId(programmeId, userId).isPresent()) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "Employee is already enrolled in this programme");
@@ -1566,6 +1591,36 @@ public class HrDashboardService {
     }
 
     @Transactional(readOnly = true)
+    public List<LeadershipReportShareDto> getSharedLeadershipReports(User user, Long requestedDeptId) {
+        if (user == null) {
+            throw new ApiException(HttpStatus.UNAUTHORIZED, "Unauthenticated");
+        }
+        String userRole = user.getRole().name();
+        Long effectiveDeptId = requestedDeptId;
+
+        if (user.getRole() == Role.MANAGER || user.getRole() == Role.DEPARTMENT_HEAD) {
+            Department authorizedDept = departmentRepository.findByHeadUserId(user.getId()).orElse(null);
+            if (authorizedDept == null) {
+                EmployeeProfile prof = employeeProfileRepository.findByUserId(user.getId()).orElse(null);
+                if (prof != null && prof.getDepartment() != null && !prof.getDepartment().isBlank()) {
+                    authorizedDept = departmentRepository.findByName(prof.getDepartment())
+                            .or(() -> departmentRepository.findByCode(prof.getDepartment()))
+                            .orElse(null);
+                }
+            }
+
+            if (requestedDeptId != null && authorizedDept != null && !requestedDeptId.equals(authorizedDept.getId())) {
+                throw new ApiException(HttpStatus.FORBIDDEN, "Access denied: You are not authorized to view reports for department " + requestedDeptId);
+            }
+            if (effectiveDeptId == null && authorizedDept != null) {
+                effectiveDeptId = authorizedDept.getId();
+            }
+        }
+
+        return getSharedLeadershipReports(userRole, effectiveDeptId);
+    }
+
+    @Transactional(readOnly = true)
     public List<LeadershipReportShareDto> getSharedLeadershipReports(String userRole, Long deptId) {
         List<LeadershipReportShare> shares;
         if ("HR_SPECIALIST".equalsIgnoreCase(userRole) || "ADMIN".equalsIgnoreCase(userRole)) {
@@ -1598,7 +1653,28 @@ public class HrDashboardService {
         List<HrAnnouncement> announcements = hrAnnouncementRepository.findAllWithDetails();
         long totalUsers = userRepository.count();
 
-        return announcements.stream().map(a -> {
+        User currentUser = currentUserId != null ? userRepository.findById(currentUserId).orElse(null) : null;
+        boolean isHrOrAdmin = currentUser != null && (currentUser.getRole() == Role.HR_SPECIALIST || currentUser.getRole() == Role.ADMIN);
+        EmployeeProfile currentProfile = (currentUser != null && !isHrOrAdmin) ? employeeProfileRepository.findByUserId(currentUserId).orElse(null) : null;
+        String currentUserDept = currentProfile != null ? currentProfile.getDepartment() : null;
+
+        return announcements.stream()
+                .filter(a -> {
+                    if (isHrOrAdmin || currentUser == null) return true;
+                    if ("ORGANIZATION".equalsIgnoreCase(a.getTargetType())) return true;
+                    if ("ROLE".equalsIgnoreCase(a.getTargetType())) {
+                        return a.getTargetRole() == null || currentUser.getRole().name().equalsIgnoreCase(a.getTargetRole());
+                    }
+                    if ("DEPARTMENT".equalsIgnoreCase(a.getTargetType())) {
+                        if (a.getDepartment() == null) return true;
+                        return currentUserDept != null && (
+                                currentUserDept.equalsIgnoreCase(a.getDepartment().getName()) ||
+                                currentUserDept.equalsIgnoreCase(a.getDepartment().getCode())
+                        );
+                    }
+                    return true;
+                })
+                .map(a -> {
             long readCount = hrAnnouncementReadRepository.countByAnnouncementId(a.getId());
             boolean readByMe = currentUserId != null &&
                     hrAnnouncementReadRepository.existsByAnnouncementIdAndUserId(a.getId(), currentUserId);
@@ -1697,6 +1773,28 @@ public class HrDashboardService {
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ApiException(HttpStatus.NOT_FOUND, "User not found: " + userId));
+
+        boolean isHrOrAdmin = user.getRole() == Role.HR_SPECIALIST || user.getRole() == Role.ADMIN;
+        if (!isHrOrAdmin) {
+            String targetType = a.getTargetType();
+            if ("ROLE".equalsIgnoreCase(targetType)) {
+                if (a.getTargetRole() != null && !user.getRole().name().equalsIgnoreCase(a.getTargetRole())) {
+                    throw new ApiException(HttpStatus.FORBIDDEN, "Not authorized: Announcement is restricted to " + a.getTargetRole());
+                }
+            } else if ("DEPARTMENT".equalsIgnoreCase(targetType)) {
+                if (a.getDepartment() != null) {
+                    EmployeeProfile prof = employeeProfileRepository.findByUserId(userId).orElse(null);
+                    String userDept = prof != null ? prof.getDepartment() : null;
+                    boolean matches = userDept != null && (
+                            userDept.equalsIgnoreCase(a.getDepartment().getName()) ||
+                            userDept.equalsIgnoreCase(a.getDepartment().getCode())
+                    );
+                    if (!matches) {
+                        throw new ApiException(HttpStatus.FORBIDDEN, "Not authorized: Announcement is restricted to " + a.getDepartment().getName());
+                    }
+                }
+            }
+        }
 
         if (!hrAnnouncementReadRepository.existsByAnnouncementIdAndUserId(announcementId, userId)) {
             HrAnnouncementRead read = new HrAnnouncementRead(a, user);
