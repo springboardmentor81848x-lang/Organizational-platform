@@ -1,0 +1,79 @@
+package com.skillsphere.entity;
+
+import jakarta.persistence.*;
+import java.time.Instant;
+
+@Entity
+@Table(name = "learning_paths")
+public class LearningPath {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 140)
+    private String title;
+
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "target_role", length = 80)
+    private String targetRole;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id")
+    private User createdBy;
+
+    @Column(name = "is_active", nullable = false)
+    private boolean isActive = true;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "skill_id")
+    private Skill skill;
+
+    @Column(name = "difficulty_level", length = 30)
+    private String difficultyLevel = "Beginner";
+
+    @Column(name = "created_at", nullable = false, updatable = false)
+    private Instant createdAt = Instant.now();
+
+    public LearningPath() {}
+
+    public LearningPath(String title, String description, String targetRole, User createdBy) {
+        this.title = title;
+        this.description = description;
+        this.targetRole = targetRole;
+        this.createdBy = createdBy;
+        this.isActive = true;
+        this.difficultyLevel = "Beginner";
+        this.createdAt = Instant.now();
+    }
+
+    public LearningPath(String title, String description, String targetRole, User createdBy, Skill skill, String difficultyLevel) {
+        this.title = title;
+        this.description = description;
+        this.targetRole = targetRole;
+        this.createdBy = createdBy;
+        this.skill = skill;
+        this.difficultyLevel = difficultyLevel != null ? difficultyLevel : "Beginner";
+        this.isActive = true;
+        this.createdAt = Instant.now();
+    }
+
+    public Long getId() { return id; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getDescription() { return description; }
+    public void setDescription(String description) { this.description = description; }
+    public String getTargetRole() { return targetRole; }
+    public void setTargetRole(String targetRole) { this.targetRole = targetRole; }
+    public User getCreatedBy() { return createdBy; }
+    public void setCreatedBy(User createdBy) { this.createdBy = createdBy; }
+    public boolean isActive() { return isActive; }
+    public void setActive(boolean active) { isActive = active; }
+    public Skill getSkill() { return skill; }
+    public void setSkill(Skill skill) { this.skill = skill; }
+    public String getDifficultyLevel() { return difficultyLevel; }
+    public void setDifficultyLevel(String difficultyLevel) { this.difficultyLevel = difficultyLevel; }
+    public Instant getCreatedAt() { return createdAt; }
+}

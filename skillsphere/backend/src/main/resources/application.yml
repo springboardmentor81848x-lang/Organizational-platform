@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: skillsphere-backend
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/skillsphere_db}
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD}          # required - no default on purpose
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate              # schema is owned by Flyway migrations
+    properties:
+      hibernate.jdbc.time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  port: ${SERVER_PORT:8080}
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+        secure: ${COOKIE_SECURE:false}   # set true when served over HTTPS
+
+app:
+  frontend-url: ${FRONTEND_URL:http://localhost:5173}
+  cors:
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:5173}
+  session:
+    remember-me-days: 7
+  login:
+    max-failed-attempts: 5
+    lock-minutes: 15
+  password-reset:
+    token-minutes: 30
+    log-links-to-console: ${LOG_RESET_LINKS:true}   # dev only: no mail server is configured
+  gemini:                             # AI course recommendations (key stays on the server)
+    api-key: ${GEMINI_API_KEY:}
+    model: ${GEMINI_MODEL:gemini-2.5-flash}
+    timeout-seconds: 45
+  bootstrap-admin:                    # optional: creates the first Admin if none exists
+    email: ${ADMIN_EMAIL:}
+    password: ${ADMIN_PASSWORD:}
+    full-name: ${ADMIN_FULL_NAME:SkillSphere Administrator}
+  backup:
+    directory: ${BACKUP_DIR:backups}
+    postgres-bin-path: ${PG_BIN_PATH:D:\PostgreSQL\18\bin}
+    max-retained: ${BACKUP_MAX_RETAINED:15}
+    timeout-minutes: ${BACKUP_TIMEOUT_MINUTES:5}
+
+logging:
+  level:
+    com.skillsphere: INFO
