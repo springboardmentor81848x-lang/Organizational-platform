@@ -1,0 +1,2189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HR Specialist Dashboard | Workforce Intelligence</title>
+<meta name="description" content="Strategic HR dashboard for workforce skill planning, competency frameworks, knowledge gap analysis, learning coordination, and workforce analytics.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=premium">
+<style>
+  /* ===== DESIGN SYSTEM ===== */
+  :root {
+    --brand: #0B6E75; --brand-dark: #095A60; --brand-light: #E3F1F2;
+    --nav: #101C2B; --ink: #1A2433; --muted: #5B6778;
+    --bg: #F3F5F8; --card: #ffffff; --line: #DDE2E9;
+    --ok: #1F7A4D; --ok-bg: #E5F3EB;
+    --warn: #8A5A00; --warn-bg: #FFF1D6;
+    --bad: #B3261E; --bad-bg: #FBE7E5;
+    --info-bg: #E3F1F2;
+    --accent1: #0B6E75; --accent2: #2F6FA3; --accent3: #D9822B;
+    --accent4: #1F7A4D; --accent5: #B3261E; --accent6: #5B6778;
+    --shadow-xs: 0 1px 2px rgba(16,28,43,.04);
+    --shadow-sm: 0 2px 6px rgba(16,28,43,.06);
+    --shadow-md: 0 6px 16px rgba(16,28,43,.08);
+    --shadow-lg: 0 12px 28px rgba(16,28,43,.10);
+    --shadow-xl: 0 20px 40px rgba(16,28,43,.14);
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body {
+    margin: 0;
+    font-family: 'IBM Plex Sans', system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.45;
+  }
+  button, input, select, textarea { font: inherit; color: inherit; }
+  :focus-visible { outline: 3px solid #5FB3B8; outline-offset: 2px; }
+
+  /* ===== HEADER ===== */
+  .brand { display: flex; align-items: center; gap: 12px; font-size: 16px; line-height: 1.2; font-weight: 500; }
+  .logo {
+    background: linear-gradient(135deg, var(--brand), #0d848d);
+    border-radius: 8px; padding: 8px 12px; font-size: 15px; font-weight: 700; letter-spacing: .5px;
+    box-shadow: 0 2px 8px rgba(11,110,117,.35);
+  }
+  .top .right { display: flex; align-items: center; gap: 16px; }
+  .who { text-align: right; line-height: 1.2; }
+  .who strong { font-size: 13.5px; }
+  .who small { display: block; opacity: .78; font-size: 11.5px; }
+  .role-badge {
+    background: rgba(255,255,255,.14); border-radius: 20px;
+    font-size: 11px; font-weight: 700; letter-spacing: .4px; text-transform: uppercase;
+    padding: 4px 12px; white-space: nowrap; border: 1px solid rgba(255,255,255,.12);
+  }
+
+  /* ===== BUTTONS ===== */
+  .btn {
+    background: var(--brand); color: #fff; border: 0; border-radius: 8px;
+    padding: 8px 16px; cursor: pointer; font-weight: 600; font-size: 13.5px;
+    transition: all var(--transition-fast);
+    box-shadow: 0 1px 3px rgba(11,110,117,.2);
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    text-decoration: none;
+  }
+  .btn:hover {
+    background: var(--brand-dark);
+    box-shadow: 0 4px 12px rgba(11,110,117,.28);
+    transform: translateY(-1px);
+  }
+  .btn:active { transform: translateY(0); box-shadow: 0 1px 2px rgba(11,110,117,.2); }
+  .btn:disabled { opacity: .55; cursor: default; transform: none; box-shadow: none; }
+  .btn.ghost {
+    background: #fff; color: var(--brand); border: 1px solid var(--line);
+    box-shadow: var(--shadow-xs);
+  }
+  .btn.ghost:hover {
+    background: var(--brand-light); border-color: var(--brand);
+    color: var(--brand-dark); box-shadow: var(--shadow-sm);
+  }
+  .btn.danger {
+    background: #fff; color: var(--bad); border: 1px solid #E5B3AF;
+    box-shadow: var(--shadow-xs);
+  }
+  .btn.danger:hover {
+    background: var(--bad-bg); border-color: var(--bad);
+    box-shadow: var(--shadow-sm);
+  }
+  .btn.small { padding: 5px 12px; font-size: 12.5px; border-radius: 6px; }
+
+  /* ===== MAIN CONTENT ===== */
+  main { min-width: 0; }
+  h1 { font-size: 26px; font-weight: 600; letter-spacing: -.01em; margin: 0 0 4px; }
+  h2 { font-size: 18px; font-weight: 600; margin: 0 0 12px; }
+  p.lead { font-size: 14px; max-width: 72ch; margin: 0 0 20px; color: var(--muted); }
+  .section-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; }
+  .section-head h1 { margin: 0 0 4px; }
+  .section-head p { margin: 0; font-size: 14px; color: var(--muted); max-width: 72ch; }
+
+  /* ===== CARDS & TILES ===== */
+  .card {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 22px; box-shadow: var(--shadow-sm); margin-bottom: 20px;
+    transition: transform var(--transition-normal), box-shadow var(--transition-normal), border-color var(--transition-normal);
+  }
+  .card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #CAD5E2; }
+  .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; gap: 12px; flex-wrap: wrap; }
+  .card-header h2 { margin: 0; }
+  .grid { display: grid; gap: 16px; }
+  .g4 { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .g2 { grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); }
+
+  .tile, .stat-tile {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 18px 20px; box-shadow: var(--shadow-sm); transition: all var(--transition-fast);
+    position: relative; overflow: hidden;
+  }
+  .tile:hover, .stat-tile:hover {
+    transform: translateY(-2px); box-shadow: var(--shadow-md); border-color: #CAD5E2;
+  }
+  .stat-tile.accent-purple { box-shadow: inset 0 3px 0 var(--accent1), var(--shadow-sm); }
+  .stat-tile.accent-purple:hover { box-shadow: inset 0 3px 0 var(--accent1), var(--shadow-md); }
+  .stat-tile.accent-blue   { box-shadow: inset 0 3px 0 var(--accent2), var(--shadow-sm); }
+  .stat-tile.accent-blue:hover   { box-shadow: inset 0 3px 0 var(--accent2), var(--shadow-md); }
+  .stat-tile.accent-amber  { box-shadow: inset 0 3px 0 var(--accent3), var(--shadow-sm); }
+  .stat-tile.accent-amber:hover  { box-shadow: inset 0 3px 0 var(--accent3), var(--shadow-md); }
+  .stat-tile.accent-green  { box-shadow: inset 0 3px 0 var(--accent4), var(--shadow-sm); }
+  .stat-tile.accent-green:hover  { box-shadow: inset 0 3px 0 var(--accent4), var(--shadow-md); }
+  .stat-tile.accent-red    { box-shadow: inset 0 3px 0 var(--accent5), var(--shadow-sm); }
+  .stat-tile.accent-red:hover    { box-shadow: inset 0 3px 0 var(--accent5), var(--shadow-md); }
+
+  .tile b, .stat-tile b {
+    display: block; font-size: 28px; line-height: 1.15; font-weight: 700;
+    font-variant-numeric: tabular-nums; letter-spacing: -.01em; color: var(--ink); margin-bottom: 4px;
+  }
+  .tile span, .stat-tile span { color: var(--muted); font-size: 13px; font-weight: 500; }
+
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 0; border-top: 1px solid var(--line); flex-wrap: wrap; }
+  .row:first-of-type { border-top: 0; }
+  .row .grow { flex: 1; min-width: 200px; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .chip { display: inline-block; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 600; background: var(--info-bg); color: var(--brand-dark); }
+  .chip.ok { background: var(--ok-bg); color: var(--ok); }
+  .chip.warn { background: var(--warn-bg); color: var(--warn); }
+  .chip.bad { background: var(--bad-bg); color: var(--bad); }
+  /* .empty styles inherited from style.css */
+  .callout {
+    background: var(--info-bg); border: 1px solid #BFDDE0; border-radius: 10px;
+    padding: 14px 18px; margin-bottom: 18px; display: flex; gap: 12px;
+    align-items: center; justify-content: space-between; flex-wrap: wrap;
+    box-shadow: var(--shadow-xs);
+  }
+
+  /* ===== FORMS ===== */
+  label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 4px; }
+  input, select, textarea {
+    width: 100%; padding: 9px 12px; border: 1px solid var(--line);
+    border-radius: 8px; background: #fff; font-size: 13.5px;
+    transition: all var(--transition-fast);
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: var(--brand); box-shadow: 0 0 0 3px rgba(11,110,117,.16); }
+  textarea { min-height: 80px; resize: vertical; }
+  .filter-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; align-items: center; }
+  .filter-bar select, .filter-bar input { width: auto; }
+  .search-box { position: relative; }
+  .search-box input { padding-left: 34px; min-width: 220px; }
+  .search-box svg { position: absolute; left: 11px; top: 50%; transform: translateY(-50%); color: var(--muted); width: 14px; height: 14px; }
+
+  /* ===== BARS & AVATAR ===== */
+  .bar { height: 8px; background: #E6EAF0; border-radius: 999px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--brand); border-radius: 999px; transition: width .3s cubic-bezier(0.4,0,0.2,1); }
+  .gapbar { position: relative; height: 10px; background: #E6EAF0; border-radius: 999px; }
+  .gapbar > i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--brand); border-radius: 999px; }
+  .gapbar > u { position: absolute; top: -3px; bottom: -3px; width: 3px; background: #D9822B; text-decoration: none; border-radius: 2px; }
+  .avatar { width: 34px; height: 34px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 600; font-size: 12.5px; color: #fff; flex-shrink: 0; box-shadow: var(--shadow-xs); }
+
+  /* ===== TABLE ===== */
+  .tablewrap { overflow-x: auto; border-radius: 8px; }
+  table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13.5px; }
+  th {
+    color: var(--muted); font-weight: 600; font-size: 11.5px; text-transform: uppercase;
+    letter-spacing: .5px; background: #F8FAFC; padding: 12px 14px;
+    border-bottom: 1px solid var(--line); border-top: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  th:first-child { border-top-left-radius: 8px; border-left: 1px solid var(--line); }
+  th:last-child { border-top-right-radius: 8px; border-right: 1px solid var(--line); }
+  td {
+    text-align: left; padding: 13px 14px; border-bottom: 1px solid #EDF1F5;
+    vertical-align: middle; font-variant-numeric: tabular-nums;
+    transition: background var(--transition-fast);
+  }
+  td:first-child { border-left: 1px solid #EDF1F5; }
+  td:last-child { border-right: 1px solid #EDF1F5; }
+  tr:last-child td { border-bottom: 1px solid var(--line); }
+  tr:last-child td:first-child { border-bottom-left-radius: 8px; }
+  tr:last-child td:last-child { border-bottom-right-radius: 8px; }
+  tr:hover td { background: #F8FAFD; }
+
+  /* ===== MODAL ===== */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(16,28,43,.5);
+    backdrop-filter: blur(4px); display: flex; align-items: center;
+    justify-content: center; z-index: 100; padding: 16px;
+  }
+  .modal {
+    background: #fff; border-radius: 14px; padding: 26px; max-width: 620px;
+    width: 100%; max-height: 90vh; overflow-y: auto; border: 1px solid var(--line);
+    box-shadow: var(--shadow-xl); animation: fadeIn .2s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  @keyframes fadeIn { from { transform: translateY(14px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+  .modal-header h2 { margin: 0; font-size: 19px; font-weight: 600; }
+  .modal-close {
+    background: none; border: 0; font-size: 22px; cursor: pointer;
+    color: var(--muted); padding: 4px 8px; border-radius: 6px;
+    transition: all var(--transition-fast);
+  }
+  .modal-close:hover { background: #F3F5F8; color: var(--ink); }
+
+  /* ===== TOAST ===== */
+  #toast {
+    position: fixed; bottom: 22px; left: 50%; transform: translateX(-50%);
+    background: #1A2433; color: #fff; padding: 11px 20px; border-radius: 8px;
+    opacity: 0; pointer-events: none; transition: opacity .2s; max-width: 90vw;
+    z-index: 200; font-size: 13.5px; font-weight: 500; box-shadow: var(--shadow-lg);
+  }
+  #toast.show { opacity: 1; }
+  #toast.err { background: var(--bad); }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 992px) {
+    .who small { display: none; }
+  }
+  @media (max-width: 520px) {
+    .brand span:last-child { display: none; }
+    .top .right { gap: 8px; min-width: 0; }
+    .who { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .role-badge { display: none; }
+  }
+  @media print {
+    .top, nav#nav, .noprint, #toast, .modal-overlay { display: none !important; }
+    .layout { display: block; padding: 0; }
+    .card, .tile, .stat-tile { box-shadow: none; border: 1px solid #ccc; }
+    body { background: #fff; }
+  }
+</style>
+</head>
+<body data-role="HR_MANAGER">
+<div id="app" hidden>
+  <!-- HEADER (SAME STRUCTURE AS EMPLOYEE DASHBOARD) -->
+  <header class="top">
+    <div class="brand">
+      <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle navigation drawer" aria-expanded="false">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+      </button>
+      <span class="logo">WKI</span>
+      <span>Workforce<br>Intelligence</span>
+    </div>
+    <div class="right">
+      <button class="bell" data-act="go" data-view="notifications" aria-label="Notifications" title="Notifications">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      </button>
+      <span class="role-badge">&#128203; HR Specialist</span>
+      <div class="user-menu-wrap">
+        <button class="user-profile-btn" id="userMenuBtn" aria-expanded="false" aria-haspopup="true" title="User account menu">
+          <span class="user-avatar" id="userAvatar">U</span>
+          <div class="who">
+            <strong id="userName">Loading…</strong>
+            <small id="userEmail"></small>
+          </div>
+          <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+        </button>
+        <div class="user-dropdown" id="userDropdown" hidden>
+          <div class="dropdown-header">
+            <div class="dropdown-avatar" id="dropdownAvatar">U</div>
+            <div class="dropdown-info">
+              <strong id="dropdownName">User</strong>
+              <span class="dropdown-email" id="dropdownEmail"></span>
+              <span class="dropdown-role" id="dropdownRole">HR Specialist</span>
+            </div>
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-actions">
+            <button type="button" class="dropdown-item" id="logoutDropdownBtn">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      <button class="btn outline-nav" id="logoutBtn">Logout</button>
+    </div>
+  </header>
+
+  <!-- LAYOUT -->
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <nav id="nav" aria-label="Dashboard sections">
+      <div class="nav-section-label">Workforce Analytics</div>
+      <button data-act="go" data-view="overview" aria-current="page">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button data-act="go" data-view="directory">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <span>Employee Directory</span>
+      </button>
+      <button data-act="go" data-view="gaps">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <span>Skill Gap Analysis</span>
+      </button>
+
+      <div class="nav-section-label">Frameworks & Roles</div>
+      <button data-act="go" data-view="competency">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+        <span>Competency Framework</span>
+      </button>
+      <button data-act="go" data-view="roles">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/></svg>
+        <span>Role Requirements</span>
+      </button>
+
+      <div class="nav-section-label">Learning & Development</div>
+      <button data-act="go" data-view="catalogue">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+        <span>Learning Catalogue</span>
+      </button>
+      <button data-act="go" data-view="paths">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><line x1="6" y1="9" x2="6" y2="21"/></svg>
+        <span>Learning Paths</span>
+      </button>
+      <button data-act="go" data-view="trainings">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span>Training Programmes</span>
+      </button>
+      <button data-act="go" data-view="mentors">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 19a2 2 0 0 0-2-2h-1a2 2 0 0 0-2 2"/></svg>
+        <span>Mentor Directory</span>
+      </button>
+      <button data-act="go" data-view="progress">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+        <span>Learning Progress</span>
+      </button>
+
+      <div class="nav-section-label">Operations & Governance</div>
+      <button data-act="go" data-view="feedback">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        <span>Feedback & Effectiveness</span>
+      </button>
+      <button data-act="go" data-view="reports">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <span>Reports & Analytics</span>
+      </button>
+      <button data-act="go" data-view="notifications">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        <span>Announcements</span>
+      </button>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main id="main" tabindex="-1">
+      <div class="card empty">Loading HR Intelligence Dashboard…</div>
+    </main>
+  </div>
+</div>
+
+<!-- MODAL CONTAINER -->
+<div id="modalOverlay" class="modal-overlay" hidden>
+  <div class="modal" id="modalBox">
+    <div class="modal-header">
+      <h2 id="modalTitle">Modal</h2>
+      <button class="modal-close" id="modalCloseBtn">&times;</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<!-- TOAST -->
+<div id="toast" role="status" aria-live="polite"></div>
+
+<script src="js/guard.js"></script>
+<script>
+(function() {
+  const API = "http://localhost:8080/api/hr";
+  let currentView = "overview";
+  let S = {
+    overview: null,
+    employees: [],
+    skills: [],
+    categories: [],
+    roles: [],
+    gaps: null,
+    courses: [],
+    paths: [],
+    trainings: [],
+    mentors: [],
+    mentorMatches: [],
+    progress: null,
+    feedback: null,
+    reports: null,
+    notifications: [],
+    meta: { departments: [], designations: [], roles: [], skills: [] }
+  };
+
+  const COLORS = ["#0B6E75", "#2F6FA3", "#D9822B", "#1F7A4D", "#8E44AD", "#C0392B", "#16A085"];
+
+  function getSession() {
+    try { return JSON.parse(localStorage.getItem("wki_session") || "null"); } catch { return null; }
+  }
+
+  async function hrApi(endpoint, opts = {}) {
+    const s = getSession();
+    const headers = { "Content-Type": "application/json" };
+    if (s && s.token) headers["Authorization"] = "Bearer " + s.token;
+    const res = await fetch(API + endpoint, {
+      method: opts.method || "GET",
+      headers,
+      body: opts.body ? JSON.stringify(opts.body) : undefined
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      const err = new Error(data.message || "Request failed");
+      err.status = res.status;
+      throw err;
+    }
+    return data;
+  }
+
+  function toast(msg, isErr = false) {
+    const t = document.getElementById("toast");
+    if (!t) return;
+    t.textContent = msg;
+    t.className = isErr ? "show err" : "show";
+    setTimeout(() => { t.className = ""; }, 3200);
+  }
+
+  function esc(s) {
+    return String(s || "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+
+  function av(name, size = 32) {
+    let h = 0;
+    for (let c of String(name || "X")) h = (h * 31 + c.charCodeAt(0)) & 0xffffffff;
+    const bg = COLORS[Math.abs(h) % COLORS.length];
+    const ini = String(name || "?").trim().split(/\s+/).slice(0, 2).map(p => p[0]?.toUpperCase() || "").join("");
+    return `<span class="avatar" style="background:${bg};width:${size}px;height:${size}px">${ini}</span>`;
+  }
+
+  function openModal(title, html) {
+    document.getElementById("modalTitle").textContent = title;
+    document.getElementById("modalBody").innerHTML = html;
+    document.getElementById("modalOverlay").hidden = false;
+  }
+
+  function closeModal() {
+    document.getElementById("modalOverlay").hidden = true;
+  }
+
+  document.getElementById("modalCloseBtn").addEventListener("click", closeModal);
+  document.getElementById("modalOverlay").addEventListener("click", (e) => {
+    if (e.target.id === "modalOverlay") closeModal();
+  });
+
+  // =========================================================================
+  // NATIVE CANVAS CHARTS (Matching Calm Enterprise Palette)
+  // =========================================================================
+  function drawDonut(id, segments) {
+    const c = document.getElementById(id);
+    if (!c) return;
+    const ctx = c.getContext("2d"), cx = c.width / 2, cy = c.height / 2, r = Math.min(cx, cy) - 10;
+    ctx.clearRect(0, 0, c.width, c.height);
+    const total = segments.reduce((a, s) => a + s.value, 0);
+    if (!total) return;
+    let start = -Math.PI / 2;
+    segments.forEach(seg => {
+      const angle = (seg.value / total) * 2 * Math.PI;
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.arc(cx, cy, r, start, start + angle); ctx.closePath();
+      ctx.fillStyle = seg.color; ctx.fill();
+      start += angle;
+    });
+    ctx.beginPath(); ctx.arc(cx, cy, r * 0.58, 0, 2 * Math.PI); ctx.fillStyle = "#fff"; ctx.fill();
+    ctx.fillStyle = "#1A2433"; ctx.font = "bold 20px 'IBM Plex Sans',sans-serif"; ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillText(total, cx, cy - 8);
+    ctx.font = "11px 'IBM Plex Sans',sans-serif"; ctx.fillStyle = "#5B6778"; ctx.fillText("employees", cx, cy + 10);
+  }
+
+  function drawBar(id, labels, values, colors) {
+    const c = document.getElementById(id);
+    if (!c) return;
+    const ctx = c.getContext("2d"), W = c.width, H = c.height;
+    ctx.clearRect(0, 0, W, H);
+    const pad = { top: 20, right: 16, bottom: 44, left: 36 };
+    const cW = W - pad.left - pad.right, cH = H - pad.top - pad.bottom;
+    const maxV = Math.max(...values, 1);
+    const bW = Math.floor(cW / labels.length * 0.55), gap = Math.floor(cW / labels.length * 0.45);
+
+    ctx.strokeStyle = "#DDE2E9"; ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.top + cH - (i / 4) * cH;
+      ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(pad.left + cW, y); ctx.stroke();
+      ctx.fillStyle = "#5B6778"; ctx.font = "11px 'IBM Plex Sans',sans-serif"; ctx.textAlign = "right";
+      ctx.fillText(Math.round(maxV * i / 4), pad.left - 4, y + 4);
+    }
+    labels.forEach((lbl, i) => {
+      const x = pad.left + i * (bW + gap) + gap / 2;
+      const bh = (values[i] / maxV) * cH, y = pad.top + cH - bh;
+      ctx.beginPath(); ctx.rect(x, y, bW, bh); ctx.fillStyle = colors[i % colors.length]; ctx.fill();
+      ctx.fillStyle = "#1A2433"; ctx.textAlign = "center"; ctx.font = "bold 11px 'IBM Plex Sans',sans-serif";
+      ctx.fillText(values[i], x + bW / 2, y - 5);
+      ctx.fillStyle = "#5B6778"; ctx.font = "10px 'IBM Plex Sans',sans-serif";
+      const words = lbl.split(" ");
+      words.slice(0, 2).forEach((w, wi) => ctx.fillText(w, x + bW / 2, pad.top + cH + 14 + wi * 12));
+    });
+  }
+
+  function drawRadar(id, labels, values, max = 5) {
+    const c = document.getElementById(id);
+    if (!c) return;
+    const ctx = c.getContext("2d"), W = c.width, H = c.height;
+    ctx.clearRect(0, 0, W, H);
+    const cx = W / 2, cy = H / 2, r = Math.min(cx, cy) - 38, n = labels.length, a0 = -Math.PI / 2;
+    function pt(i, val) { const a = a0 + (i / n) * 2 * Math.PI, d = (val / max) * r; return [cx + d * Math.cos(a), cy + d * Math.sin(a)]; }
+
+    [0.25, 0.5, 0.75, 1].forEach(f => {
+      ctx.beginPath();
+      for (let i = 0; i < n; i++) { const [x, y] = pt(i, max * f); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); }
+      ctx.closePath(); ctx.strokeStyle = "#DDE2E9"; ctx.lineWidth = 1; ctx.stroke();
+    });
+    for (let i = 0; i < n; i++) {
+      const [x, y] = pt(i, max);
+      ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(x, y); ctx.strokeStyle = "#DDE2E9"; ctx.lineWidth = 1; ctx.stroke();
+    }
+    // Data polygon
+    ctx.beginPath();
+    values.forEach((v, i) => { const [x, y] = pt(i, v); i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y); });
+    ctx.closePath(); ctx.fillStyle = "rgba(11,110,117,.22)"; ctx.fill(); ctx.strokeStyle = "#0B6E75"; ctx.lineWidth = 2; ctx.stroke();
+    values.forEach((v, i) => { const [x, y] = pt(i, v); ctx.beginPath(); ctx.arc(x, y, 4, 0, 2 * Math.PI); ctx.fillStyle = "#0B6E75"; ctx.fill(); });
+    labels.forEach((lbl, i) => {
+      const [x, y] = pt(i, max + 0.85);
+      ctx.fillStyle = "#1A2433"; ctx.font = "10px 'IBM Plex Sans',sans-serif"; ctx.textAlign = "center";
+      const ws = lbl.split(" ");
+      ws.slice(0, 2).forEach((w, wi) => ctx.fillText(w, x, y + wi * 11));
+    });
+  }
+
+  // =========================================================================
+  // VIEW RENDERERS (A to M)
+  // =========================================================================
+  const views = {
+    // A. Dashboard Overview
+    overview: function() {
+      const ov = S.overview;
+      if (!ov) return '<div class="empty">Loading overview metrics…</div>';
+      const topGapSlice = (ov.topGaps || []).slice(0, 5);
+
+      const sessUser = getSession();
+      const hrName = (sessUser && sessUser.fullName) ? sessUser.fullName : "HR Specialist";
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Welcome back to the HR Dashboard, ${esc(hrName)}!</h1>
+            <p class="lead">Organisation-wide view of workforce competencies, critical knowledge gaps, and training participation.</p>
+          </div>
+          <button class="btn ghost small" data-act="exportCSV">Export Summary CSV</button>
+        </div>
+
+        <div class="grid g4" style="margin-bottom:18px">
+          <div class="stat-tile accent-purple">
+            <span class="tile-icon">👥</span>
+            <b>${ov.totalEmployees}</b>
+            <span>Total Employees</span>
+          </div>
+          <div class="stat-tile accent-blue">
+            <span class="tile-icon">🎯</span>
+            <b>${ov.skillCoveragePct}%</b>
+            <span>Skill Coverage (${ov.assessedSkills}/${ov.totalSkills})</span>
+          </div>
+          <div class="stat-tile accent-red">
+            <span class="tile-icon">⚠️</span>
+            <b>${ov.criticalGaps}</b>
+            <span>Critical Skill Gaps</span>
+          </div>
+          <div class="stat-tile accent-amber">
+            <span class="tile-icon">💡</span>
+            <b>${ov.activeLearners}</b>
+            <span>Active Learners</span>
+          </div>
+          <div class="stat-tile accent-green">
+            <span class="tile-icon">🎓</span>
+            <b>${ov.trainingCompletionRate}%</b>
+            <span>Training Completion</span>
+          </div>
+        </div>
+
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-header">
+              <h2>Top Skill Shortages</h2>
+              <button class="btn ghost small" data-act="go" data-view="gaps">Full Analysis &rarr;</button>
+            </div>
+            ${topGapSlice.length ? topGapSlice.map(g => `
+              <div style="padding:10px 0;border-top:1px solid var(--line)">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                  <strong>${esc(g.skill)}</strong>
+                  <span class="chip bad">${g.employeesAffected} affected</span>
+                </div>
+                <div class="gapbar" style="margin:6px 0">
+                  <i style="width:${(g.avgProficiency/5)*100}%"></i>
+                  <u style="left:calc(${(g.avgRequired/5)*100}% - 1px)"></u>
+                </div>
+                <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted)">
+                  <span>Org Avg: ${g.avgProficiency}/5 (Target: ${g.avgRequired}/5)</span>
+                  <span>Avg Gap: ${g.avgGap}</span>
+                </div>
+              </div>
+            `).join("") : '<div class="empty">No critical gaps identified!</div>'}
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Gap Severity Distribution</h2>
+            </div>
+            <div style="display:flex;justify-content:center;margin-bottom:12px">
+              <canvas id="ovDonut" width="220" height="220"></canvas>
+            </div>
+            <div style="display:flex;justify-content:center;gap:14px;font-size:12px">
+              <span><span style="display:inline-block;width:10px;height:10px;background:#1F7A4D;border-radius:2px;margin-right:4px"></span>No Gap: ${ov.gapDistribution?.noGap || 0}</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:#D9822B;border-radius:2px;margin-right:4px"></span>Minor (1-2): ${ov.gapDistribution?.minorGap || 0}</span>
+              <span><span style="display:inline-block;width:10px;height:10px;background:#B3261E;border-radius:2px;margin-right:4px"></span>Critical (&ge;3): ${ov.gapDistribution?.criticalGap || 0}</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-header">
+              <h2>Department Skill Gap Overview</h2>
+            </div>
+            <div class="tablewrap">
+              <table>
+                <thead>
+                  <tr><th>Department</th><th>Headcount</th><th>Total Gaps</th><th>Avg Gap</th></tr>
+                </thead>
+                <tbody>
+                  ${(ov.departmentOverview || []).map(d => `
+                    <tr>
+                      <td><strong>${esc(d.department)}</strong></td>
+                      <td>${d.totalEmployees}</td>
+                      <td>${d.gapCount > 0 ? `<span class="chip warn">${d.gapCount}</span>` : '<span class="chip ok">0</span>'}</td>
+                      <td>${d.avgGap}</td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Employees Requiring Attention</h2>
+              <button class="btn ghost small" data-act="go" data-view="directory">Directory &rarr;</button>
+            </div>
+            ${(ov.needsAttention || []).length ? ov.needsAttention.map(e => `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-top:1px solid var(--line)">
+                <div style="display:flex;align-items:center;gap:10px">
+                  ${av(e.name, 28)}
+                  <div>
+                    <div style="font-weight:600;font-size:13px">${esc(e.name)}</div>
+                    <div style="font-size:11px;color:var(--muted)">${esc(e.department)} &middot; ${esc(e.designation)}</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  ${e.criticalGaps > 0 ? `<span class="chip bad">${e.criticalGaps} critical</span>` : ''}
+                  <button class="btn small ghost" data-act="viewEmp" data-id="${e.id}">Profile</button>
+                </div>
+              </div>
+            `).join("") : '<div class="empty">All employees on track!</div>'}
+          </div>
+        </div>
+      `;
+    },
+
+    // B. Employee Directory
+    directory: function() {
+      const emps = S.employees || [];
+      const depts = S.meta.departments || [];
+      const desigs = S.meta.designations || [];
+      const roles = S.meta.roles || [];
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Workforce Employee Directory</h1>
+            <p class="lead">Search, filter, and inspect skill profiles, knowledge gaps, and learning records across all employees.</p>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="search-box" style="flex:1;min-width:200px">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+            <input id="empSearch" placeholder="Search by name, email..." oninput="HR.filterDirectory()">
+          </div>
+          <select id="empDeptFilter" onchange="HR.filterDirectory()">
+            <option value="">All Departments</option>
+            ${depts.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join("")}
+          </select>
+          <select id="empDesigFilter" onchange="HR.filterDirectory()">
+            <option value="">All Designations</option>
+            ${desigs.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join("")}
+          </select>
+          <select id="empRoleFilter" onchange="HR.filterDirectory()">
+            <option value="">All Roles</option>
+            ${roles.map(r => `<option value="${r.id}">${esc(r.name)}</option>`).join("")}
+          </select>
+        </div>
+
+        <div class="card">
+          <div class="tablewrap">
+            <table id="empTable">
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Department / Designation</th>
+                  <th>System Role</th>
+                  <th>Skills</th>
+                  <th>Skill Gaps</th>
+                  <th>Training Progress</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="empTableBody">
+                ${HR.renderEmployeeRows(emps)}
+              </tbody>
+            </table>
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:10px;text-align:right" id="empCountLabel">
+            Showing ${emps.length} employees
+          </div>
+        </div>
+      `;
+    },
+
+    // C. Competency Framework
+    competency: function() {
+      const skills = S.skills || [];
+      const cats = S.categories || [];
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Competency Framework & Skills</h1>
+            <p class="lead">Define standard organizational skills, categorize competencies, and set default proficiency benchmarks.</p>
+          </div>
+          <button class="btn" data-act="openAddSkillModal">+ Add New Skill</button>
+        </div>
+
+        <div class="grid g4" style="margin-bottom:18px">
+          <div class="stat-tile accent-purple"><b>${skills.length}</b><span>Total Defined Skills</span></div>
+          <div class="stat-tile accent-blue"><b>${cats.length}</b><span>Skill Categories</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Skill Definitions & Benchmarks</h2>
+            <div class="search-box" style="width:240px">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input id="skillSearch" placeholder="Search skill or category..." oninput="HR.filterSkills()">
+            </div>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Skill Name</th>
+                  <th>Category</th>
+                  <th>Default Benchmark (1-5)</th>
+                  <th>Employees Assessed</th>
+                  <th>Avg Proficiency</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="skillTableBody">
+                ${skills.map(s => `
+                  <tr>
+                    <td><strong>${esc(s.skillName)}</strong></td>
+                    <td><span class="chip">${esc(s.category)}</span></td>
+                    <td>Level ${s.defaultRequiredLevel} / 5</td>
+                    <td>${s.employeesCount} employee(s)</td>
+                    <td><strong>${s.avgProficiency}</strong> / 5</td>
+                    <td>
+                      <button class="btn ghost small" data-act="editSkill" data-id="${s.skillId}" data-name="${esc(s.skillName)}" data-cat="${esc(s.category)}" data-lvl="${s.defaultRequiredLevel}">Edit</button>
+                      <button class="btn danger small" data-act="deleteSkill" data-id="${s.skillId}">Delete</button>
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    },
+
+    // D. Role Requirements
+    roles: function() {
+      const roles = S.roles || [];
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Target Role Competency Requirements</h1>
+            <p class="lead">Manage organizational target career paths, required skills per role, and expected proficiency levels.</p>
+          </div>
+          <button class="btn" data-act="openAddRoleModal">+ Create Target Role</button>
+        </div>
+
+        <div class="grid g2">
+          ${roles.map(r => `
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h2 style="font-size:17px">${esc(r.roleName)}</h2>
+                  <p class="sub">${esc(r.description || 'Target career track')}</p>
+                </div>
+                <button class="btn ghost small" data-act="openAddRoleSkillModal" data-id="${r.roleId}" data-name="${esc(r.roleName)}">+ Add Skill</button>
+              </div>
+              <div class="tablewrap" style="margin-bottom:12px">
+                <table>
+                  <thead>
+                    <tr><th>Skill</th><th>Req Level</th><th>Weight</th><th></th></tr>
+                  </thead>
+                  <tbody>
+                    ${(r.skills || []).length ? (r.skills || []).map(sk => `
+                      <tr>
+                        <td><strong>${esc(sk.skillName)}</strong></td>
+                        <td>Level ${sk.requiredLevel}</td>
+                        <td>${sk.weightPct}%</td>
+                        <td><button class="btn danger small" style="padding:2px 6px" data-act="delRoleSkill" data-roleid="${r.roleId}" data-skillid="${sk.skillId}">&times;</button></td>
+                      </tr>
+                    `).join("") : '<tr><td colspan="4" class="empty">No skills mapped yet.</td></tr>'}
+                  </tbody>
+                </table>
+              </div>
+              <div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--muted)">
+                <span>${r.assignedEmployees || 0} employees targeting this role</span>
+                <button class="btn danger small" data-act="deleteRole" data-id="${r.roleId}">Delete Role</button>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    },
+
+    // E. Skill Gap Analysis
+    gaps: function() {
+      const g = S.gaps;
+      if (!g) return '<div class="empty">Loading skill gap matrix…</div>';
+      const skillsGaps = g.skillsGaps || [];
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Organisation-Wide Skill Gap Analysis</h1>
+            <p class="lead">In-depth intelligence comparing employee current proficiencies against organizational requirements.</p>
+          </div>
+        </div>
+
+        <div class="grid g2" style="margin-bottom:18px">
+          <div class="card">
+            <div class="card-header">
+              <h2>Skill Gap Radar Chart</h2>
+            </div>
+            <div style="display:flex;justify-content:center;height:260px">
+              <canvas id="gapRadar" width="280" height="260"></canvas>
+            </div>
+            <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:6px">
+              Org Average Proficiency vs Maximum Target
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Top Affected Skills</h2>
+            </div>
+            <div style="display:flex;justify-content:center;height:260px">
+              <canvas id="gapBar" width="340" height="260"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Detailed Competency Gap Matrix</h2>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Skill</th>
+                  <th>Category</th>
+                  <th>Org Avg</th>
+                  <th>Required Target</th>
+                  <th>Avg Gap</th>
+                  <th>Employees Affected</th>
+                  <th>Severity</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${skillsGaps.map(sk => `
+                  <tr>
+                    <td><strong>${esc(sk.skill)}</strong></td>
+                    <td><span class="chip">${esc(sk.category)}</span></td>
+                    <td>${sk.orgAvg} / 5</td>
+                    <td>${sk.requiredLevel} / 5</td>
+                    <td style="font-weight:700;color:var(--${sk.severity==='critical'?'bad':sk.severity==='medium'?'warn':'ok'})">-${sk.avgGap}</td>
+                    <td><span class="chip ${sk.severity==='critical'?'bad':sk.severity==='medium'?'warn':'ok'}">${sk.employeesAffected} employee(s)</span></td>
+                    <td><span class="chip ${sk.severity==='critical'?'bad':sk.severity==='medium'?'warn':'ok'}">${sk.severity.toUpperCase()}</span></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    },
+
+    // F. Learning Catalogue
+    catalogue: function() {
+      const courses = S.courses || [];
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Approved Learning Catalogue</h1>
+            <p class="lead">Maintain courses, internal workshops, and learning resources mapped to competency skills.</p>
+          </div>
+          <button class="btn" data-act="openAddCourseModal">+ Add New Course</button>
+        </div>
+
+        <div class="card">
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Course Title</th>
+                  <th>Provider</th>
+                  <th>Mapped Skill</th>
+                  <th>Level</th>
+                  <th>Duration</th>
+                  <th>Active Learners</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${courses.map(c => `
+                  <tr>
+                    <td>
+                      <strong>${esc(c.title)}</strong>
+                      ${c.url ? `<div style="font-size:11px"><a href="${esc(c.url)}" target="_blank" style="color:var(--brand)">Resource Link &nearr;</a></div>` : ''}
+                    </td>
+                    <td>${esc(c.provider || 'Internal')}</td>
+                    <td><span class="chip">${esc(c.skillName || 'General')}</span></td>
+                    <td>Level ${c.level}</td>
+                    <td>${c.durationHours} hrs</td>
+                    <td>${c.enrolledCount || 0} enrolled (${c.completedCount || 0} completed)</td>
+                    <td>
+                      <button class="btn danger small" data-act="deleteCourse" data-id="${c.courseId}">Delete</button>
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    },
+
+    // G. Learning Paths
+    paths: function() {
+      const paths = S.paths || [];
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Structured Learning Paths</h1>
+            <p class="lead">Curated learning sequences and career milestones to bridge identified gaps and prepare employees for target roles.</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn ghost small" data-act="openAssignPathModal">Assign Path</button>
+            <button class="btn small" data-act="openAddPathModal">+ Create Path</button>
+          </div>
+        </div>
+
+        <div class="grid g2">
+          ${paths.map(p => `
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h2 style="font-size:17px">${esc(p.title)}</h2>
+                  <p class="sub">${esc(p.description)}</p>
+                </div>
+                <span class="chip ok">${p.assignedCount || 0} assigned</span>
+              </div>
+              <div style="margin:10px 0">
+                <div style="font-size:12px;font-weight:600;margin-bottom:6px;color:var(--muted)">Curated Modules / Milestones:</div>
+                <ol style="margin:0;padding-left:18px;font-size:13px;line-height:1.6">
+                  ${(p.courses || []).map(c => `
+                    <li><strong>${esc(c.courseTitle)}</strong> <span class="sub" style="font-size:11px">(${c.durationHours} hrs)</span></li>
+                  `).join("")}
+                </ol>
+              </div>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    },
+
+    // H. Training Programmes
+    trainings: function() {
+      const list = S.trainings || [];
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Corporate Training Programmes</h1>
+            <p class="lead">Schedule, manage, and coordinate organization-wide training programmes and cohort enrollments.</p>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn ghost small" data-act="openAssignTrainingModal">Enroll Cohort</button>
+            <button class="btn small" data-act="openAddTrainingModal">+ New Programme</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Programme</th>
+                  <th>Provider / Mode</th>
+                  <th>Skill Targeted</th>
+                  <th>Schedule</th>
+                  <th>Duration</th>
+                  <th>Participation</th>
+                  <th>Avg Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${list.map(t => `
+                  <tr>
+                    <td><strong>${esc(t.title)}</strong></td>
+                    <td>${esc(t.providerName)} <span class="chip">${esc(t.mode)}</span></td>
+                    <td><span class="chip">${esc(t.skillName)}</span></td>
+                    <td>${t.startDate ? `${t.startDate} to ${t.endDate}` : 'Flexible'}</td>
+                    <td>${t.durationHours} hrs</td>
+                    <td>${t.enrolledCount || 0} enrolled (${t.completedCount || 0} completed)</td>
+                    <td><strong>${t.avgScore > 0 ? t.avgScore : '-'}</strong></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    },
+
+    // I. Mentor Directory & Smart Matching
+    mentors: function() {
+      const mentors = S.mentors || [];
+      const matches = S.mentorMatches || [];
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Mentor Directory & Skill Gap Pairing</h1>
+            <p class="lead">Coordinate internal peer mentorship and match employees facing critical skill gaps with verified expert mentors.</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:20px;border-left:4px solid var(--accent1)">
+          <div class="card-header">
+            <div>
+              <h2>Intelligent Mentor Match Recommendations</h2>
+              <p class="sub">Employees with measured gaps paired with mentors possessing Level 4-5 verified proficiencies.</p>
+            </div>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mentee (Gap Identified)</th>
+                  <th>Skill Gap</th>
+                  <th>Recommended Mentor</th>
+                  <th>Mentor Proficiency</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${matches.length ? matches.map(m => `
+                  <tr>
+                    <td><strong>${esc(m.menteeName)}</strong> <div style="font-size:11px;color:var(--muted)">${esc(m.menteeDept)}</div></td>
+                    <td><span class="chip bad">${esc(m.gapSkill)} (L${m.menteeLevel} &rarr; L${m.requiredLevel})</span></td>
+                    <td><strong>${esc(m.mentorName)}</strong> <div style="font-size:11px;color:var(--muted)">${esc(m.mentorHeadline)}</div></td>
+                    <td><span class="chip ok">Level ${m.mentorSkillLevel} Expert</span></td>
+                    <td>
+                      <button class="btn small" data-act="pairMentor" data-mentorid="${m.mentorId}" data-menteeid="${m.menteeId}" data-skill="${esc(m.gapSkill)}">Pair Mentor</button>
+                    </td>
+                  </tr>
+                `).join("") : '<tr><td colspan="5" class="empty">No pending matches. All gaps adequately covered.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Active Mentor Directory</h2>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Mentor</th>
+                  <th>Department</th>
+                  <th>Expertise Headline</th>
+                  <th>Availability</th>
+                  <th>Active Mentees</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${mentors.map(m => `
+                  <tr>
+                    <td><strong>${esc(m.name)}</strong></td>
+                    <td>${esc(m.department)}</td>
+                    <td>${esc(m.headline || 'Technical & Professional Mentor')}</td>
+                    <td>${m.accepting ? '<span class="chip ok">Available</span>' : '<span class="chip warn">Busy</span>'}</td>
+                    <td>${m.activeMentees} active</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    },
+
+    // J. Learning Progress
+    progress: function() {
+      const p = S.progress;
+      if (!p) return '<div class="empty">Loading learning progress…</div>';
+      const acts = p.activities || [];
+      const depts = p.deptProgress || [];
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Workforce Learning Progress Monitoring</h1>
+            <p class="lead">Real-time tracking of employee learning engagement, active course completion, and overdue activities.</p>
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:18px">
+          <div class="card-header">
+            <h2>Department Learning Completion Summary</h2>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr><th>Department</th><th>Enrollments</th><th>Completed</th><th>Avg Progress</th></tr>
+              </thead>
+              <tbody>
+                ${depts.map(d => `
+                  <tr>
+                    <td><strong>${esc(d.department)}</strong></td>
+                    <td>${d.totalEnrollments}</td>
+                    <td><span class="chip ok">${d.completedCount}</span></td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <div class="bar" style="width:120px"><i style="width:${d.avgProgress}%"></i></div>
+                        <span style="font-weight:600;font-size:12px">${d.avgProgress}%</span>
+                      </div>
+                    </td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Active Individual Learning Activities</h2>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Employee</th>
+                  <th>Department</th>
+                  <th>Course / Activity</th>
+                  <th>Progress</th>
+                  <th>Status</th>
+                  <th>Flag</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${acts.map(a => `
+                  <tr>
+                    <td><strong>${esc(a.employeeName)}</strong></td>
+                    <td>${esc(a.department)}</td>
+                    <td>${esc(a.activityTitle)}</td>
+                    <td>
+                      <div style="display:flex;align-items:center;gap:8px">
+                        <div class="bar" style="width:100px"><i style="width:${a.progressPct}%"></i></div>
+                        <span style="font-size:12px;font-weight:600">${a.progressPct}%</span>
+                      </div>
+                    </td>
+                    <td>${a.status === 'COMPLETED' ? '<span class="chip ok">Completed</span>' : '<span class="chip warn">In Progress</span>'}</td>
+                    <td>${a.isOverdue ? '<span class="chip bad">&#9888; Overdue</span>' : '<span class="chip ok">On Track</span>'}</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    },
+
+    // K. Feedback & Effectiveness
+    feedback: function() {
+      const fb = S.feedback;
+      if (!fb) return '<div class="empty">Loading feedback metrics…</div>';
+      const outcomes = fb.outcomes || [];
+      const feedbacks = fb.feedbackList || [];
+      const prePost = fb.prePostComparison || [];
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Learning Effectiveness & Feedback</h1>
+            <p class="lead">Measure learning ROI, participant feedback, training outcomes, and measured skill improvement.</p>
+          </div>
+        </div>
+
+        <div class="grid g2">
+          <div class="card">
+            <div class="card-header">
+              <h2>Training Programme Outcomes</h2>
+            </div>
+            <div class="tablewrap">
+              <table>
+                <thead>
+                  <tr><th>Programme</th><th>Completion %</th><th>Avg Score</th></tr>
+                </thead>
+                <tbody>
+                  ${outcomes.map(o => `
+                    <tr>
+                      <td><strong>${esc(o.title)}</strong></td>
+                      <td><span class="chip ok">${o.completionPct}%</span></td>
+                      <td><strong>${o.avgScore > 0 ? o.avgScore : '-'}</strong></td>
+                    </tr>
+                  `).join("")}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h2>Pre vs Post Assessment Gain</h2>
+            </div>
+            <div class="tablewrap">
+              <table>
+                <thead>
+                  <tr><th>Skill</th><th>Learner</th><th>Pre-Score</th><th>Post-Score</th><th>Gain</th></tr>
+                </thead>
+                <tbody>
+                  ${prePost.length ? prePost.map(pp => `
+                    <tr>
+                      <td><strong>${esc(pp.skill)}</strong></td>
+                      <td>${esc(pp.learner)}</td>
+                      <td>${pp.preScore}%</td>
+                      <td><strong>${pp.postScore}%</strong></td>
+                      <td><span class="chip ok">+${pp.improvement}%</span></td>
+                    </tr>
+                  `).join("") : '<tr><td colspan="5" class="empty">Assessment improvement metrics recorded after re-assessments.</td></tr>'}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Recent Participant Reviews</h2>
+          </div>
+          ${feedbacks.length ? feedbacks.map(f => `
+            <div style="padding:10px 0;border-top:1px solid var(--line)">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <strong>${esc(f.trainingTitle)}</strong>
+                <span style="font-size:12px;color:var(--muted)">${f.completionDate || ''}</span>
+              </div>
+              <p style="margin:0 0 4px;font-size:13px">&ldquo;${esc(f.feedback)}&rdquo;</p>
+              <div style="font-size:11px;color:var(--muted)">&mdash; ${esc(f.learnerName)} (Score: ${f.score || 'Pass'})</div>
+            </div>
+          `).join("") : '<div class="empty">No written reviews submitted yet.</div>'}
+        </div>
+      `;
+    },
+
+    // L. Reports & Analytics
+    reports: function() {
+      const rep = S.reports;
+      if (!rep) return '<div class="empty">Loading analytics reports…</div>';
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Workforce Intelligence Reports & Analytics</h1>
+            <p class="lead">Comprehensive organizational capability index, critical shortage rankings, and exportable datasets.</p>
+          </div>
+          <button class="btn" data-act="exportCSV">Download Full Report (CSV)</button>
+        </div>
+
+        <div class="grid g4" style="margin-bottom:18px">
+          <div class="stat-tile accent-green">
+            <b>${rep.capabilityIndex || 70}/100</b>
+            <span>Workforce Capability Index</span>
+          </div>
+          <div class="stat-tile accent-blue">
+            <b>${(rep.departmentRankings || []).length}</b>
+            <span>Ranked Departments</span>
+          </div>
+          <div class="stat-tile accent-red">
+            <b>${(rep.shortageRankings || []).length}</b>
+            <span>Identified Shortage Clusters</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Department Capability & Skill Matrix</h2>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Department</th>
+                  <th>Employees</th>
+                  <th>Avg Skill Level (1-5)</th>
+                  <th>Gaps Count</th>
+                  <th>Avg Training Progress</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${(rep.departmentRankings || []).map(d => `
+                  <tr>
+                    <td><strong>${esc(d.department)}</strong></td>
+                    <td>${d.employees}</td>
+                    <td><strong>${d.avgSkillLevel}</strong> / 5</td>
+                    <td>${d.totalGaps > 0 ? `<span class="chip warn">${d.totalGaps}</span>` : '<span class="chip ok">0</span>'}</td>
+                    <td>${d.avgTrainingProgress}%</td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    },
+
+    // M. Announcements & Notifications
+    notifications: function() {
+      const notifs = S.notifications || [];
+
+      return `
+        <div class="section-head">
+          <div>
+            <h1>Announcements & Training Notifications</h1>
+            <p class="lead">Broadcast organizational notices, send training reminders, and notify cohorts of learning assignments.</p>
+          </div>
+          <button class="btn" data-act="openSendNotifModal">+ New Announcement</button>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Broadcast History</h2>
+          </div>
+          <div class="tablewrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Announcement Title</th>
+                  <th>Message</th>
+                  <th>Audience Target</th>
+                  <th>Sent By</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${notifs.length ? notifs.map(n => `
+                  <tr>
+                    <td><strong>${esc(n.title)}</strong></td>
+                    <td style="max-width:320px">${esc(n.message)}</td>
+                    <td><span class="chip">${esc(n.targetType)}</span></td>
+                    <td>${esc(n.senderName)}</td>
+                    <td style="font-size:12px;color:var(--muted)">${n.createdAt ? n.createdAt.replace("T"," ").substring(0,16) : ''}</td>
+                  </tr>
+                `).join("") : '<tr><td colspan="5" class="empty">No announcements broadcasted yet.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+  };
+
+  // =========================================================================
+  // ACTIONS & CONTROLLER
+  // =========================================================================
+  window.HR = {
+    renderEmployeeRows: function(list) {
+      if (!list || !list.length) return '<tr><td colspan="7" class="empty">No employees found.</td></tr>';
+      return list.map(e => `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              ${av(e.name, 30)}
+              <div>
+                <div style="font-weight:600">${esc(e.name)}</div>
+                <div style="font-size:11px;color:var(--muted)">${esc(e.email)}</div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div>${esc(e.department)}</div>
+            <div style="font-size:11px;color:var(--muted)">${esc(e.designation)}</div>
+          </td>
+          <td><span class="chip">${esc(e.role)}</span></td>
+          <td>${e.totalSkills || 0}</td>
+          <td>
+            ${e.totalGaps > 0 ? `
+              <span class="chip ${e.criticalGaps > 0 ? 'bad' : 'warn'}">
+                ${e.totalGaps} gap${e.totalGaps > 1 ? 's' : ''} ${e.criticalGaps > 0 ? `(${e.criticalGaps} crit)` : ''}
+              </span>
+            ` : '<span class="chip ok">0 gaps</span>'}
+          </td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="bar" style="width:70px"><i style="width:${e.trainingProgress}%"></i></div>
+              <span style="font-size:11px;font-weight:600">${e.trainingProgress}%</span>
+            </div>
+          </td>
+          <td>
+            <button class="btn ghost small" data-act="viewEmp" data-id="${e.id}">View Details</button>
+          </td>
+        </tr>
+      `).join("");
+    },
+
+    filterDirectory: function() {
+      const q = (document.getElementById("empSearch")?.value || "").toLowerCase().trim();
+      const d = document.getElementById("empDeptFilter")?.value || "";
+      const ds = document.getElementById("empDesigFilter")?.value || "";
+      const r = document.getElementById("empRoleFilter")?.value || "";
+
+      const filtered = S.employees.filter(e => {
+        if (q && !e.name.toLowerCase().includes(q) && !e.email.toLowerCase().includes(q)) return false;
+        if (d && String(e.departmentId) !== d) return false;
+        if (ds && String(e.designationId) !== ds) return false;
+        if (r && String(e.roleId) !== r) return false;
+        return true;
+      });
+
+      document.getElementById("empTableBody").innerHTML = HR.renderEmployeeRows(filtered);
+      document.getElementById("empCountLabel").textContent = `Showing ${filtered.length} of ${S.employees.length} employees`;
+    },
+
+    filterSkills: function() {
+      const q = (document.getElementById("skillSearch")?.value || "").toLowerCase().trim();
+      const rows = document.querySelectorAll("#skillTableBody tr");
+      rows.forEach(r => {
+        const text = r.textContent.toLowerCase();
+        r.style.display = text.includes(q) ? "" : "none";
+      });
+    },
+
+    showEmployeeModal: async function(empId) {
+      try {
+        const emp = await hrApi("/employees/" + empId);
+        const html = `
+          <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px">
+            ${av(emp.fullName, 42)}
+            <div>
+              <div style="font-size:16px;font-weight:700">${esc(emp.fullName)}</div>
+              <div style="font-size:12px;color:var(--muted)">${esc(emp.email)} &middot; ${esc(emp.department)} &middot; ${esc(emp.designation)}</div>
+              ${emp.targetRole ? `<div style="font-size:11px;color:var(--brand);margin-top:2px">Target Role: <strong>${esc(emp.targetRole)}</strong></div>` : ''}
+            </div>
+          </div>
+
+          <h3 style="font-size:14px;margin:16px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px">Assessed Skills & Competencies</h3>
+          <div class="tablewrap" style="max-height:220px;overflow-y:auto;margin-bottom:14px">
+            <table>
+              <thead><tr><th>Skill</th><th>Proficiency</th><th>Required</th><th>Gap</th></tr></thead>
+              <tbody>
+                ${(emp.skills || []).length ? (emp.skills || []).map(sk => `
+                  <tr>
+                    <td><strong>${esc(sk.skillName)}</strong></td>
+                    <td>Level ${sk.selfLevel}/5</td>
+                    <td>Level ${sk.requiredLevel}/5</td>
+                    <td>${sk.gap > 0 ? `<span class="chip ${sk.gap>=2?'bad':'warn'}">-${sk.gap}</span>` : '<span class="chip ok">Target Met</span>'}</td>
+                  </tr>
+                `).join("") : '<tr><td colspan="4" class="empty">No skills assessed yet.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+
+          <h3 style="font-size:14px;margin:16px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px">Enrolled Courses</h3>
+          <div class="tablewrap" style="max-height:180px;overflow-y:auto">
+            <table>
+              <thead><tr><th>Course</th><th>Progress</th><th>Status</th></tr></thead>
+              <tbody>
+                ${(emp.courses || []).length ? (emp.courses || []).map(c => `
+                  <tr>
+                    <td>${esc(c.courseTitle)}</td>
+                    <td>${c.progressPct}%</td>
+                    <td><span class="chip ${c.status==='COMPLETED'?'ok':'warn'}">${esc(c.status)}</span></td>
+                  </tr>
+                `).join("") : '<tr><td colspan="3" class="empty">No active courses.</td></tr>'}
+              </tbody>
+            </table>
+          </div>
+        `;
+        openModal("Employee Profile & Learning Details", html);
+      } catch (err) {
+        toast(err.message, true);
+      }
+    },
+
+    exportCSV: function() {
+      const rows = [
+        ["Employee ID", "Name", "Email", "Department", "Designation", "Total Skills", "Skill Gaps", "Critical Gaps", "Training Progress %"]
+      ];
+      (S.employees || []).forEach(e => {
+        rows.push([
+          e.id, `"${e.name}"`, e.email, `"${e.department}"`, `"${e.designation}"`,
+          e.totalSkills, e.totalGaps, e.criticalGaps, e.trainingProgress
+        ]);
+      });
+      const csv = rows.map(r => r.join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `HR_Workforce_Intelligence_Report_${new Date().toISOString().substring(0,10)}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast("Report CSV downloaded");
+    }
+  };
+
+  // =========================================================================
+  // VIEW NAVIGATION & DATA LOADING
+  // =========================================================================
+  async function loadView(v) {
+    currentView = v;
+    document.querySelectorAll("nav#nav button[data-act='go']").forEach(btn => {
+      btn.removeAttribute("aria-current");
+      if (btn.dataset.view === v) btn.setAttribute("aria-current", "page");
+    });
+
+    const root = document.getElementById("main");
+    root.innerHTML = '<div class="card empty">Loading…</div>';
+
+    try {
+      if (v === "overview") {
+        S.overview = await hrApi("/overview");
+        root.innerHTML = views.overview();
+        setTimeout(() => {
+          if (document.getElementById("ovDonut")) {
+            const gd = S.overview.gapDistribution || {};
+            drawDonut("ovDonut", [
+              { value: gd.noGap || 0, color: "#1F7A4D" },
+              { value: gd.minorGap || 0, color: "#D9822B" },
+              { value: gd.criticalGap || 0, color: "#B3261E" }
+            ]);
+          }
+        }, 50);
+      } else if (v === "directory") {
+        S.employees = await hrApi("/employees");
+        root.innerHTML = views.directory();
+      } else if (v === "competency") {
+        S.skills = await hrApi("/competency/skills");
+        S.categories = await hrApi("/competency/categories");
+        root.innerHTML = views.competency();
+      } else if (v === "roles") {
+        S.roles = await hrApi("/roles");
+        root.innerHTML = views.roles();
+      } else if (v === "gaps") {
+        S.gaps = await hrApi("/gaps/analysis");
+        root.innerHTML = views.gaps();
+        setTimeout(() => {
+          if (document.getElementById("gapRadar") && S.gaps?.skillsGaps?.length) {
+            const top5 = S.gaps.skillsGaps.slice(0, 6);
+            drawRadar("gapRadar", top5.map(g => g.skill), top5.map(g => g.orgAvg), 5);
+          }
+          if (document.getElementById("gapBar") && S.gaps?.skillsGaps?.length) {
+            const top5 = S.gaps.skillsGaps.slice(0, 5);
+            drawBar("gapBar", top5.map(g => g.skill), top5.map(g => g.employeesAffected), ["#B3261E", "#D9822B", "#2F6FA3", "#0B6E75", "#8E44AD"]);
+          }
+        }, 50);
+      } else if (v === "catalogue") {
+        S.courses = await hrApi("/courses");
+        root.innerHTML = views.catalogue();
+      } else if (v === "paths") {
+        S.paths = await hrApi("/learning-paths");
+        root.innerHTML = views.paths();
+      } else if (v === "trainings") {
+        S.trainings = await hrApi("/training-programs");
+        root.innerHTML = views.trainings();
+      } else if (v === "mentors") {
+        S.mentors = await hrApi("/mentors");
+        S.mentorMatches = await hrApi("/mentors/matches");
+        root.innerHTML = views.mentors();
+      } else if (v === "progress") {
+        S.progress = await hrApi("/learning-progress");
+        root.innerHTML = views.progress();
+      } else if (v === "feedback") {
+        S.feedback = await hrApi("/feedback-effectiveness");
+        root.innerHTML = views.feedback();
+      } else if (v === "reports") {
+        S.reports = await hrApi("/reports");
+        root.innerHTML = views.reports();
+      } else if (v === "notifications") {
+        S.notifications = await hrApi("/notifications");
+        root.innerHTML = views.notifications();
+      }
+    } catch (err) {
+      root.innerHTML = `<div class="card empty" style="color:var(--bad)">Error loading data: ${esc(err.message)}</div>`;
+      toast(err.message, true);
+    }
+  }
+
+  // =========================================================================
+  // GLOBAL CLICK DELEGATION
+  // =========================================================================
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    const act = btn.dataset.act;
+
+    if (act === "go") {
+      loadView(btn.dataset.view);
+    } else if (act === "viewEmp") {
+      HR.showEmployeeModal(btn.dataset.id);
+    } else if (act === "exportCSV") {
+      HR.exportCSV();
+    }
+
+    // Skill CRUD
+    else if (act === "openAddSkillModal") {
+      const cats = S.categories || [];
+      const html = `
+        <div class="form-group">
+          <label>Skill Name *</label>
+          <input id="newSkillName" placeholder="e.g. Kubernetes, TypeScript, Negotiation" required>
+        </div>
+        <div class="form-group">
+          <label>Category *</label>
+          <input id="newSkillCat" list="catList" placeholder="e.g. Technical, Soft Skills, Leadership" required>
+          <datalist id="catList">
+            ${cats.map(c => `<option value="${esc(c.categoryName)}"></option>`).join("")}
+          </datalist>
+        </div>
+        <div class="form-group">
+          <label>Default Required Benchmark (Level 1 to 5) *</label>
+          <select id="newSkillLevel">
+            <option value="1">Level 1 - Fundamental / Basic</option>
+            <option value="2">Level 2 - Developing</option>
+            <option value="3" selected>Level 3 - Proficient / Competent</option>
+            <option value="4">Level 4 - Advanced</option>
+            <option value="5">Level 5 - Expert / Mastery</option>
+          </select>
+        </div>
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn" id="saveNewSkillBtn">Create Skill</button>
+        </div>
+      `;
+      openModal("Add New Skill to Competency Framework", html);
+      document.getElementById("saveNewSkillBtn").onclick = async () => {
+        const name = document.getElementById("newSkillName").value.trim();
+        const cat = document.getElementById("newSkillCat").value.trim();
+        const lvl = parseInt(document.getElementById("newSkillLevel").value, 10);
+        if (!name) return alert("Please enter skill name");
+        try {
+          await hrApi("/competency/skills", { method: "POST", body: { skillName: name, category: cat, defaultRequiredLevel: lvl } });
+          closeModal();
+          toast("Skill created successfully");
+          loadView("competency");
+        } catch (err) { toast(err.message, true); }
+      };
+    } else if (act === "editSkill") {
+      const id = btn.dataset.id;
+      const curName = btn.dataset.name;
+      const curCat = btn.dataset.cat;
+      const curLvl = btn.dataset.lvl;
+      const html = `
+        <div class="form-group">
+          <label>Skill Name</label>
+          <input id="editSkillName" value="${esc(curName)}">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <input id="editSkillCat" value="${esc(curCat)}">
+        </div>
+        <div class="form-group">
+          <label>Default Benchmark Level</label>
+          <select id="editSkillLevel">
+            ${[1,2,3,4,5].map(l => `<option value="${l}" ${l==curLvl?'selected':''}>Level ${l}</option>`).join("")}
+          </select>
+        </div>
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn" id="updateSkillBtn">Update Skill</button>
+        </div>
+      `;
+      openModal("Edit Skill Definition", html);
+      document.getElementById("updateSkillBtn").onclick = async () => {
+        const name = document.getElementById("editSkillName").value.trim();
+        const cat = document.getElementById("editSkillCat").value.trim();
+        const lvl = parseInt(document.getElementById("editSkillLevel").value, 10);
+        try {
+          await hrApi("/competency/skills/" + id, { method: "PUT", body: { skillName: name, category: cat, defaultRequiredLevel: lvl } });
+          closeModal();
+          toast("Skill updated");
+          loadView("competency");
+        } catch (err) { toast(err.message, true); }
+      };
+    } else if (act === "deleteSkill") {
+      if (!confirm("Are you sure you want to delete this skill?")) return;
+      try {
+        await hrApi("/competency/skills/" + btn.dataset.id, { method: "DELETE" });
+        toast("Skill deleted");
+        loadView("competency");
+      } catch (err) { toast(err.message, true); }
+    }
+
+    // Role CRUD
+    else if (act === "openAddRoleModal") {
+      const html = `
+        <div class="form-group">
+          <label>Target Role Title *</label>
+          <input id="newRoleName" placeholder="e.g. Solution Architect, Cloud Specialist" required>
+        </div>
+        <div class="form-group">
+          <label>Role Purpose & Description</label>
+          <textarea id="newRoleDesc" placeholder="Responsibilities and competency summary..."></textarea>
+        </div>
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn" id="saveRoleBtn">Save Target Role</button>
+        </div>
+      `;
+      openModal("Create Target Role", html);
+      document.getElementById("saveRoleBtn").onclick = async () => {
+        const name = document.getElementById("newRoleName").value.trim();
+        const desc = document.getElementById("newRoleDesc").value.trim();
+        if (!name) return alert("Enter role name");
+        try {
+          await hrApi("/roles", { method: "POST", body: { roleName: name, description: desc } });
+          closeModal();
+          toast("Target role created");
+          loadView("roles");
+        } catch (err) { toast(err.message, true); }
+      };
+    } else if (act === "openAddRoleSkillModal") {
+      const roleId = btn.dataset.id;
+      const roleName = btn.dataset.name;
+      const skills = S.meta.skills || [];
+      const html = `
+        <p class="sub" style="margin:0 0 12px">Role: <strong>${esc(roleName)}</strong></p>
+        <div class="form-group">
+          <label>Select Skill *</label>
+          <select id="roleSkillId">
+            ${skills.map(s => `<option value="${s.id}">${esc(s.name)} (${esc(s.category)})</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Required Benchmark Level *</label>
+          <select id="roleSkillLevel">
+            <option value="1">Level 1 - Fundamental</option>
+            <option value="2">Level 2 - Developing</option>
+            <option value="3" selected>Level 3 - Proficient</option>
+            <option value="4">Level 4 - Advanced</option>
+            <option value="5">Level 5 - Expert</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Role Weight % (e.g. 20)</label>
+          <input type="number" id="roleSkillWeight" value="25" min="5" max="100">
+        </div>
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn" id="saveRoleSkillBtn">Add to Role</button>
+        </div>
+      `;
+      openModal("Map Skill to Target Role", html);
+      document.getElementById("saveRoleSkillBtn").onclick = async () => {
+        const skId = parseInt(document.getElementById("roleSkillId").value, 10);
+        const lvl = parseInt(document.getElementById("roleSkillLevel").value, 10);
+        const wt = parseInt(document.getElementById("roleSkillWeight").value, 10);
+        try {
+          await hrApi(`/roles/${roleId}/skills`, { method: "POST", body: { skillId: skId, requiredLevel: lvl, weightPct: wt } });
+          closeModal();
+          toast("Skill mapped to role");
+          loadView("roles");
+        } catch (err) { toast(err.message, true); }
+      };
+    } else if (act === "delRoleSkill") {
+      try {
+        await hrApi(`/roles/${btn.dataset.roleid}/skills/${btn.dataset.skillid}`, { method: "DELETE" });
+        toast("Skill removed from role");
+        loadView("roles");
+      } catch (err) { toast(err.message, true); }
+    } else if (act === "deleteRole") {
+      if (!confirm("Delete this target role?")) return;
+      try {
+        await hrApi("/roles/" + btn.dataset.id, { method: "DELETE" });
+        toast("Role deleted");
+        loadView("roles");
+      } catch (err) { toast(err.message, true); }
+    }
+
+    // Course CRUD
+    else if (act === "openAddCourseModal") {
+      const skills = S.meta.skills || [];
+      const html = `
+        <div class="form-group">
+          <label>Course Title *</label>
+          <input id="courseTitle" placeholder="e.g. Advanced System Architecture with Microservices" required>
+        </div>
+        <div class="form-group">
+          <label>Provider / Platform</label>
+          <input id="courseProvider" placeholder="Internal Academy, Coursera, etc." value="Internal Academy">
+        </div>
+        <div class="form-group">
+          <label>Mapped Skill *</label>
+          <select id="courseSkillId">
+            ${skills.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Level & Duration (Hours)</label>
+          <div style="display:flex;gap:10px">
+            <select id="courseLevel" style="flex:1">
+              <option value="1">Level 1 - Beginner</option>
+              <option value="2">Level 2 - Basic</option>
+              <option value="3" selected>Level 3 - Intermediate</option>
+              <option value="4">Level 4 - Advanced</option>
+            </select>
+            <input type="number" id="courseDuration" value="8" style="width:100px" placeholder="Hours">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Course Resource URL</label>
+          <input id="courseUrl" placeholder="https://learning.internal.org/course/...">
+        </div>
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn" id="saveCourseBtn">Add to Catalogue</button>
+        </div>
+      `;
+      openModal("Add Course to Learning Catalogue", html);
+      document.getElementById("saveCourseBtn").onclick = async () => {
+        const title = document.getElementById("courseTitle").value.trim();
+        const provider = document.getElementById("courseProvider").value.trim();
+        const skillId = parseInt(document.getElementById("courseSkillId").value, 10);
+        const level = parseInt(document.getElementById("courseLevel").value, 10);
+        const durationHours = parseInt(document.getElementById("courseDuration").value, 10);
+        const url = document.getElementById("courseUrl").value.trim();
+        if (!title) return alert("Enter course title");
+        try {
+          await hrApi("/courses", { method: "POST", body: { title, provider, skillId, level, durationHours, url } });
+          closeModal();
+          toast("Course added to catalogue");
+          loadView("catalogue");
+        } catch (err) { toast(err.message, true); }
+      };
+    } else if (act === "deleteCourse") {
+      if (!confirm("Remove this course from catalogue?")) return;
+      try {
+        await hrApi("/courses/" + btn.dataset.id, { method: "DELETE" });
+        toast("Course removed");
+        loadView("catalogue");
+      } catch (err) { toast(err.message, true); }
+    }
+
+    // Learning Paths
+    else if (act === "openAddPathModal") {
+      const courses = S.courses || [];
+      const html = `
+        <div class="form-group">
+          <label>Learning Path Title *</label>
+          <input id="pathTitle" placeholder="e.g. Senior Backend Architect Track" required>
+        </div>
+        <div class="form-group">
+          <label>Track Description</label>
+          <textarea id="pathDesc" placeholder="Goal of this structured learning sequence..."></textarea>
+        </div>
+        <div class="form-group">
+          <label>Select Courses in Sequence</label>
+          <div style="max-height:160px;overflow-y:auto;border:1px solid var(--line);border-radius:6px;padding:8px">
+            ${courses.map(c => `
+              <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:6px">
+                <input type="checkbox" name="pathCourses" value="${c.courseId}">
+                <span>${esc(c.title)} (${c.durationHours}h)</span>
+              </label>
+            `).join("")}
+          </div>
+        </div>
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn" id="savePathBtn">Create Path</button>
+        </div>
+      `;
+      openModal("Create Structured Learning Path", html);
+      document.getElementById("savePathBtn").onclick = async () => {
+        const title = document.getElementById("pathTitle").value.trim();
+        const desc = document.getElementById("pathDesc").value.trim();
+        const cbs = Array.from(document.querySelectorAll("input[name='pathCourses']:checked")).map(cb => parseInt(cb.value, 10));
+        if (!title) return alert("Enter path title");
+        try {
+          await hrApi("/learning-paths", { method: "POST", body: { title, description: desc, courseIds: cbs } });
+          closeModal();
+          toast("Learning path created");
+          loadView("paths");
+        } catch (err) { toast(err.message, true); }
+      };
+    } else if (act === "openAssignPathModal") {
+      const paths = S.paths || [];
+      const depts = S.meta.departments || [];
+      const emps = S.employees || [];
+      const html = `
+        <div class="form-group">
+          <label>Select Learning Path *</label>
+          <select id="assignPathId">
+            ${paths.map(p => `<option value="${p.pathId}">${esc(p.title)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Assign To</label>
+          <select id="assignTargetType" onchange="document.getElementById('assignDeptBox').hidden = this.value!=='DEPT'; document.getElementById('assignEmpBox').hidden = this.value!=='EMP';">
+            <option value="DEPT">Entire Department</option>
+            <option value="EMP">Individual Employee</option>
+          </select>
+        </div>
+        <div class="form-group" id="assignDeptBox">
+          <label>Select Department</label>
+          <select id="assignDeptId">
+            ${depts.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group" id="assignEmpBox" hidden>
+          <label>Select Employee</label>
+          <select id="assignEmpId">
+            ${emps.map(e => `<option value="${e.id}">${esc(e.name)} (${esc(e.department)})</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Target Completion Date</label>
+          <input type="date" id="assignTargetDate">
+        </div>
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn" id="submitAssignPathBtn">Assign Path</button>
+        </div>
+      `;
+      openModal("Assign Learning Path", html);
+      document.getElementById("submitAssignPathBtn").onclick = async () => {
+        const pathId = parseInt(document.getElementById("assignPathId").value, 10);
+        const tType = document.getElementById("assignTargetType").value;
+        const targetDate = document.getElementById("assignTargetDate").value;
+        const body = { pathId, targetDate };
+        if (tType === "DEPT") body.departmentId = parseInt(document.getElementById("assignDeptId").value, 10);
+        else body.employeeId = parseInt(document.getElementById("assignEmpId").value, 10);
+        try {
+          const res = await hrApi("/learning-paths/assign", { method: "POST", body });
+          closeModal();
+          toast(`Learning path assigned to ${res.assignedCount} employees`);
+          loadView("paths");
+        } catch (err) { toast(err.message, true); }
+      };
+    }
+
+    // Training Programmes
+    else if (act === "openAddTrainingModal") {
+      const skills = S.meta.skills || [];
+      const html = `
+        <div class="form-group">
+          <label>Programme Title *</label>
+          <input id="tpTitle" placeholder="e.g. Q4 Cloud Security & Governance Cohort" required>
+        </div>
+        <div class="form-group">
+          <label>Provider / Academy</label>
+          <input id="tpProvider" value="HR Learning & Development">
+        </div>
+        <div class="form-group">
+          <label>Mode</label>
+          <select id="tpMode">
+            <option value="Online">Online / Self-Paced</option>
+            <option value="Hybrid">Hybrid Cohort</option>
+            <option value="Classroom">Classroom Workshop</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Start & End Date</label>
+          <div style="display:flex;gap:10px">
+            <input type="date" id="tpStartDate">
+            <input type="date" id="tpEndDate">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Targeted Competency Skill</label>
+          <select id="tpSkillId">
+            ${skills.map(s => `<option value="${s.id}">${esc(s.name)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Duration (Hours)</label>
+          <input type="number" id="tpDuration" value="16">
+        </div>
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn" id="saveTrainingBtn">Publish Programme</button>
+        </div>
+      `;
+      openModal("Schedule New Corporate Training Programme", html);
+      document.getElementById("saveTrainingBtn").onclick = async () => {
+        const title = document.getElementById("tpTitle").value.trim();
+        const providerName = document.getElementById("tpProvider").value.trim();
+        const mode = document.getElementById("tpMode").value;
+        const startDate = document.getElementById("tpStartDate").value;
+        const endDate = document.getElementById("tpEndDate").value;
+        const skillId = parseInt(document.getElementById("tpSkillId").value, 10);
+        const durationHours = parseFloat(document.getElementById("tpDuration").value);
+        if (!title) return alert("Enter training title");
+        try {
+          await hrApi("/training-programs", {
+            method: "POST",
+            body: { title, providerName, mode, startDate, endDate, skillId, durationHours }
+          });
+          closeModal();
+          toast("Training programme created");
+          loadView("trainings");
+        } catch (err) { toast(err.message, true); }
+      };
+    } else if (act === "openAssignTrainingModal") {
+      const progs = S.trainings || [];
+      const depts = S.meta.departments || [];
+      const emps = S.employees || [];
+      const html = `
+        <div class="form-group">
+          <label>Select Training Programme *</label>
+          <select id="assignTpId">
+            ${progs.map(t => `<option value="${t.trainingId}">${esc(t.title)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Enrollment Scope</label>
+          <select id="assignTpTargetType" onchange="document.getElementById('tpDeptBox').hidden = this.value!=='DEPT'; document.getElementById('tpEmpBox').hidden = this.value!=='EMP';">
+            <option value="DEPT">Entire Department</option>
+            <option value="EMP">Individual Employee</option>
+          </select>
+        </div>
+        <div class="form-group" id="tpDeptBox">
+          <label>Select Department</label>
+          <select id="tpDeptId">
+            ${depts.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group" id="tpEmpBox" hidden>
+          <label>Select Employee</label>
+          <select id="tpEmpId">
+            ${emps.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join("")}
+          </select>
+        </div>
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn" id="submitAssignTpBtn">Enroll Cohort</button>
+        </div>
+      `;
+      openModal("Enroll Employees in Training Programme", html);
+      document.getElementById("submitAssignTpBtn").onclick = async () => {
+        const id = parseInt(document.getElementById("assignTpId").value, 10);
+        const tType = document.getElementById("assignTpTargetType").value;
+        const body = {};
+        if (tType === "DEPT") body.departmentId = parseInt(document.getElementById("tpDeptId").value, 10);
+        else body.employeeId = parseInt(document.getElementById("tpEmpId").value, 10);
+        try {
+          const res = await hrApi(`/training-programs/${id}/assign`, { method: "POST", body });
+          closeModal();
+          toast(`Enrolled ${res.assignedCount} employees into training programme`);
+          loadView("trainings");
+        } catch (err) { toast(err.message, true); }
+      };
+    }
+
+    // Mentor Pairing
+    else if (act === "pairMentor") {
+      const mentorId = btn.dataset.mentorid;
+      const menteeId = btn.dataset.menteeid;
+      const skill = btn.dataset.skill;
+      if (!confirm(`Pair mentor for skill focus: "${skill}"?`)) return;
+      try {
+        await hrApi("/mentors/assign", { method: "POST", body: { mentorId, menteeId, topic: "Skill Coaching: " + skill } });
+        toast("Mentor paired successfully");
+        loadView("mentors");
+      } catch (err) { toast(err.message, true); }
+    }
+
+    // Announcements
+    else if (act === "openSendNotifModal") {
+      const depts = S.meta.departments || [];
+      const emps = S.employees || [];
+      const html = `
+        <div class="form-group">
+          <label>Announcement Title *</label>
+          <input id="notifTitle" placeholder="e.g. Q4 Competency Assessment & Training Enrollment Notice" required>
+        </div>
+        <div class="form-group">
+          <label>Audience Target</label>
+          <select id="notifTargetType" onchange="document.getElementById('notifDeptGroup').hidden = this.value!=='DEPARTMENT'; document.getElementById('notifEmpGroup').hidden = this.value!=='EMPLOYEE';">
+            <option value="ALL">All Organization</option>
+            <option value="DEPARTMENT">Specific Department</option>
+            <option value="EMPLOYEE">Specific Employee</option>
+          </select>
+        </div>
+        <div class="form-group" id="notifDeptGroup" hidden>
+          <label>Department</label>
+          <select id="notifDeptId">
+            ${depts.map(d => `<option value="${d.id}">${esc(d.name)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group" id="notifEmpGroup" hidden>
+          <label>Employee</label>
+          <select id="notifEmpId">
+            ${emps.map(e => `<option value="${e.id}">${esc(e.name)}</option>`).join("")}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Message Content *</label>
+          <textarea id="notifMsg" placeholder="Type your announcement or reminder..."></textarea>
+        </div>
+        <div style="text-align:right;margin-top:16px">
+          <button class="btn" id="submitBroadcastBtn">Send Announcement</button>
+        </div>
+      `;
+      openModal("Broadcast HR Announcement", html);
+      document.getElementById("submitBroadcastBtn").onclick = async () => {
+        const title = document.getElementById("notifTitle").value.trim();
+        const message = document.getElementById("notifMsg").value.trim();
+        const targetType = document.getElementById("notifTargetType").value;
+        let targetId = null;
+        if (targetType === "DEPARTMENT") targetId = parseInt(document.getElementById("notifDeptId").value, 10);
+        else if (targetType === "EMPLOYEE") targetId = parseInt(document.getElementById("notifEmpId").value, 10);
+
+        if (!title || !message) return alert("Enter title and message");
+        try {
+          const res = await hrApi("/notifications/send", { method: "POST", body: { title, message, targetType, targetId } });
+          closeModal();
+          toast(`Announcement sent to ${res.recipientsCount} employees`);
+          loadView("notifications");
+        } catch (err) { toast(err.message, true); }
+      };
+    }
+  });
+
+  // =========================================================================
+  // INITIALIZATION
+  // =========================================================================
+  (async function init() {
+    try {
+      S.meta = await hrApi("/meta");
+    } catch (e) {
+      console.warn("Meta fetch error:", e);
+    }
+    loadView("overview");
+  })();
+})();
+</script>
+</body>
+</html>

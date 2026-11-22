@@ -1,0 +1,6231 @@
+{
+  "info": {
+    "_postman_id": "1ce348ea-4329-48a3-8a07-d03efcfd9383",
+    "name": "Infosys Platform - Comprehensive CRUD & Regression Suite",
+    "description": "Comprehensive Postman test collection for the Organizational Knowledge Gap Intelligence Platform (Spring Boot & MySQL). Contains 124 REST endpoints categorized into 21 modules, with end-to-end sequential CRUD lifecycles (C -> R -> U -> R -> D -> R), negative/edge-case tests, dynamic ID extraction, and automated assertions.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "employee_id",
+      "value": "24",
+      "type": "string"
+    },
+    {
+      "key": "skill_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "course_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "role_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "cert_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "session_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "path_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "program_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "id": "ed7c518c-e5cd-4fe2-8266-9460ddf65df5",
+      "name": "01. Authentication",
+      "description": "User registration and role logins. Login automatically extracts and sets {{jwt_token}} and {{employee_id}}.",
+      "item": [
+        {
+          "id": "81d40c69-ebde-4bb0-bbe9-188fa138d356",
+          "name": "Register New User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Test Automation User\",\n  \"email\": \"auto.test@infosys.com\",\n  \"password\": \"Password@123\",\n  \"confirmPassword\": \"Password@123\",\n  \"role\": \"EMPLOYEE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Registration returns 201 Created or 409 Conflict', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "a0a3c201-6ef0-4963-9223-34e4d82391b5",
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"emp.test@infosys.com\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test('Token received for EMPLOYEE', function () {",
+                  "    pm.expect(data).to.have.property('token');",
+                  "});",
+                  "if (data.token) {",
+                  "    pm.environment.set('jwt_token', data.token);",
+                  "    pm.collectionVariables.set('jwt_token', data.token);",
+                  "    if (data.employeeId) {",
+                  "        pm.environment.set('employee_id', String(data.employeeId));",
+                  "        pm.collectionVariables.set('employee_id', String(data.employeeId));",
+                  "    }",
+                  "    console.log('Saved jwt_token for role: ' + data.role);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "701eb2e4-6d93-4e29-9845-5af8948a5096",
+          "name": "Login - HR Specialist",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"hr.test@infosys.com\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test('Token received for HR', function () {",
+                  "    pm.expect(data).to.have.property('token');",
+                  "});",
+                  "if (data.token) {",
+                  "    pm.environment.set('jwt_token', data.token);",
+                  "    pm.collectionVariables.set('jwt_token', data.token);",
+                  "    if (data.employeeId) {",
+                  "        pm.environment.set('employee_id', String(data.employeeId));",
+                  "        pm.collectionVariables.set('employee_id', String(data.employeeId));",
+                  "    }",
+                  "    console.log('Saved jwt_token for role: ' + data.role);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "b5d70fa0-57de-4e35-9716-b708c0e5d122",
+          "name": "Login - Team Manager",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mgr.test@infosys.com\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test('Token received for MANAGER', function () {",
+                  "    pm.expect(data).to.have.property('token');",
+                  "});",
+                  "if (data.token) {",
+                  "    pm.environment.set('jwt_token', data.token);",
+                  "    pm.collectionVariables.set('jwt_token', data.token);",
+                  "    if (data.employeeId) {",
+                  "        pm.environment.set('employee_id', String(data.employeeId));",
+                  "        pm.collectionVariables.set('employee_id', String(data.employeeId));",
+                  "    }",
+                  "    console.log('Saved jwt_token for role: ' + data.role);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "227e428d-3940-4da5-a8d4-a1a1fa413f65",
+          "name": "Login - Mentor",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"mentor.test@infosys.com\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test('Token received for MENTOR', function () {",
+                  "    pm.expect(data).to.have.property('token');",
+                  "});",
+                  "if (data.token) {",
+                  "    pm.environment.set('jwt_token', data.token);",
+                  "    pm.collectionVariables.set('jwt_token', data.token);",
+                  "    if (data.employeeId) {",
+                  "        pm.environment.set('employee_id', String(data.employeeId));",
+                  "        pm.collectionVariables.set('employee_id', String(data.employeeId));",
+                  "    }",
+                  "    console.log('Saved jwt_token for role: ' + data.role);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "c56d7665-f0f0-4536-8bbc-fa969a90552f",
+          "name": "Login - Department Head",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"depthead.test@infosys.com\",\n  \"password\": \"Password@123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200 OK', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var data = pm.response.json();",
+                  "pm.test('Token received for DEPT_HEAD', function () {",
+                  "    pm.expect(data).to.have.property('token');",
+                  "});",
+                  "if (data.token) {",
+                  "    pm.environment.set('jwt_token', data.token);",
+                  "    pm.collectionVariables.set('jwt_token', data.token);",
+                  "    if (data.employeeId) {",
+                  "        pm.environment.set('employee_id', String(data.employeeId));",
+                  "        pm.collectionVariables.set('employee_id', String(data.employeeId));",
+                  "    }",
+                  "    console.log('Saved jwt_token for role: ' + data.role);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "be21ec54-984c-4cdf-9d30-8e1197147592",
+          "name": "Get Current User Profile (/api/me)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/me",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "me"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "978a7b03-4a11-464e-af19-ad85a296b1ea",
+          "name": "Admin Ping",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/admin/ping",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "admin",
+                "ping"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "57928d06-3c50-4cd5-ab5f-3c0e6e81ef4c",
+      "name": "02. Employee Profile",
+      "description": "Employee profile retrieval (READ) and in-place updates (UPDATE). Profile is initialized on registration.",
+      "item": [
+        {
+          "id": "1b1cff7a-11ab-43fb-aa20-36241ac67b06",
+          "name": "READ Employee Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "profile"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "var data = pm.response.json();",
+                  "pm.test('Profile contains basic details', function () {",
+                  "    pm.expect(data).to.have.property('email');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "3744b435-91fa-478b-abe7-a2fa289c8b34",
+          "name": "UPDATE Employee Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"firstName\": \"Arjun\",\n  \"lastName\": \"Mehta\",\n  \"phone\": \"+91-9876543210\",\n  \"location\": \"Bengaluru, India\",\n  \"bio\": \"Senior Cloud Software Engineer\",\n  \"linkedin\": \"https://linkedin.com/in/arjun-mehta\",\n  \"education\": \"B.Tech Computer Science\",\n  \"workExperience\": \"4 years in Java, Spring Boot & AWS\",\n  \"department\": \"Engineering\",\n  \"jobRole\": \"Senior Java Developer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Profile updated successfully', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 204]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5f305cd5-0236-44bb-bc09-5de5121bd4c6",
+      "name": "03. Employee Skills",
+      "description": "Employee personal skill inventory. Supports CREATE/RATE, READ, and DELETE.",
+      "item": [
+        {
+          "id": "968b9e98-79d2-46f6-8f7b-7d609d86bbd9",
+          "name": "READ Full Skill Catalog",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/skills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "skills"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "bc98a56a-bffb-4adc-a170-fd4d87ef6c83",
+          "name": "READ My Skills Inventory",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/skills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "skills"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "507097ee-2739-4fb6-a416-84783b7feb50",
+          "name": "CREATE / UPDATE Skill in My Skills",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/skills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "skills"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillId\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Skill saved successfully', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "d494f079-a404-4003-83f9-cd2495a8a179",
+          "name": "DELETE Skill from My Skills",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/skills/2",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "skills",
+                "2"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Skill removed successfully', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d7736365-16c2-43ee-aa6d-101d153859a7",
+      "name": "04. Skill Assessments",
+      "description": "Assessment questions, submission attempt (CREATE), and assessment history (READ).",
+      "item": [
+        {
+          "id": "96728936-5b6d-4149-a444-73a2be3ee435",
+          "name": "READ Assessment Questions by Skill",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/assessment/questions?skillId=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "assessment",
+                "questions"
+              ],
+              "query": [
+                {
+                  "key": "skillId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "8f3a588f-c0ce-4d9d-8a10-18536ff6e2c7",
+          "name": "CREATE Assessment Attempt & Answers",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/assessment/submit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "assessment",
+                "submit"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillId\": 1,\n  \"answers\": [\n    {\n      \"questionId\": 1,\n      \"selectedOption\": \"A\"\n    },\n    {\n      \"questionId\": 2,\n      \"selectedOption\": \"B\"\n    },\n    {\n      \"questionId\": 3,\n      \"selectedOption\": \"C\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Assessment submission scored', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "b31b828c-09f8-4911-bfa3-b2f7a8299f0b",
+          "name": "READ Assessment History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/assessment/history",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "assessment",
+                "history"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2e75be17-93db-45a4-99fc-e591337fe3e9",
+      "name": "05. Knowledge Gap Analysis",
+      "description": "Calculates gap between current proficiency and benchmark requirements across employee and organizational scopes.",
+      "item": [
+        {
+          "id": "e288978e-61d1-4874-af89-3254ad5dea92",
+          "name": "READ My Knowledge Gaps",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/gaps",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "gaps"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "512604d7-a62c-481a-a7ae-2718eee533d3",
+          "name": "READ HR Organization Gap Analysis",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/gaps/analysis",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "gaps",
+                "analysis"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "606d6e86-2e68-44ce-9672-563d2c5b4d9e",
+          "name": "READ Dept Head Top Gaps",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/gaps",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "gaps"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "8976c49b-22d3-4446-acca-c4032fbe775c",
+          "name": "READ Dept Head Gap Heatmap",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/gap-heatmap",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "gap-heatmap"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "08375761-85fd-46f1-897a-eb6fc9540f03",
+      "name": "06. Job Roles",
+      "description": "Role target configuration, role-based composite assessments, and latest role score.",
+      "item": [
+        {
+          "id": "05c8df62-77e5-4aff-935c-511a5ac2518d",
+          "name": "READ Available Job Roles & Target",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/job-roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "job-roles"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "11ab03b7-e695-4027-a9d7-990c5e21ed8c",
+          "name": "UPDATE Target Job Role Selection",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/job-role",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "job-role"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "105c14b6-b7bf-4169-b4b2-9ab84ba273d4",
+          "name": "READ Role Assessment Questions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/role-assessment/questions?roleId=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "role-assessment",
+                "questions"
+              ],
+              "query": [
+                {
+                  "key": "roleId",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "9310bb52-bba2-4eab-8e2e-a2326260f6ed",
+          "name": "CREATE Role Assessment Submit",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/role-assessment/submit",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "role-assessment",
+                "submit"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleId\": 1,\n  \"answers\": [\n    {\n      \"questionId\": 1,\n      \"selectedOption\": \"A\"\n    },\n    {\n      \"questionId\": 2,\n      \"selectedOption\": \"B\"\n    }\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "6e53ef3d-643d-4950-aced-e8144a705f9b",
+          "name": "READ Latest Role Assessment Score",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/role-assessment/latest",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "role-assessment",
+                "latest"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "f0af803f-d20f-4563-a771-ac43efa917bf",
+      "name": "07. Certifications",
+      "description": "Full Sequential CRUD: 1. CREATE -> 2. READ -> 3. UPDATE -> 4. READ -> 5. DELETE -> 6. READ.",
+      "item": [
+        {
+          "id": "7c7fde02-6f14-40aa-b74f-00ca24db80ed",
+          "name": "1. CREATE Certification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/certifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "certifications"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Automated Certification\",\n  \"issuer\": \"Automated Testing Authority\",\n  \"credentialId\": \"CERT-POSTMAN-001\",\n  \"issueDate\": \"2026-01-01\",\n  \"expiryDate\": \"2028-01-01\",\n  \"credentialUrl\": \"https://infosys.com/cert/001\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200/201', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "8097a6b9-db04-4d86-9af6-0c41f62b9eb1",
+          "name": "2. READ Certifications (Capture cert_id)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/certifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "certifications"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "var found = list.find(function (c) { return c.credentialId === 'CERT-POSTMAN-001'; });",
+                  "pm.test('Newly created certification found', function () { pm.expect(found).to.be.an('object'); });",
+                  "if (found && found.certificationId) {",
+                  "    pm.environment.set('cert_id', String(found.certificationId));",
+                  "    pm.collectionVariables.set('cert_id', String(found.certificationId));",
+                  "    console.log('Saved cert_id: ' + found.certificationId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "fa8f8896-46fc-46cb-9878-0c6b14550645",
+          "name": "3. UPDATE Certification",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/certifications/{{cert_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "certifications",
+                "{{cert_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Automated Certification Updated\",\n  \"issuer\": \"Automated Testing Authority\",\n  \"credentialId\": \"CERT-POSTMAN-001\",\n  \"issueDate\": \"2026-01-01\",\n  \"expiryDate\": \"2029-01-01\",\n  \"credentialUrl\": \"https://infosys.com/cert/001-v2\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Updated successfully', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "fb5f85c1-e8e7-4648-894c-487f35946228",
+          "name": "4. READ Verified Updated Certification",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/certifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "certifications"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "var found = list.find(function (c) { return String(c.certificationId) === pm.environment.get('cert_id'); });",
+                  "pm.test('Updated title is reflected', function () {",
+                  "    pm.expect(found.title).to.eql('Postman Automated Certification Updated');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "6b321f91-af0f-461d-ae74-3c25a796ff88",
+          "name": "5. DELETE Certification",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/certifications/{{cert_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "certifications",
+                "{{cert_id}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Deleted successfully', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "4bcefbfa-9519-469f-a172-fa640c8de49d",
+          "name": "6. READ Verify Deletion",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/certifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "certifications"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "var found = list.find(function (c) { return String(c.certificationId) === pm.environment.get('cert_id'); });",
+                  "pm.test('Deleted certification no longer returned', function () { pm.expect(found).to.be.undefined; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "0b4f3a39-6aaa-4217-b7ee-2d730780e94c",
+      "name": "08. Achievements",
+      "description": "Employee learning milestones, badges, and achievements feed.",
+      "item": [
+        {
+          "id": "54d3249d-70fb-44e0-b901-01767c315aa8",
+          "name": "READ My Achievements & Milestones",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/achievements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "achievements"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "c27744fb-d20a-469a-b3e8-ecf8c8dade32",
+      "name": "09. Learning Paths",
+      "description": "Learning path management and employee enrollment.",
+      "item": [
+        {
+          "id": "e2a81393-1506-4793-8079-30b4734932c0",
+          "name": "READ Learning Paths List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/learning-paths",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "learning-paths"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "4c7fdf26-98a5-48ad-b290-f9795215645a",
+          "name": "CREATE Learning Path",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/learning-paths",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "learning-paths"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Cloud DevSecOps Career Path\",\n  \"description\": \"Complete pathway for automated CI/CD and cloud security\",\n  \"courseIds\": [\n    1,\n    2\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "6875bf4b-640e-46ff-81eb-bf48339b8110",
+          "name": "CREATE / ASSIGN Learning Path to Employees",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/learning-paths/assign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "learning-paths",
+                "assign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pathId\": 1,\n  \"employeeIds\": [\n    24\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "f29cff13-cab6-4326-8515-9f125c64e2d6",
+          "name": "CREATE Employee Path Self-Enrollment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/enroll-path",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "enroll-path"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pathId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e9f8e273-c658-401b-b612-65486d994b51",
+      "name": "10. Courses",
+      "description": "Full Sequential CRUD for Training Courses: 1. CREATE -> 2. READ -> 3. UPDATE -> 4. READ -> 5. DELETE -> 6. READ.",
+      "item": [
+        {
+          "id": "619f1848-b5a7-4e40-b9b0-168f47a4f7c6",
+          "name": "1. CREATE Training Course",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "courses"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Automated Course\",\n  \"provider\": \"Infosys Internal Testing\",\n  \"skillId\": 1,\n  \"durationHours\": 10,\n  \"level\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Course created (200/201)', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "var data = pm.response.json();",
+                  "if (data.courseId) {",
+                  "    pm.environment.set('course_id', String(data.courseId));",
+                  "    pm.collectionVariables.set('course_id', String(data.courseId));",
+                  "    console.log('Saved course_id: ' + data.courseId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "9221a9ce-2563-44f3-9ce1-6b9cfee6bf8a",
+          "name": "2. READ Course Catalog",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "courses"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "var cid = pm.environment.get('course_id');",
+                  "var found = list.find(function (c) { return String(c.id || c.courseId) === cid; });",
+                  "pm.test('Newly created course is present in catalog', function () { pm.expect(found).to.be.an('object'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "5d41a833-9444-4c95-90d5-56e14d0aa0dc",
+          "name": "3. UPDATE Training Course",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/courses/{{course_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "courses",
+                "{{course_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman Automated Course Updated\",\n  \"provider\": \"Infosys Internal Testing Updated\",\n  \"skillId\": 1,\n  \"durationHours\": 15,\n  \"level\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Course updated successfully', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "07e0cd2b-715a-46ed-8a9e-7707c1e9254f",
+          "name": "4. READ Verified Updated Course",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "courses"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "var cid = pm.environment.get('course_id');",
+                  "var found = list.find(function (c) { return String(c.id || c.courseId) === cid; });",
+                  "pm.test('Updated title reflected', function () { pm.expect(found.title).to.eql('Postman Automated Course Updated'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "1f12a3f5-c3bd-434a-a577-7e4dd524c503",
+          "name": "5. DELETE Training Course",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/courses/{{course_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "courses",
+                "{{course_id}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Course deleted successfully', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "5c440ea4-0900-470a-8985-8810115152be",
+          "name": "6. READ Verify Course Deletion",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/courses",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "courses"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "var cid = pm.environment.get('course_id');",
+                  "var found = list.find(function (c) { return String(c.id || c.courseId) === cid; });",
+                  "pm.test('Deleted course no longer in catalog', function () { pm.expect(found).to.be.undefined; });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e58b9f8e-bb2c-40c6-bc78-26264cc2ed99",
+      "name": "11. Training Programs",
+      "description": "Training programs catalog and employee assignments.",
+      "item": [
+        {
+          "id": "986d34b1-e725-4609-96fb-ea6ee7187a0f",
+          "name": "READ Training Programs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/training-programs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "training-programs"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "a218e2e4-d3e1-4828-ac0b-98ddc2987038",
+          "name": "CREATE Training Program",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/training-programs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "training-programs"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"programName\": \"Q4 Cloud Acceleration Program\",\n  \"description\": \"Mandatory cloud upskilling for developers\",\n  \"courseIds\": [\n    1,\n    2\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "c509cd9b-64c2-4f14-929b-95c55771365a",
+          "name": "CREATE / ASSIGN Training Program to Employees",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/training-programs/1/assign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "training-programs",
+                "1",
+                "assign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employeeIds\": [\n    24\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9da697c1-c349-47cd-9af6-6afa20784b4f",
+      "name": "12. Learning Progress",
+      "description": "Course enrollment and completion tracking (0-100%).",
+      "item": [
+        {
+          "id": "0edcb9ab-0838-4c57-be8f-78320d921c23",
+          "name": "READ My Learning Enrollments & Progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/learning",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "learning"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "06ab6c3a-9953-421f-9cac-f0a5766158ad",
+          "name": "CREATE Single Course Enrollment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/enroll",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "enroll"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "972f5ef8-a82f-4cc0-bd38-544e3ff1b241",
+          "name": "UPDATE Course Progress Pct (0-100%)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/progress",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "progress"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"courseId\": 1,\n  \"progressPct\": 85\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "d74245a4-aeb7-45fa-9666-8958c2823dc1",
+          "name": "READ Org-wide Learning Progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/learning-progress",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "learning-progress"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "e9e14ae7-71e9-4e6a-b341-663994002378",
+          "name": "READ Dept Learning Progress",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/learning",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "learning"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "10758bc1-6e52-4ef8-80f9-fd53e8e5b1b1",
+      "name": "13. Mentorship",
+      "description": "Mentor directories, mentorship requests, and request answers.",
+      "item": [
+        {
+          "id": "1ca884e6-0316-4e05-be20-e1a5f2bcf9d0",
+          "name": "READ Available Mentors Directory",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/mentors",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "mentors"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "0a080b40-2192-4f17-94fd-d844e2cbea64",
+          "name": "READ Peer Mentor Suggestions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/mentor-suggestions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "mentor-suggestions"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "635e394d-4bfe-4026-ab6c-081208963b76",
+          "name": "READ My Mentorships",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/mentorships",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "mentorships"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "fbecd553-55a8-4ab0-ab96-1e121cc0752e",
+          "name": "CREATE Mentorship Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/mentorship-requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "mentorship-requests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mentorId\": 26,\n  \"topic\": \"Microservices Architecture & System Design\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "71f9cd48-f139-4435-944f-a8909c513dc2",
+          "name": "UPDATE Answer Mentorship Request (ACTIVE/DECLINED)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/mentorships/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "mentorships",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "90be6066-843b-4db3-befe-cfe36b45275f",
+          "name": "READ HR Mentors Roster",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/mentors",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "mentors"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "ab66edce-b531-4ba2-aec1-26cafe45e468",
+          "name": "READ HR Mentor Matches",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/mentors/matches",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "mentors",
+                "matches"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "5afbe8eb-819c-41f2-bc90-651857950d8e",
+          "name": "CREATE HR Mentor Assignment",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/mentors/assign",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "mentors",
+                "assign"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mentorId\": 26,\n  \"menteeId\": 24,\n  \"topic\": \"Full Stack Cloud Architecture\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "49c08769-03a5-4d3c-b5b4-e3e5e01be3b8",
+      "name": "14. Mentor Sessions",
+      "description": "Knowledge sharing sessions scheduling (CREATE), attendee tracking (UPDATE), and cancellation (DELETE).",
+      "item": [
+        {
+          "id": "d9e3bc06-82c4-486b-952e-8c03c0484fba",
+          "name": "READ Upcoming Knowledge Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/sessions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "sessions"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "0f98e298-4456-4feb-a57d-5ad3c91b16ee",
+          "name": "CREATE Knowledge Session Proposal (Employee)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/sessions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Spring Boot 3 Deep Dive\",\n  \"description\": \"Virtual threads and memory footprint\",\n  \"scheduledAt\": \"2026-12-15T15:00:00\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "e942dadf-df73-4ed9-bd3c-6c6447dde1b3",
+          "name": "CREATE Register for Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/sessions/1/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "sessions",
+                "1",
+                "register"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "917616f0-873a-4761-b6dd-fcd176f2bf73",
+          "name": "DELETE Unregister from Session",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/sessions/1/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "sessions",
+                "1",
+                "register"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "ea679b7f-c812-487d-9e9b-19b9fed16f33",
+          "name": "READ Mentor Scheduled Sessions",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/sessions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "sessions"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "e7185a48-fdf5-447c-8e3d-6f963efbcc8a",
+          "name": "CREATE Mentor Knowledge Session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/sessions",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Advanced SQL Tuning\",\n  \"skillId\": 1,\n  \"scheduledAt\": \"2026-12-20T14:00:00\",\n  \"durationMin\": 60,\n  \"mode\": \"ONLINE\",\n  \"location\": \"https://meet.google.com/test-sql-session\",\n  \"description\": \"Query plan indexing and optimization\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "cce9966f-c650-414b-b70b-b35a71d7f4ba",
+          "name": "READ Session Attendees List",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/sessions/1/attendees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "sessions",
+                "1",
+                "attendees"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "f623af69-a685-4c77-b40b-32a9696c162e",
+          "name": "UPDATE Session Attendance",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/sessions/1/attendance",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "sessions",
+                "1",
+                "attendance"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attendedEmployeeIds\": [\n    24\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "8c561102-7e5c-4a9f-baf0-9075545feac2",
+          "name": "DELETE / Cancel Mentor Session",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/sessions/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "sessions",
+                "1"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "c2cc7494-0d0e-4eae-85f3-4beaae63cf25",
+      "name": "15. Notifications",
+      "description": "In-app notifications across Employee, Manager, Mentor, HR, and Dept Head.",
+      "item": [
+        {
+          "id": "f594052c-610d-4868-a755-35e982a57c08",
+          "name": "READ Employee Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "notifications"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "1256bb88-57d4-4d21-87dc-4ecaa1013bd9",
+          "name": "UPDATE Mark Single Notification Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/notifications/1/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "notifications",
+                "1",
+                "read"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "539c188c-f6e3-4133-99a3-c90f7350f44d",
+          "name": "UPDATE Mark All Notifications Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/notifications/read-all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "notifications",
+                "read-all"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "a97475fc-5db9-4ef2-bd82-6582ce575482",
+          "name": "CREATE HR Broadcast Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/notifications/send",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "notifications",
+                "send"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Quarterly Skill Assessment Cycle\",\n  \"message\": \"Please review and complete your competency tests.\",\n  \"target\": \"ALL\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "3d107003-f339-4fd8-8a7e-0db512317f2c",
+          "name": "READ HR Notifications History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "notifications"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "fac7e5a4-44fe-4bb2-8dbd-cbd7c5e814e6",
+          "name": "READ Manager Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/manager/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "manager",
+                "notifications"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "5f3c5954-aa76-42a4-98cc-81ff1c628aae",
+          "name": "UPDATE Mark Manager Notification Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/manager/notifications/1/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "manager",
+                "notifications",
+                "1",
+                "read"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "2863f230-3c25-4201-b97e-ff4dd77e340a",
+          "name": "READ Mentor Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "notifications"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "22eefc57-4cd1-47f3-8957-614a9cc49b75",
+          "name": "READ Dept Head Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "notifications"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "c77301b6-1ef5-4aaf-97d6-cd24c6ebb379",
+          "name": "UPDATE Mark Dept Head Notification Read",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/notifications/1/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "notifications",
+                "1",
+                "read"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "d9bc0ece-5c9a-4a25-8b14-a2f189f1257f",
+      "name": "16. Messaging",
+      "description": "Peer connection requests (ed_connections) and 1-on-1 direct chat threads (ed_messages).",
+      "item": [
+        {
+          "id": "f2e0659c-a268-4be6-ac3f-2ad36a0ecd3e",
+          "name": "READ Messaging Summary (Unread Count)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/summary",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "messages",
+                "summary"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "a1a9f669-1852-4f0b-b697-53b8db0fee06",
+          "name": "READ Active Conversations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/conversations",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "messages",
+                "conversations"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "5dab50a2-5a86-468a-a516-9b403bb25016",
+          "name": "READ Available Mentors for Direct Chat",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/mentors",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "messages",
+                "mentors"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "25f8c4dc-4230-442e-8bf4-2a1fd3d7e0bb",
+          "name": "READ Directory Search People",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/people?q=arjun",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "messages",
+                "people"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "arjun"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "fb18bbda-e221-40bf-9109-25a729ad6827",
+          "name": "READ Pending Follow Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "messages",
+                "requests"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "adaf644c-9b2c-42b4-86dd-61c5d25fe8db",
+          "name": "CREATE Follow Request to Employee 30",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/follow/30",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "messages",
+                "follow",
+                "30"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "8030a79d-c4c9-415a-9d79-feaa74bd4a18",
+          "name": "UPDATE Accept Follow Request from Employee 24",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/follow/24/accept",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "messages",
+                "follow",
+                "24",
+                "accept"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "cf4f7d27-6ff4-4223-a2b9-cc5a541c7a66",
+          "name": "UPDATE Decline Follow Request",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/follow/24/decline",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "messages",
+                "follow",
+                "24",
+                "decline"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "64980a43-cc25-4d80-b721-efd06a95aec3",
+          "name": "DELETE Unfollow User",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/follow/30",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "messages",
+                "follow",
+                "30"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "1a4b0d65-4c83-4d44-888e-e3a4e0140a55",
+          "name": "CREATE Send Chat Message to Mentor 26",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/with/26",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "messages",
+                "with",
+                "26"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hi Mentor! Could you please review my assessment results?\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "e792c54f-b1d3-4131-8295-84977af68812",
+          "name": "READ Chat Thread Messages with Mentor 26",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/messages/with/26",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "messages",
+                "with",
+                "26"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "915ea2c2-42cd-46f6-b3c0-f1ac583c7214",
+      "name": "17. HR Dashboard",
+      "description": "Workforce analytics and Competency Skills Full Sequential CRUD.",
+      "item": [
+        {
+          "id": "c4c58e5a-9a02-47dc-8ffe-0b49a6453643",
+          "name": "READ HR Overview KPIs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "overview"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "a392e03b-53c5-46c6-ac12-1d2b885cc02b",
+          "name": "READ Employee Roster",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/employees?dept=all&status=all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "employees"
+              ],
+              "query": [
+                {
+                  "key": "dept",
+                  "value": "all"
+                },
+                {
+                  "key": "status",
+                  "value": "all"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "2074a0cb-a108-456d-a1a9-ec1f030ed726",
+          "name": "READ Employee Details by ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/employees/24",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "employees",
+                "24"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "7becce44-535e-4fbc-87a4-5516b41ca3bd",
+          "name": "READ Organization Metadata",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/meta",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "meta"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "dcf76522-e366-49fc-84dc-12580fa2cfcd",
+          "name": "READ Competency Skill Categories",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/competency/categories",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "competency",
+                "categories"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "4ba82a7f-305f-4bc2-96ab-de3887cf1f58",
+          "name": "READ Feedback & Training Effectiveness",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/feedback-effectiveness",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "feedback-effectiveness"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "84a31bb5-4fba-48f0-b11c-2b1f06f7f202",
+          "name": "READ Comprehensive Reports Data",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/reports",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "reports"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "71eed04a-5770-4085-9e96-c5ca3e0e39e2",
+          "name": "1. CREATE Competency Skill",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/competency/skills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "competency",
+                "skills"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillName\": \"Postman Automated Competency Skill\",\n  \"category\": \"Quality Assurance\",\n  \"defaultRequiredLevel\": 3\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Skill created (200/201)', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "var data = pm.response.json();",
+                  "if (data.skillId) {",
+                  "    pm.environment.set('skill_id', String(data.skillId));",
+                  "    pm.collectionVariables.set('skill_id', String(data.skillId));",
+                  "    console.log('Saved skill_id: ' + data.skillId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "d32bb4f3-6d7f-41b9-af48-d5c53fa3be60",
+          "name": "2. READ Competency Skills",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/competency/skills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "competency",
+                "skills"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "var sid = pm.environment.get('skill_id');",
+                  "var found = list.find(function (s) { return String(s.id || s.skillId) === sid; });",
+                  "pm.test('Newly created skill present in catalog', function () { pm.expect(found).to.be.an('object'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "c34b439a-0342-4c9d-8c77-e954a2adcf8c",
+          "name": "3. UPDATE Competency Skill",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/competency/skills/{{skill_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "competency",
+                "skills",
+                "{{skill_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillName\": \"Postman Automated Competency Skill Updated\",\n  \"category\": \"Quality Assurance\",\n  \"defaultRequiredLevel\": 4\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Skill updated successfully', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "34f1efa5-f006-4fcd-9d70-026d749626f6",
+          "name": "4. READ Verified Updated Competency Skill",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/competency/skills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "competency",
+                "skills"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "var sid = pm.environment.get('skill_id');",
+                  "var found = list.find(function (s) { return String(s.id || s.skillId) === sid; });",
+                  "pm.test('Updated name reflected', function () { pm.expect(found.name || found.skillName).to.eql('Postman Automated Competency Skill Updated'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "3d3039a4-1083-4f37-8f10-36da695004cc",
+          "name": "5. DELETE Competency Skill",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/competency/skills/{{skill_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "competency",
+                "skills",
+                "{{skill_id}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Skill deleted successfully', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "576e288c-7824-44f4-b146-93648d08b124",
+          "name": "6. READ Verify Competency Skill Deletion",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/competency/skills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "competency",
+                "skills"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "var sid = pm.environment.get('skill_id');",
+                  "var found = list.find(function (s) { return String(s.id || s.skillId) === sid; });",
+                  "pm.test('Deleted skill absent from list', function () { pm.expect(found).to.be.undefined; });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "1d415d46-a5ec-4edc-96b8-8636f41d1cb8",
+          "name": "1. CREATE Job Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "roles"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleName\": \"Postman Automated Lead\",\n  \"description\": \"Role generated for automated verification\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Role created (200/201)', function () { pm.expect(pm.response.code).to.be.oneOf([200, 201]); });",
+                  "var data = pm.response.json();",
+                  "if (data.roleId) {",
+                  "    pm.environment.set('role_id', String(data.roleId));",
+                  "    pm.collectionVariables.set('role_id', String(data.roleId));",
+                  "    console.log('Saved role_id: ' + data.roleId);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "da23fa9a-49ca-4617-a020-deb39a6071cd",
+          "name": "2. READ Job Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "roles"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status is 200', function () { pm.response.to.have.status(200); });",
+                  "var list = pm.response.json();",
+                  "var rid = pm.environment.get('role_id');",
+                  "var found = list.find(function (r) { return String(r.id || r.roleId) === rid; });",
+                  "pm.test('Newly created role present in list', function () { pm.expect(found).to.be.an('object'); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "79dfe6bc-687d-4cbb-a51f-c5becaf8d7a6",
+          "name": "3. UPDATE Job Role",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/roles/{{role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "roles",
+                "{{role_id}}"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleName\": \"Postman Automated Lead Updated\",\n  \"description\": \"Updated role description\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Role updated successfully', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "0e6f6b3d-8a12-4258-9a89-dff9c2dc53b8",
+          "name": "4. CREATE Assign Skill to Role",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/roles/{{role_id}}/skills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "roles",
+                "{{role_id}}",
+                "skills"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillId\": 1,\n  \"weightPct\": 30\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "f5677de6-fdc0-4d91-9172-b8a380184ed6",
+          "name": "5. DELETE Remove Skill from Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/roles/{{role_id}}/skills/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "roles",
+                "{{role_id}}",
+                "skills",
+                "1"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "27ec2255-c3d2-4a92-8894-0c5722b91edb",
+          "name": "6. DELETE Job Role",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/roles/{{role_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "roles",
+                "{{role_id}}"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Role deleted successfully', function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5cd576a7-c2ba-437b-9a05-97008ca4324e",
+      "name": "18. Manager Dashboard",
+      "description": "Team notifications and alerts management for managers.",
+      "item": [
+        {
+          "id": "24310c27-d89e-4963-853d-cf7466360239",
+          "name": "READ Manager Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/manager/notifications",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "manager",
+                "notifications"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "9e2d1476-c4a7-42c8-8a0a-61df2effe1df",
+          "name": "UPDATE Mark Single Manager Alert Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/manager/notifications/1/read",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "manager",
+                "notifications",
+                "1",
+                "read"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "7f085a27-5a81-421a-9be4-06a08fe93167",
+          "name": "UPDATE Mark All Manager Alerts Read",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/manager/notifications/read-all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "manager",
+                "notifications",
+                "read-all"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "e1614a80-3ea7-454c-b394-33e59beb26ff",
+      "name": "19. Mentor Dashboard",
+      "description": "Mentor overview metrics, mentees progress, and teaching profile.",
+      "item": [
+        {
+          "id": "59465b85-ce8e-451e-a344-f408362c4be2",
+          "name": "READ Mentor Overview Metrics",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "overview"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "1956c0c7-45d4-4658-83c7-edabdbd161d8",
+          "name": "READ Skill Gap Insights for Planning",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/skill-gaps",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "skill-gaps"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "d77a1d77-a0b4-457a-a1ce-e4898bfb2843",
+          "name": "READ Mentor Requests",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/requests",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "requests"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "daaa5384-c873-4f2a-8392-72b1e56e34f6",
+          "name": "UPDATE Answer Mentorship Request",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/requests/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "requests",
+                "1"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"ACTIVE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "59177391-72cd-4094-acb3-82c8c78f4f02",
+          "name": "READ Active Mentees",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/mentees",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "mentees"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "b6504a2d-eb08-45e9-865e-eb2236f20e58",
+          "name": "READ Mentor Teaching Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "profile"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "9df95141-3983-4ac9-af3f-2bd6061eb0be",
+          "name": "UPDATE Mentor Teaching Profile",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/mentor/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "mentor",
+                "profile"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"headline\": \"Lead Architect & Cloud Mentor\",\n  \"bio\": \"Specialized in cloud microservices and scalable architecture\",\n  \"accepting\": 1,\n  \"skillIds\": [\n    1,\n    2\n  ]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "ecb07adc-b9d5-414c-8c5f-ec8a91b6a42a",
+      "name": "20. Department Head Dashboard",
+      "description": "Strategic department KPIs, skill matrix, capability risks, announcements, and CSV exports.",
+      "item": [
+        {
+          "id": "3b9ae15a-931f-4905-a89f-4817de05eb0e",
+          "name": "READ Dept Head Strategic KPIs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "overview"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "c633f580-0e1e-498a-add6-415cc29a8e28",
+          "name": "READ Department Teams Breakdown",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/teams",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "teams"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "9a962979-0ea4-4b60-abbf-62a1bd3684be",
+          "name": "READ Department Skill Matrix",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/skill-matrix?category=all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "skill-matrix"
+              ],
+              "query": [
+                {
+                  "key": "category",
+                  "value": "all"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "f807cae3-8d05-43e1-9673-3312f5b68b0e",
+          "name": "READ Workforce Distribution",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/workforce",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "workforce"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "32f91854-9b0f-46a7-a780-9c1a1b312e41",
+          "name": "READ Capability Risk Alerts",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/risks?severity=all",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "risks"
+              ],
+              "query": [
+                {
+                  "key": "severity",
+                  "value": "all"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "68c865d3-37f2-4878-909b-207bc1a4761b",
+          "name": "UPDATE Acknowledge Capability Risk",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/risks/1/acknowledge",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "risks",
+                "1",
+                "acknowledge"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "70b3d794-7f08-4aa5-b6b4-f3f6b8ad23fb",
+          "name": "READ Department Announcements",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/announcements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "announcements"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "4c447834-17bf-4747-9139-d8f9a2cac6ad",
+          "name": "CREATE Department Announcement",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/announcements",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "announcements"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Quarterly Technical Enablement Goals\",\n  \"body\": \"Focus for this quarter is AWS & Spring Boot microservices.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "4b81ece9-5848-48f8-b3b2-95e5cb56113e",
+          "name": "READ Skill Matrix CSV Export",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/reports/skill-matrix-csv",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "reports",
+                "skill-matrix-csv"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "16baaaea-9bf1-4497-a825-c43a46385676",
+          "name": "READ Gap Report CSV Export",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/reports/gap-report-csv",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "reports",
+                "gap-report-csv"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "1b36a1be-8599-43b1-9379-42bd477add9e",
+          "name": "READ Workforce CSV Export",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/reports/workforce-csv",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "reports",
+                "workforce-csv"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200/201/204', function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200, 201, 204]);",
+                  "});",
+                  "pm.test('Response time is acceptable (< 2000ms)', function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(2000);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "2be28fa4-e296-405f-b8ec-fa21a3831b4e",
+      "name": "21. Negative & Boundary Scenarios",
+      "description": "Validates error handling: Unauthorized (401), Forbidden role mismatch, empty bodies (400), missing fields, nonexistent IDs (404), type mismatches, and duplicates (409).",
+      "item": [
+        {
+          "id": "793a2683-5a78-4933-88c1-2e1c787685ba",
+          "name": "Unauthorized: Request Without Token",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "profile"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected with 401 Unauthorized', function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "3dd1101a-61d9-4686-a7b3-0be3aafb282f",
+          "name": "Forbidden: Manager Accessing Dept Head API",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/dept-head/overview",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "dept-head",
+                "overview"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Access denied (HTTP 401/403)', function () { pm.expect(pm.response.code).to.be.oneOf([401, 403]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "69cd7e0b-3afe-4dfd-ae2f-f43446e78912",
+          "name": "Validation: Empty Body on Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected with 400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "7eb5358b-b601-4801-9b31-03c9dd20f304",
+          "name": "Validation: Missing Password in Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Incomplete User\",\n  \"email\": \"incomplete@infosys.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected with 400 Bad Request', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "53045772-b088-4f9b-924a-0436b5b94e9c",
+          "name": "Validation: Invalid String in Integer Field",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/competency/skills",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "competency",
+                "skills"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"skillName\": \"Invalid Level Skill\",\n  \"defaultRequiredLevel\": \"NOT_A_NUMBER\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Handled invalid data type (400/500)', function () { pm.expect(pm.response.code).to.be.oneOf([400, 500]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "35f5a076-471c-4a74-8105-d505be344c6e",
+          "name": "Boundary: DELETE Nonexistent Certification ID",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/employee/me/certifications/999999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "employee",
+                "me",
+                "certifications",
+                "999999"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Handled nonexistent ID gracefully (404/400/200)', function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 404]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "92b87ee3-9c15-44c3-bea5-b056b0c1603d",
+          "name": "Boundary: GET Nonexistent Employee Details",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/employees/999999",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "employees",
+                "999999"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Handled nonexistent employee (404/400/200)', function () { pm.expect(pm.response.code).to.be.oneOf([200, 400, 404]); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "58474003-b016-4de2-8ef6-cc5f3539eabb",
+          "name": "Boundary: Invalid String in Path Variable",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/hr/employees/invalid-id-string",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "hr",
+                "employees",
+                "invalid-id-string"
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected with 400 Type Mismatch', function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "id": "3bcd87cb-15a9-4e97-9b8f-cc64b0426852",
+          "name": "Conflict: Duplicate Email Registration",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fullName\": \"Arjun Mehta\",\n  \"email\": \"emp.test@infosys.com\",\n  \"password\": \"Password@123\",\n  \"confirmPassword\": \"Password@123\",\n  \"role\": \"EMPLOYEE\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected duplicate with 409 Conflict or 400', function () { pm.expect(pm.response.code).to.be.oneOf([400, 409]); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

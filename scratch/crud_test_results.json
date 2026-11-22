@@ -1,0 +1,490 @@
+{
+  "total": 69,
+  "passed": 63,
+  "failed": 6,
+  "details": [
+    {
+      "test": "Login EMPLOYEE",
+      "category": "Authentication",
+      "passed": true,
+      "status": 200,
+      "message": "Token received, employeeId: 24"
+    },
+    {
+      "test": "Login HR",
+      "category": "Authentication",
+      "passed": true,
+      "status": 200,
+      "message": "Token received, employeeId: 27"
+    },
+    {
+      "test": "Login MANAGER",
+      "category": "Authentication",
+      "passed": true,
+      "status": 200,
+      "message": "Token received, employeeId: 25"
+    },
+    {
+      "test": "Login MENTOR",
+      "category": "Authentication",
+      "passed": true,
+      "status": 200,
+      "message": "Token received, employeeId: 26"
+    },
+    {
+      "test": "Login DEPT_HEAD",
+      "category": "Authentication",
+      "passed": true,
+      "status": 200,
+      "message": "Token received, employeeId: 28"
+    },
+    {
+      "test": "1. CREATE Certification",
+      "category": "Certifications",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Certification added'}"
+    },
+    {
+      "test": "1b. Verify CREATE in MySQL",
+      "category": "Certifications",
+      "passed": true,
+      "status": 200,
+      "message": "MySQL row verified with certification_id: 6"
+    },
+    {
+      "test": "2. READ Newly Created Certification",
+      "category": "Certifications",
+      "passed": true,
+      "status": 200,
+      "message": "Found record in GET response: True"
+    },
+    {
+      "test": "3. UPDATE Certification",
+      "category": "Certifications",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Certification updated'}"
+    },
+    {
+      "test": "3b. Verify UPDATE in MySQL",
+      "category": "Certifications",
+      "passed": true,
+      "status": 200,
+      "message": "Updated title verified in ed_certifications"
+    },
+    {
+      "test": "4. READ Verified Updated Certification",
+      "category": "Certifications",
+      "passed": true,
+      "status": 200,
+      "message": "Updated title reflected in GET"
+    },
+    {
+      "test": "5. DELETE Certification",
+      "category": "Certifications",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Certification deleted'}"
+    },
+    {
+      "test": "5b. Verify DELETE in MySQL",
+      "category": "Certifications",
+      "passed": true,
+      "status": 200,
+      "message": "Record removed from ed_certifications"
+    },
+    {
+      "test": "6. READ Verify Deletion in List",
+      "category": "Certifications",
+      "passed": true,
+      "status": 200,
+      "message": "Deleted certification absent from GET"
+    },
+    {
+      "test": "1. CREATE HR Competency Skill",
+      "category": "HR Competency Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Generated skillId: 581"
+    },
+    {
+      "test": "1b. Verify CREATE in MySQL",
+      "category": "HR Competency Skills",
+      "passed": true,
+      "status": 200,
+      "message": "MySQL row verified in ed_skills"
+    },
+    {
+      "test": "2. READ Newly Created HR Skill",
+      "category": "HR Competency Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Skill 581 present in GET"
+    },
+    {
+      "test": "3. UPDATE HR Competency Skill",
+      "category": "HR Competency Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Skill updated successfully'}"
+    },
+    {
+      "test": "3b. Verify UPDATE in MySQL",
+      "category": "HR Competency Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Updated skill_name & level verified in MySQL"
+    },
+    {
+      "test": "4. READ Verified Updated HR Skill",
+      "category": "HR Competency Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Updated name reflected in GET"
+    },
+    {
+      "test": "5. DELETE HR Competency Skill",
+      "category": "HR Competency Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Skill deleted successfully'}"
+    },
+    {
+      "test": "5b. Verify DELETE in MySQL",
+      "category": "HR Competency Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Skill deleted from ed_skills"
+    },
+    {
+      "test": "6. READ Verify Deletion in Catalog",
+      "category": "HR Competency Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Deleted skill absent from GET"
+    },
+    {
+      "test": "1. CREATE HR Job Role",
+      "category": "Job Roles",
+      "passed": true,
+      "status": 200,
+      "message": "Generated roleId: 242"
+    },
+    {
+      "test": "1b. Verify CREATE in MySQL",
+      "category": "Job Roles",
+      "passed": true,
+      "status": 200,
+      "message": "MySQL row verified in ed_job_roles"
+    },
+    {
+      "test": "2. READ Newly Created Job Role",
+      "category": "Job Roles",
+      "passed": true,
+      "status": 200,
+      "message": "Role 242 present in GET"
+    },
+    {
+      "test": "3. UPDATE HR Job Role",
+      "category": "Job Roles",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Target role updated successfully'}"
+    },
+    {
+      "test": "3b. Verify UPDATE in MySQL",
+      "category": "Job Roles",
+      "passed": true,
+      "status": 200,
+      "message": "Updated role_name verified in MySQL"
+    },
+    {
+      "test": "4. READ Verified Updated Job Role",
+      "category": "Job Roles",
+      "passed": true,
+      "status": 200,
+      "message": "Updated name reflected in GET"
+    },
+    {
+      "test": "5. DELETE HR Job Role",
+      "category": "Job Roles",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Target role deleted successfully'}"
+    },
+    {
+      "test": "5b. Verify DELETE in MySQL",
+      "category": "Job Roles",
+      "passed": true,
+      "status": 200,
+      "message": "Role deleted from ed_job_roles"
+    },
+    {
+      "test": "6. READ Verify Deletion in Job Roles",
+      "category": "Job Roles",
+      "passed": true,
+      "status": 200,
+      "message": "Deleted role absent from GET"
+    },
+    {
+      "test": "1. CREATE HR Training Course",
+      "category": "Courses",
+      "passed": true,
+      "status": 200,
+      "message": "Generated courseId: 26"
+    },
+    {
+      "test": "1b. Verify CREATE in MySQL",
+      "category": "Courses",
+      "passed": true,
+      "status": 200,
+      "message": "MySQL row verified in ed_courses"
+    },
+    {
+      "test": "2. READ Newly Created Course",
+      "category": "Courses",
+      "passed": true,
+      "status": 200,
+      "message": "Course 26 present in GET"
+    },
+    {
+      "test": "3. UPDATE HR Training Course",
+      "category": "Courses",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Course updated successfully'}"
+    },
+    {
+      "test": "3b. Verify UPDATE in MySQL",
+      "category": "Courses",
+      "passed": true,
+      "status": 200,
+      "message": "Updated title & duration verified in MySQL"
+    },
+    {
+      "test": "4. READ Verified Updated Course",
+      "category": "Courses",
+      "passed": true,
+      "status": 200,
+      "message": "Updated title reflected in GET"
+    },
+    {
+      "test": "5. DELETE HR Training Course",
+      "category": "Courses",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Course removed from catalogue'}"
+    },
+    {
+      "test": "5b. Verify DELETE in MySQL",
+      "category": "Courses",
+      "passed": true,
+      "status": 200,
+      "message": "Course deleted from ed_courses"
+    },
+    {
+      "test": "6. READ Verify Deletion in Course Catalog",
+      "category": "Courses",
+      "passed": true,
+      "status": 200,
+      "message": "Deleted course absent from GET"
+    },
+    {
+      "test": "1. CREATE / ADD Employee Skill",
+      "category": "Employee Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Skill saved'}"
+    },
+    {
+      "test": "1b. Verify Employee Skill in MySQL",
+      "category": "Employee Skills",
+      "passed": true,
+      "status": 200,
+      "message": "MySQL row confirmed in ed_employee_skills"
+    },
+    {
+      "test": "2. READ Employee My Skills",
+      "category": "Employee Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Skill 2 present in employee skills list"
+    },
+    {
+      "test": "3. DELETE Employee Skill",
+      "category": "Employee Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Skill removed'}"
+    },
+    {
+      "test": "3b. Verify Skill Deletion in MySQL",
+      "category": "Employee Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Skill 2 removed from ed_employee_skills"
+    },
+    {
+      "test": "4. READ Verify Skill Deleted from My Skills",
+      "category": "Employee Skills",
+      "passed": true,
+      "status": 200,
+      "message": "Skill 2 absent from employee skills list"
+    },
+    {
+      "test": "1. CREATE Mentor Session",
+      "category": "Mentor Sessions",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'invited': 2, 'message': 'Session scheduled'}"
+    },
+    {
+      "test": "1b. Verify Session CREATE in MySQL",
+      "category": "Mentor Sessions",
+      "passed": true,
+      "status": 200,
+      "message": "MySQL row verified with session_id: 5"
+    },
+    {
+      "test": "2. READ Newly Created Session",
+      "category": "Mentor Sessions",
+      "passed": true,
+      "status": 200,
+      "message": "Session 5 found in list"
+    },
+    {
+      "test": "3. UPDATE Session Attendance",
+      "category": "Mentor Sessions",
+      "passed": false,
+      "status": 400,
+      "message": "Attendance updated: {'message': 'Attendance can be marked once the session has started'}"
+    },
+    {
+      "test": "4. DELETE Mentor Session",
+      "category": "Mentor Sessions",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'message': 'Session cancelled'}"
+    },
+    {
+      "test": "4b. Verify Session Deletion in MySQL",
+      "category": "Mentor Sessions",
+      "passed": true,
+      "status": 200,
+      "message": "Session removed from ed_knowledge_sessions"
+    },
+    {
+      "test": "1. CREATE Follow Request",
+      "category": "Messaging",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'relation': 'REQUESTED'}"
+    },
+    {
+      "test": "1b. Verify Follow Request in MySQL",
+      "category": "Messaging",
+      "passed": true,
+      "status": 200,
+      "message": "Connection record in MySQL (id: 1)"
+    },
+    {
+      "test": "2. READ Follow Requests",
+      "category": "Messaging",
+      "passed": false,
+      "status": 200,
+      "message": "Request listed for recipient"
+    },
+    {
+      "test": "3. UPDATE Accept Follow Request",
+      "category": "Messaging",
+      "passed": false,
+      "status": 404,
+      "message": "Response: {'message': 'That request is no longer there'}"
+    },
+    {
+      "test": "4. DELETE Unfollow",
+      "category": "Messaging",
+      "passed": true,
+      "status": 200,
+      "message": "Response: {'relation': 'NONE'}"
+    },
+    {
+      "test": "4b. Verify Unfollow in MySQL",
+      "category": "Messaging",
+      "passed": true,
+      "status": 200,
+      "message": "Connection record deleted from ed_connections"
+    },
+    {
+      "test": "Unauthorized: Missing JWT Token",
+      "category": "Security & Auth",
+      "passed": true,
+      "status": 401,
+      "message": "Rejected with HTTP 401 Unauthorized"
+    },
+    {
+      "test": "Forbidden: Employee Accessing HR Overview",
+      "category": "Security & Auth",
+      "passed": false,
+      "status": 200,
+      "message": "Access correctly denied (HTTP 200)"
+    },
+    {
+      "test": "Forbidden: Manager Accessing Dept Head Overview",
+      "category": "Security & Auth",
+      "passed": true,
+      "status": 401,
+      "message": "Access correctly denied (HTTP 401)"
+    },
+    {
+      "test": "Validation: Empty Request Body on Login",
+      "category": "Validation & Errors",
+      "passed": true,
+      "status": 400,
+      "message": "Validation correctly rejected empty body (HTTP 400)"
+    },
+    {
+      "test": "Validation: Missing Password in Registration",
+      "category": "Validation & Errors",
+      "passed": true,
+      "status": 400,
+      "message": "Validation rejected missing fields (HTTP 400)"
+    },
+    {
+      "test": "Validation: Invalid Data Type (String in Integer Field)",
+      "category": "Validation & Errors",
+      "passed": false,
+      "status": 401,
+      "message": "Handled type mismatch (HTTP 401)"
+    },
+    {
+      "test": "Boundary: DELETE Nonexistent Certification ID",
+      "category": "Validation & Errors",
+      "passed": true,
+      "status": 404,
+      "message": "Handled nonexistent ID gracefully (HTTP 404)"
+    },
+    {
+      "test": "Boundary: GET Nonexistent Employee Details",
+      "category": "Validation & Errors",
+      "passed": true,
+      "status": 404,
+      "message": "Response handled (HTTP 404)"
+    },
+    {
+      "test": "Boundary: Invalid String in Path Variable",
+      "category": "Validation & Errors",
+      "passed": false,
+      "status": 401,
+      "message": "Spring TypeMismatch handled (HTTP 401)"
+    },
+    {
+      "test": "Conflict: Duplicate Email Registration",
+      "category": "Validation & Errors",
+      "passed": true,
+      "status": 409,
+      "message": "Rejected duplicate email (HTTP 409)"
+    }
+  ]
+}

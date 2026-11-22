@@ -1,0 +1,1874 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Department Head Dashboard | Workforce Intelligence</title>
+<meta name="description" content="Strategic view of department skills, capability risks, gaps and workforce trends for Department Heads.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css?v=premium">
+<style>
+  /* ===== TREND CHART ===== */
+  .trend-chart { display: flex; align-items: flex-end; gap: 14px; height: 130px; padding: 10px 4px 0; }
+  .trend-bar-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; flex: 1; height: 100%; justify-content: flex-end; }
+  .trend-bar {
+    width: 100%;
+    background: linear-gradient(180deg, var(--brand) 0%, var(--brand-dark) 100%);
+    border-radius: 6px 6px 0 0;
+    transition: height .4s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 4px;
+    box-shadow: 0 2px 6px rgba(11, 110, 117, 0.25);
+  }
+  .trend-label { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .trend-val { font-size: 11.5px; font-weight: 700; color: var(--ink); }
+
+  /* ===== HEATMAP ===== */
+  .heatmap-wrap { overflow-x: auto; padding-bottom: 8px; border-radius: 8px; }
+  .heatmap { display: grid; gap: 5px; }
+  .hm-cell {
+    width: 44px; height: 42px; border-radius: 8px; display: flex; align-items: center;
+    justify-content: center; font-size: 11px; font-weight: 700; color: #fff;
+    cursor: pointer; position: relative; transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: var(--shadow-xs);
+  }
+  .hm-cell:hover { transform: scale(1.12); z-index: 5; box-shadow: 0 4px 12px rgba(16, 28, 43, 0.25); }
+  .hm-cell:hover::after {
+    content: attr(data-tip); position: absolute; bottom: calc(100% + 8px); left: 50%;
+    transform: translateX(-50%); background: var(--nav); color: #fff; border-radius: 6px;
+    padding: 6px 10px; font-size: 11.5px; white-space: nowrap; z-index: 20; pointer-events: none;
+    box-shadow: var(--shadow-md);
+  }
+  .hm-cell.crit  { background: var(--bad); }
+  .hm-cell.high  { background: var(--accent3); }
+  .hm-cell.ok    { background: var(--ok); }
+  .hm-cell.none  { background: #E6EAF0; color: var(--muted); }
+  .hm-label { font-size: 12.5px; color: var(--ink); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; padding: 8px 6px; display: flex; align-items: center; }
+  .hm-col-label { font-size: 11.5px; font-weight: 700; color: var(--ink); text-align: center; padding: 6px 2px; }
+  .hm-legend { display: flex; gap: 16px; margin-top: 16px; flex-wrap: wrap; font-size: 12px; }
+  .hm-legend-item { display: flex; align-items: center; gap: 6px; }
+  .hm-legend-swatch { width: 14px; height: 14px; border-radius: 4px; box-shadow: var(--shadow-xs); }
+
+  /* ===== CAPABILITY RISK ALERT CARDS ===== */
+  .alert-card {
+    border: 1px solid var(--line); border-radius: 12px; padding: 18px 20px;
+    margin-bottom: 14px; transition: all var(--transition-fast); background: #fff;
+    box-shadow: var(--shadow-xs);
+  }
+  .alert-card:hover {
+    box-shadow: var(--shadow-md); transform: translateY(-1px); border-color: #CAD5E2;
+  }
+  .alert-card.crit { border-left: 5px solid var(--bad); }
+  .alert-card.high { border-left: 5px solid var(--accent3); }
+  .alert-card.med  { border-left: 5px solid var(--accent2); }
+  .alert-card.ack  { opacity: .6; background: #fafbff; }
+  .alert-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .alert-title { font-weight: 700; font-size: 15px; color: var(--ink); }
+  .alert-meta { font-size: 12.5px; color: var(--muted); margin-bottom: 8px; }
+  .alert-desc { font-size: 13.5px; margin-bottom: 10px; line-height: 1.5; color: var(--text); }
+  .alert-action {
+    background: var(--info-bg); border-radius: 8px; padding: 10px 14px;
+    font-size: 13px; color: var(--brand-dark); border: 1px solid #BFDDE0;
+  }
+  .alert-action strong { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .5px; margin-bottom: 2px; color: var(--muted); }
+
+  /* ===== ANNOUNCEMENT CARD ===== */
+  .ann-card {
+    border: 1px solid var(--line); border-radius: 12px; padding: 20px;
+    margin-bottom: 14px; background: #fff; position: relative;
+    box-shadow: var(--shadow-xs); transition: all var(--transition-fast);
+  }
+  .ann-card:hover { box-shadow: var(--shadow-md); border-color: #CAD5E2; }
+  .ann-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; color: var(--ink); }
+  .ann-meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .ann-body { font-size: 14px; color: var(--ink); line-height: 1.6; }
+  .ann-actions { display: flex; gap: 8px; margin-top: 12px; }
+
+  /* ===== NOTIFICATIONS ===== */
+  .notif-item { padding: 14px 16px; border-bottom: 1px solid var(--line); display: flex; gap: 12px; align-items: flex-start; }
+  .notif-item:last-child { border-bottom: 0; }
+  .notif-item.unread { background: var(--info-bg); border-radius: 10px; margin-bottom: 4px; border-bottom: 0; }
+  .notif-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); flex-shrink: 0; margin-top: 6px; }
+  .notif-dot.read { background: transparent; border: 1px solid var(--line); }
+  .notif-msg { flex: 1; font-size: 13.5px; line-height: 1.45; }
+  .notif-time { font-size: 11px; color: var(--muted); white-space: nowrap; }
+
+  /* ===== CHECKLIST (Responsibilities) ===== */
+  .check-item { display: flex; align-items: center; gap: 10px; padding: 10px 0; font-size: 13.5px; border-bottom: 1px dashed var(--line); }
+  .check-item:last-child { border-bottom: 0; }
+  .check-icon { width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; flex-shrink: 0; font-weight: 700; box-shadow: var(--shadow-xs); }
+  .check-icon.done { background: var(--ok-bg); color: var(--ok); }
+  .check-icon.warn { background: var(--warn-bg); color: var(--warn); }
+  .check-icon.info { background: var(--info-bg); color: var(--brand); }
+</style>
+</head>
+<body data-role="DEPT_HEAD">
+<!-- custom-page: hand-built, so _generate_dashboards.py will not overwrite it -->
+<div id="app" hidden>
+
+<header class="top">
+  <div class="brand">
+    <button class="sidebar-toggle-btn" id="sidebarToggleBtn" aria-label="Toggle navigation drawer" aria-expanded="false">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+    </button>
+    <span class="logo">WKI</span>
+    <span>Workforce<br>Intelligence</span>
+  </div>
+  <div class="right">
+    <button class="btn outline-nav" id="discussPlanBtn">🤝 Discuss Plan with HR / Managers</button>
+    <button class="bell" onclick="navigate('notifications')" aria-label="Notifications" title="Notifications">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+    </button>
+    <span class="role-badge">&#127970; Department Head</span>
+    <div class="user-menu-wrap">
+      <button class="user-profile-btn" id="userMenuBtn" aria-expanded="false" aria-haspopup="true" title="User account menu">
+        <span class="user-avatar" id="userAvatar">U</span>
+        <div class="who">
+          <strong id="userName">Loading&#8230;</strong>
+          <small id="userEmail"></small>
+        </div>
+        <svg class="chevron-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"/></svg>
+      </button>
+      <div class="user-dropdown" id="userDropdown" hidden>
+        <div class="dropdown-header">
+          <div class="dropdown-avatar" id="dropdownAvatar">U</div>
+          <div class="dropdown-info">
+            <strong id="dropdownName">User</strong>
+            <span class="dropdown-email" id="dropdownEmail"></span>
+            <span class="dropdown-role" id="dropdownRole">Department Head</span>
+          </div>
+        </div>
+        <div class="dropdown-divider"></div>
+        <div class="dropdown-actions">
+          <button type="button" class="dropdown-item" id="logoutDropdownBtn">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            <span>Sign Out</span>
+          </button>
+        </div>
+      </div>
+    </div>
+    <button class="btn outline-nav" id="logoutBtn">Logout</button>
+  </div>
+</header>
+
+<div class="layout">
+  <nav id="nav" aria-label="Dashboard sections">
+    <div class="nav-section-label">Strategic Overview</div>
+    <button data-view="overview" aria-current="page">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard
+    </button>
+    <button data-view="dept-overview">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Department Overview
+    </button>
+
+    <div class="nav-section-label">Skills & Gaps</div>
+    <button data-view="skill-matrix">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+      Department Skill Matrix
+    </button>
+    <button data-view="gap-heatmap">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      Gap Heatmap
+    </button>
+    <button data-view="workforce">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+      Workforce Capability
+    </button>
+
+    <div class="nav-section-label">Learning & Development</div>
+    <button data-view="learning">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+      Learning &amp; Mentoring
+    </button>
+
+    <div class="nav-section-label">Governance & Action</div>
+    <button data-view="risks">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      Risk &amp; Priority Alerts
+      <span class="nav-badge" id="riskBadge" hidden>0</span>
+    </button>
+    <button data-view="reports">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      Reports &amp; Analytics
+    </button>
+    <button data-view="announcements">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Announcements
+    </button>
+    <button data-view="notifications">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+      Notifications
+      <span class="nav-badge" id="notifBadge" hidden>0</span>
+    </button>
+  </nav>
+
+  <div class="access-banner">
+    <span>🛡️ <strong>Access Rule:</strong> Department Heads see department-level information and only the employee-level details required for their responsibilities.</span>
+    <span>Strategic Workforce Intelligence</span>
+  </div>
+
+  <main id="main" tabindex="-1">
+    <div class="card empty">Loading your dashboard&#8230;</div>
+  </main>
+</div>
+
+<!-- Modal: Discuss Improvement Plans with Managers & HR -->
+<div id="planModal" class="modal-overlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="planModalTitle">
+    <div class="modal-header">
+      <h2 id="planModalTitle">🤝 Improvement Plan Consultation</h2>
+      <button class="modal-close" id="closePlanModal" aria-label="Close dialog">&times;</button>
+    </div>
+    <p class="sub">Agree priorities, address critical shortages, and coordinate upskilling with team managers and HR partners.</p>
+    <form id="planForm">
+      <label for="planTargetTeam">Target Team *</label>
+      <select id="planTargetTeam" required>
+        <option value="Team Alpha">Team Alpha (Cloud & Backend)</option>
+        <option value="Team Beta">Team Beta (DevOps & Infrastructure)</option>
+        <option value="Team Gamma">Team Gamma (Security & Compliance)</option>
+        <option value="Team Delta">Team Delta (Data & Analytics)</option>
+        <option value="All Teams">All Teams (Cross-Departmental)</option>
+      </select>
+
+      <label for="planSkill">Priority Skill Focus *</label>
+      <select id="planSkill" required>
+        <option value="Cloud Fundamentals">Cloud Fundamentals (Critical Gap)</option>
+        <option value="Java & Spring Boot">Java & Spring Boot (Architecture)</option>
+        <option value="Kubernetes & DevOps">Kubernetes & DevOps (Pipeline)</option>
+        <option value="Cybersecurity">Cybersecurity & Compliance</option>
+        <option value="Project Management">Project Management & Leadership</option>
+      </select>
+
+      <label for="planHrPartner">Assigned HR / L&D Partner *</label>
+      <select id="planHrPartner" required>
+        <option value="Pooja Sen (HR Business Partner)">Pooja Sen (HR Business Partner)</option>
+        <option value="Vikram Malhotra (Learning Lead)">Vikram Malhotra (Learning Lead)</option>
+        <option value="Anita Desai (Talent Development)">Anita Desai (Talent Development)</option>
+      </select>
+
+      <label for="planAction">Agreed Action Plan & Next Steps *</label>
+      <textarea id="planAction" placeholder="e.g. Schedule cohort training by Nov 25th; pair with senior mentors; allocate 4 hours/week for certification prep." required></textarea>
+
+      <div style="margin-top:16px;display:flex;justify-content:flex-end;gap:10px">
+        <button type="button" class="btn ghost" id="cancelPlanBtn">Cancel</button>
+        <button type="submit" class="btn success">Save &amp; Notify Stakeholders</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="toast" role="status" aria-live="polite"></div>
+</div>
+
+<script src="js/guard.js"></script>
+<script>
+/* ================================================================
+   DEPARTMENT HEAD DASHBOARD — Workforce Knowledge Intelligence
+   ================================================================ */
+const API = "http://localhost:8080/api/dept-head";
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const $ = (s, r) => (r||document).querySelector(s);
+const $$ = (s, r) => [...(r||document).querySelectorAll(s)];
+const pct = (a, b) => b ? Math.round(a * 100 / b) : 0;
+const fmt = dt => { if (!dt) return "-"; const d = new Date(dt); return isNaN(d) ? "-" : d.toLocaleDateString([], { dateStyle: "medium" }); };
+const fmtDt = dt => { if (!dt) return "-"; const d = new Date(dt); return isNaN(d) ? "-" : d.toLocaleString([], { dateStyle: "medium", timeStyle: "short" }); };
+
+function getSession() { try { return JSON.parse(localStorage.getItem("wki_session") || "null"); } catch { return null; } }
+function goLogin() { localStorage.removeItem("wki_session"); window.location.replace("login.html"); }
+function toast(msg, isErr) {
+  const t = $("#toast"); t.textContent = msg;
+  t.className = "show" + (isErr ? " err" : "");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.className = "", 3400);
+}
+
+/* ---- API helper (falls back to mock on error) ---- */
+async function api(path, opts = {}) {
+  const sess = getSession();
+  if (!sess || !sess.token) { goLogin(); throw new Error("Not logged in"); }
+  const res = await fetch(API + path, {
+    method: opts.method || "GET",
+    headers: { Authorization: "Bearer " + sess.token, ...(opts.body ? { "Content-Type": "application/json" } : {}) },
+    body: opts.body ? JSON.stringify(opts.body) : undefined
+  });
+  if (res.status === 401) { goLogin(); throw new Error("Session expired"); }
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw new Error((data && (data.message || data.error)) || "Request failed (" + res.status + ")");
+  return data;
+}
+
+async function apiOrMock(path, mockKey, opts = {}) {
+  try { return await api(path, opts); }
+  catch (e) {
+    console.warn("API fallback to mock data for " + path + ":", e.message);
+    return MOCK[mockKey];
+  }
+}
+
+/* ================================================================
+   MOCK DATA — comprehensive dataset for department head
+   ================================================================ */
+const MOCK = {
+  overview: {
+    totalEmployees: 48, skillCoveragePct: 67, criticalGaps: 2, atRiskTeams: 4,
+    learningParticipationPct: 71, activeMentorships: 9,
+    coverageTrend: [
+      { month: "Jun", coverage: 42 }, { month: "Jul", coverage: 48 },
+      { month: "Aug", coverage: 55 }, { month: "Sep", coverage: 61 },
+      { month: "Oct", coverage: 67 }, { month: "Nov", coverage: 67 }
+    ]
+  },
+  teams: [
+    { teamName: "Team Alpha", headcount: 13, avgCoveragePct: 58, openGaps: 7, lead: "Suresh Menon", focus: "Cloud & Backend" },
+    { teamName: "Team Beta",  headcount: 11, avgCoveragePct: 72, openGaps: 3, lead: "Pooja Hegde", focus: "DevOps & SRE" },
+    { teamName: "Team Gamma", headcount: 14, avgCoveragePct: 65, openGaps: 5, lead: "Karthik Iyer", focus: "Security & QA" },
+    { teamName: "Team Delta", headcount: 10, avgCoveragePct: 80, openGaps: 2, lead: "Deepa Nair", focus: "Data & AI" }
+  ],
+  roles: [
+    { roleName: "Senior Developer", count: 12, avgLevel: 3.4, targetLevel: 4.0 },
+    { roleName: "Full Stack Engineer", count: 10, avgLevel: 3.1, targetLevel: 3.5 },
+    { roleName: "DevOps & Cloud Engineer", count: 8, avgLevel: 2.7, targetLevel: 4.0 },
+    { roleName: "QA & Automation Engineer", count: 7, avgLevel: 3.2, targetLevel: 3.5 },
+    { roleName: "Data Analyst & ML Engineer", count: 6, avgLevel: 3.0, targetLevel: 4.0 },
+    { roleName: "Scrum Master / Agile Lead", count: 5, avgLevel: 3.6, targetLevel: 4.0 }
+  ],
+  "skill-matrix": [
+    { skillName: "Cloud Fundamentals",    category: "Technical",   requiredLevel: 3, avgDeptLevel: 1.8, employeesRated: 20, totalInDept: 48, coveragePct: 22, gapScore: 1.2 },
+    { skillName: "Java",                  category: "Technical",   requiredLevel: 4, avgDeptLevel: 2.9, employeesRated: 32, totalInDept: 48, coveragePct: 44, gapScore: 1.1 },
+    { skillName: "Project Management",    category: "Management",  requiredLevel: 3, avgDeptLevel: 2.1, employeesRated: 15, totalInDept: 48, coveragePct: 33, gapScore: 0.9 },
+    { skillName: "Communication",         category: "Soft Skills", requiredLevel: 4, avgDeptLevel: 3.2, employeesRated: 40, totalInDept: 48, coveragePct: 55, gapScore: 0.8 },
+    { skillName: "SQL & Databases",       category: "Technical",   requiredLevel: 3, avgDeptLevel: 2.6, employeesRated: 28, totalInDept: 48, coveragePct: 61, gapScore: 0.4 },
+    { skillName: "Spring Boot",           category: "Technical",   requiredLevel: 3, avgDeptLevel: 2.8, employeesRated: 24, totalInDept: 48, coveragePct: 63, gapScore: 0.2 },
+    { skillName: "Problem Solving",       category: "Soft Skills", requiredLevel: 4, avgDeptLevel: 3.5, employeesRated: 35, totalInDept: 48, coveragePct: 69, gapScore: 0.5 },
+    { skillName: "JavaScript",            category: "Technical",   requiredLevel: 3, avgDeptLevel: 3.1, employeesRated: 22, totalInDept: 48, coveragePct: 72, gapScore: -0.1 },
+    { skillName: "Teamwork",              category: "Soft Skills", requiredLevel: 3, avgDeptLevel: 3.6, employeesRated: 42, totalInDept: 48, coveragePct: 81, gapScore: -0.6 },
+    { skillName: "Mentoring & Coaching",  category: "Management",  requiredLevel: 3, avgDeptLevel: 2.4, employeesRated: 18, totalInDept: 48, coveragePct: 44, gapScore: 0.6 }
+  ],
+  gaps: [
+    { skillName: "Cloud Fundamentals",   category: "Technical",   requiredLevel: 3, avgLevel: 1.8, employeesAffected: 16, totalRated: 20, severity: "CRITICAL" },
+    { skillName: "Java",                 category: "Technical",   requiredLevel: 4, avgLevel: 2.9, employeesAffected: 18, totalRated: 32, severity: "CRITICAL" },
+    { skillName: "Project Management",   category: "Management",  requiredLevel: 3, avgLevel: 2.1, employeesAffected: 10, totalRated: 15, severity: "HIGH" },
+    { skillName: "Communication",        category: "Soft Skills", requiredLevel: 4, avgLevel: 3.2, employeesAffected: 18, totalRated: 40, severity: "HIGH" },
+    { skillName: "Mentoring & Coaching", category: "Management",  requiredLevel: 3, avgLevel: 2.4, employeesAffected: 10, totalRated: 18, severity: "HIGH" }
+  ],
+  "gap-heatmap": {
+    skills: ["Cloud Fundamentals", "Java", "Project Management", "Communication", "SQL & Databases", "Spring Boot", "Problem Solving", "Teamwork"],
+    teams:  ["Team Alpha", "Team Beta", "Team Gamma", "Team Delta"],
+    cells: [
+      { skill: "Cloud Fundamentals",  team: "Team Alpha", avgLevel: 1.4, required: 3, gap: 1.6 },
+      { skill: "Cloud Fundamentals",  team: "Team Beta",  avgLevel: 2.1, required: 3, gap: 0.9 },
+      { skill: "Cloud Fundamentals",  team: "Team Gamma", avgLevel: 1.9, required: 3, gap: 1.1 },
+      { skill: "Cloud Fundamentals",  team: "Team Delta", avgLevel: 2.8, required: 3, gap: 0.2 },
+      { skill: "Java",                team: "Team Alpha", avgLevel: 2.5, required: 4, gap: 1.5 },
+      { skill: "Java",                team: "Team Beta",  avgLevel: 3.2, required: 4, gap: 0.8 },
+      { skill: "Java",                team: "Team Gamma", avgLevel: 3.0, required: 4, gap: 1.0 },
+      { skill: "Java",                team: "Team Delta", avgLevel: 3.8, required: 4, gap: 0.2 },
+      { skill: "Project Management",  team: "Team Alpha", avgLevel: 2.2, required: 3, gap: 0.8 },
+      { skill: "Project Management",  team: "Team Beta",  avgLevel: 2.5, required: 3, gap: 0.5 },
+      { skill: "Project Management",  team: "Team Gamma", avgLevel: 1.8, required: 3, gap: 1.2 },
+      { skill: "Project Management",  team: "Team Delta", avgLevel: 3.1, required: 3, gap: -0.1 },
+      { skill: "Communication",       team: "Team Alpha", avgLevel: 3.0, required: 4, gap: 1.0 },
+      { skill: "Communication",       team: "Team Beta",  avgLevel: 3.5, required: 4, gap: 0.5 },
+      { skill: "Communication",       team: "Team Gamma", avgLevel: 3.2, required: 4, gap: 0.8 },
+      { skill: "Communication",       team: "Team Delta", avgLevel: 2.0, required: 4, gap: 2.0 },
+      { skill: "SQL & Databases",     team: "Team Alpha", avgLevel: 2.3, required: 3, gap: 0.7 },
+      { skill: "SQL & Databases",     team: "Team Beta",  avgLevel: 3.0, required: 3, gap: 0.0 },
+      { skill: "SQL & Databases",     team: "Team Gamma", avgLevel: 2.7, required: 3, gap: 0.3 },
+      { skill: "SQL & Databases",     team: "Team Delta", avgLevel: 3.2, required: 3, gap: -0.2 },
+      { skill: "Spring Boot",         team: "Team Alpha", avgLevel: 2.6, required: 3, gap: 0.4 },
+      { skill: "Spring Boot",         team: "Team Beta",  avgLevel: 3.1, required: 3, gap: -0.1 },
+      { skill: "Spring Boot",         team: "Team Gamma", avgLevel: 2.8, required: 3, gap: 0.2 },
+      { skill: "Spring Boot",         team: "Team Delta", avgLevel: 3.0, required: 3, gap: 0.0 },
+      { skill: "Problem Solving",     team: "Team Alpha", avgLevel: 3.3, required: 4, gap: 0.7 },
+      { skill: "Problem Solving",     team: "Team Beta",  avgLevel: 3.7, required: 4, gap: 0.3 },
+      { skill: "Problem Solving",     team: "Team Gamma", avgLevel: 3.4, required: 4, gap: 0.6 },
+      { skill: "Problem Solving",     team: "Team Delta", avgLevel: 3.9, required: 4, gap: 0.1 },
+      { skill: "Teamwork",            team: "Team Alpha", avgLevel: 3.5, required: 3, gap: -0.5 },
+      { skill: "Teamwork",            team: "Team Beta",  avgLevel: 3.8, required: 3, gap: -0.8 },
+      { skill: "Teamwork",            team: "Team Gamma", avgLevel: 3.4, required: 3, gap: -0.4 },
+      { skill: "Teamwork",            team: "Team Delta", avgLevel: 3.6, required: 3, gap: -0.6 }
+    ]
+  },
+  workforce: {
+    healthScore: 74,
+    strengths: [
+      { skillName: "Teamwork",          category: "Soft Skills", avgLevel: 3.6, requiredLevel: 3, coveragePct: 81, trend: "+5%" },
+      { skillName: "JavaScript",        category: "Technical",   avgLevel: 3.1, requiredLevel: 3, coveragePct: 72, trend: "+3%" },
+      { skillName: "Problem Solving",   category: "Soft Skills", avgLevel: 3.5, requiredLevel: 4, coveragePct: 69, trend: "+4%" },
+      { skillName: "Spring Boot",       category: "Technical",   avgLevel: 2.8, requiredLevel: 3, coveragePct: 63, trend: "+7%" },
+      { skillName: "SQL & Databases",   category: "Technical",   avgLevel: 2.6, requiredLevel: 3, coveragePct: 61, trend: "+2%" }
+    ],
+    shortages: [
+      { skillName: "Cloud Fundamentals",   category: "Technical",  avgLevel: 1.8, requiredLevel: 3, coveragePct: 22, trend: "-4%" },
+      { skillName: "Java",                 category: "Technical",  avgLevel: 2.9, requiredLevel: 4, coveragePct: 44, trend: "-2%" },
+      { skillName: "Mentoring & Coaching", category: "Management", avgLevel: 2.4, requiredLevel: 3, coveragePct: 44, trend: "+1%" },
+      { skillName: "Project Management",   category: "Management", avgLevel: 2.1, requiredLevel: 3, coveragePct: 33, trend: "-3%" },
+      { skillName: "Communication",        category: "Soft Skills",avgLevel: 3.2, requiredLevel: 4, coveragePct: 55, trend: "+6%" }
+    ],
+    emerging: [
+      { skillName: "Cloud Architecture (AWS/GCP)", category: "Technical",  requiredLevel: 4, avgLevel: 1.8, priority: "Critical" },
+      { skillName: "Kubernetes & Microservices",   category: "Technical",  requiredLevel: 4, avgLevel: 2.1, priority: "High" },
+      { skillName: "Generative AI & LLM Ops",      category: "Technical",  requiredLevel: 4, avgLevel: 1.5, priority: "Critical" },
+      { skillName: "Advanced Agile & Scrum",       category: "Management", requiredLevel: 4, avgLevel: 2.8, priority: "Medium" }
+    ]
+  },
+  learning: {
+    totalEnrollments: 86, completionRate: 54, activeMentorships: 9, knowledgeSessionsCount: 5,
+    enrollmentsByTeam: [
+      { teamName: "Team Alpha", enrollments: 24, completions: 11, target: 20 },
+      { teamName: "Team Beta",  enrollments: 22, completions: 14, target: 18 },
+      { teamName: "Team Gamma", enrollments: 26, completions: 16, target: 22 },
+      { teamName: "Team Delta", enrollments: 14, completions:  6, target: 12 }
+    ],
+    mentorshipPairs: [
+      { mentor: "Priya Sharma (Sr. Dev)", mentee: "Vivek Kumar (Jr. Dev)", skill: "Java & Microservices", status: "Active", progress: 75 },
+      { mentor: "Rahul Verma (DBA)", mentee: "Anjali Singh (QA)", skill: "SQL & Performance Tuning", status: "Active", progress: 60 },
+      { mentor: "Arjun Mehta (Cloud SME)", mentee: "Sneha Kapoor (Analyst)", skill: "Cloud Fundamentals", status: "Active", progress: 85 },
+      { mentor: "Karthik Raj (Tech Lead)", mentee: "Divya Nair (DevOps)", skill: "Kubernetes Ops", status: "Active", progress: 50 }
+    ],
+    knowledgeSessions: [
+      { title: "Cloud Architecture Best Practices", presenter: "Arjun Mehta", date: "2026-11-12", time: "2:00 PM", attendees: 24, status: "Scheduled" },
+      { title: "Defensive Coding & OWASP Top 10", presenter: "Karthik Iyer", date: "2026-11-18", time: "3:30 PM", attendees: 32, status: "Scheduled" },
+      { title: "Modern Microservices with Spring 3", presenter: "Priya Sharma", date: "2026-11-04", time: "2:00 PM", attendees: 28, status: "Completed" }
+    ],
+    recentCompletions: [
+      { employeeName: "Priya Sharma",   courseTitle: "Java Core to Advanced",        skillName: "Java",               completedAt: "2026-11-05T10:30:00" },
+      { employeeName: "Arjun Mehta",    courseTitle: "Cloud Basics for Developers",  skillName: "Cloud Fundamentals", completedAt: "2026-11-04T14:15:00" },
+      { employeeName: "Sneha Kapoor",   courseTitle: "Project Management Essentials",skillName: "Project Management", completedAt: "2026-11-03T09:00:00" },
+      { employeeName: "Rahul Verma",    courseTitle: "SQL for Application Developers",skillName: "SQL & Databases",   completedAt: "2026-11-02T16:00:00" },
+      { employeeName: "Anjali Singh",   courseTitle: "Effective Workplace Communication",skillName: "Communication",  completedAt: "2026-11-01T11:30:00" }
+    ]
+  },
+  risks: [
+    { alertId: 1, skillName: "Cloud Architecture", teamName: "Team Alpha", severity: "CRITICAL", acknowledged: 0,
+      description: "Only 20% of Alpha team members meet the required Cloud Architecture level. Critical delivery risk for Q1 cloud migration.",
+      recommendedAction: "Enroll all Alpha engineers in Cloud Basics immediately. Target 60% coverage by end of month.", createdAt: "2026-11-01T08:00:00" },
+    { alertId: 2, skillName: "Kubernetes & Container Ops", teamName: "Team Beta", severity: "CRITICAL", acknowledged: 0,
+      description: "Team Beta has zero certified Kubernetes practitioners. DevOps pipeline is at risk.",
+      recommendedAction: "Fast-track Kubernetes certification for at least 2 Beta team leads.", createdAt: "2026-11-02T09:00:00" },
+    { alertId: 3, skillName: "Cybersecurity & Compliance", teamName: "Team Gamma", severity: "HIGH", acknowledged: 0,
+      description: "Cybersecurity skills average is 1.8/5 across Team Gamma, below the department minimum of 3.0.",
+      recommendedAction: "Schedule CompTIA Security+ training cohort.", createdAt: "2026-11-03T10:00:00" },
+    { alertId: 4, skillName: "Machine Learning / AI", teamName: "Team Delta", severity: "HIGH", acknowledged: 0,
+      description: "AI initiative requires ML skills at level 3+. Only 30% of Delta team qualifies.",
+      recommendedAction: "Identify top 5 candidates for ML upskilling. Enroll in AI bootcamp.", createdAt: "2026-11-04T11:00:00" },
+    { alertId: 5, skillName: "Data Analysis & BI", teamName: "Team Alpha", severity: "MEDIUM", acknowledged: 0,
+      description: "Power BI and Tableau coverage is insufficient for the upcoming analytics project.",
+      recommendedAction: "Assign online BI learning paths. Target completion within 6 weeks.", createdAt: "2026-11-05T12:00:00" },
+    { alertId: 6, skillName: "Agile Leadership", teamName: "Team Beta", severity: "MEDIUM", acknowledged: 1,
+      description: "No certified Scrum Masters in Beta team leading to process inefficiencies.",
+      recommendedAction: "Nominate 1 Beta team member for Scrum Master certification this quarter.", createdAt: "2026-10-28T08:00:00" }
+  ],
+  announcements: [
+    { announcementId: 1, title: "Q4 Skill Development Sprint – Action Required", authorName: "You (Dept Head)", audience: "All Teams",
+      body: "All team managers must submit their team skill gap reports by November 15th. The department is targeting 70% skill coverage across all critical areas by year-end. Please prioritize enrollments in Cloud, Security, and AI tracks.", createdAt: "2026-11-05T08:00:00" },
+    { announcementId: 2, title: "Cross-Team Mentorship Program Kickoff", authorName: "You (Dept Head)", audience: "All Teams",
+      body: "We are excited to launch the departmental cross-team mentorship program. Senior engineers with level 4+ skills are encouraged to sign up as mentors. This initiative aims to reduce critical skill gaps within 90 days.", createdAt: "2026-11-02T09:00:00" },
+    { announcementId: 3, title: "Hands-on Kubernetes Workshop – Nov 20th", authorName: "You (Dept Head)", audience: "Team Beta",
+      body: "An in-house Kubernetes workshop has been arranged for November 20th (full day). All Team Beta members are mandatorily invited. Team Alpha and Gamma members with DevOps responsibilities should also attend.", createdAt: "2026-10-30T10:00:00" }
+  ],
+  notifications: {
+    unread: 3,
+    items: [
+      { notificationId: 1, message: "Risk Alert: Cloud Architecture gap in Team Alpha is now CRITICAL.", isRead: 0, createdAt: "2026-11-05T10:00:00" },
+      { notificationId: 2, message: "Team Gamma completed 12 course enrollments this week — highest in the department.", isRead: 0, createdAt: "2026-11-04T14:00:00" },
+      { notificationId: 3, message: "Monthly capability report is ready. Skill coverage improved from 61% to 67%.", isRead: 0, createdAt: "2026-11-03T09:00:00" },
+      { notificationId: 4, message: "New mentorship request from Priya Sharma — awaiting mentor assignment.", isRead: 1, createdAt: "2026-11-01T11:00:00" },
+      { notificationId: 5, message: "Welcome to the Department Head Dashboard. Review your department overview to get started.", isRead: 1, createdAt: "2026-10-28T08:00:00" }
+    ]
+  }
+};
+
+/* ================================================================
+   ROUTING & NAVIGATION
+   ================================================================ */
+let activeView = "overview";
+const VIEWS = {};
+function registerView(id, loader) { VIEWS[id] = loader; }
+
+function navigate(view) {
+  activeView = view;
+  $$("nav#nav button").forEach(btn => {
+    btn.setAttribute("aria-current", btn.dataset.view === view ? "page" : "false");
+  });
+  const main = $("#main");
+  main.innerHTML = `<div class="card empty">Loading view&#8230;</div>`;
+  if (VIEWS[view]) {
+    VIEWS[view](main).catch(err => {
+      main.innerHTML = `<div class="card"><p class="empty" style="color:var(--bad)">&#9888;&#65039; Error loading view: ${esc(err.message)}</p></div>`;
+      toast(err.message, true);
+    });
+  }
+}
+
+$$("nav#nav button").forEach(btn => {
+  btn.addEventListener("click", () => navigate(btn.dataset.view));
+});
+
+/* ================================================================
+   HELPERS & BADGES
+   ================================================================ */
+function severityChip(s) {
+  if (!s) return "";
+  const lc = s.toUpperCase();
+  if (lc === "CRITICAL") return `<span class="chip crit">Critical</span>`;
+  if (lc === "HIGH")     return `<span class="chip bad">High</span>`;
+  if (lc === "MEDIUM")   return `<span class="chip warn">Medium</span>`;
+  return `<span class="chip">${esc(s)}</span>`;
+}
+function coverageChip(p) {
+  if (p == null) return `<span class="chip">No data</span>`;
+  if (p >= 70) return `<span class="chip ok">${p}%</span>`;
+  if (p >= 40) return `<span class="chip warn">${p}%</span>`;
+  return `<span class="chip bad">${p}%</span>`;
+}
+function matrixRowClass(gap) {
+  if (gap >= 1) return "style='background:#fff5f5'";
+  if (gap >= 0.5) return "style='background:#fffbf0'";
+  return "";
+}
+function barColor(p) {
+  if (p >= 70) return "ok";
+  if (p >= 40) return "warn";
+  return "bad";
+}
+function updateNotifBadge(count) {
+  const b = $("#notifBadge");
+  if (count > 0) { b.textContent = count; b.hidden = false; } else { b.hidden = true; }
+}
+function updateRiskBadge(count) {
+  const b = $("#riskBadge");
+  if (count > 0) { b.textContent = count; b.hidden = false; } else { b.hidden = true; }
+}
+
+/* Client-side CSV Download */
+function downloadCSV(filename, csvData) {
+  const blob = new Blob([csvData], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(`Exported ${filename}`);
+}
+
+/* ================================================================
+   VIEW 1: DASHBOARD (Overview)
+   ================================================================ */
+registerView("overview", async main => {
+  const d = await apiOrMock("/overview", "overview");
+  const risks = await apiOrMock("/risks", "risks");
+  const gaps = await apiOrMock("/gaps", "gaps");
+  const unackedRisks = (risks || []).filter(r => !r.acknowledged);
+  const trendMax = Math.max(...d.coverageTrend.map(t => t.coverage), 80);
+
+  const sessUser = getSession();
+  const deptHeadName = (sessUser && sessUser.fullName) ? sessUser.fullName : "Department Head";
+
+  main.innerHTML = `
+  <div class="section-head">
+    <div>
+      <h1>Welcome back to the Department Head Dashboard, ${esc(deptHeadName)}!</h1>
+      <p>Strategic view of skills, capability risks and progress within the department.</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn ghost small noprint" onclick="navigate('risks')">View ${unackedRisks.length} Risk Alerts</button>
+      <button class="btn small success" id="openPlanFromDash">🤝 Agree Priorities</button>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-tile p1">
+      <div class="tile-icon">👥</div>
+      <b>${d.totalEmployees}</b>
+      <span>Total Employees</span>
+      <div class="delta up">▲ 4 active teams</div>
+    </div>
+    <div class="stat-tile p2">
+      <div class="tile-icon">📊</div>
+      <b>${d.skillCoveragePct}%</b>
+      <span>Skill Coverage</span>
+      <div class="delta up">▲ +6% vs last month</div>
+    </div>
+    <div class="stat-tile p3">
+      <div class="tile-icon">⚠️</div>
+      <b>${d.criticalGaps}</b>
+      <span>Critical Gaps</span>
+      <div class="delta down">Needs immediate action</div>
+    </div>
+    <div class="stat-tile p4">
+      <div class="tile-icon">🏢</div>
+      <b>${d.atRiskTeams}</b>
+      <span>At-Risk Teams</span>
+      <div class="delta down">Affected by skill deficits</div>
+    </div>
+    <div class="stat-tile p5">
+      <div class="tile-icon">📚</div>
+      <b>${d.learningParticipationPct}%</b>
+      <span>Learning Participation</span>
+      <div class="delta up">▲ +12% target pace</div>
+    </div>
+    <div class="stat-tile p6">
+      <div class="tile-icon">🤝</div>
+      <b>${d.activeMentorships}</b>
+      <span>Active Mentorships</span>
+      <div class="delta up">Across 4 teams</div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- Trend & Coverage -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Department Skill Coverage Trend</h2>
+        <span class="sub">6-Month Progress</span>
+      </div>
+      <div class="trend-chart" id="trendChart"></div>
+      <div style="display:flex;justify-content:space-between;margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)">
+        <span>Baseline (Jun): 42%</span>
+        <span>Target for Q4: <strong>70%</strong></span>
+        <span>Current (Nov): <strong style="color:var(--brand)">${d.skillCoveragePct}%</strong></span>
+      </div>
+    </div>
+
+    <!-- Main Responsibilities & Governance -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Department Head Responsibilities</h2>
+        <span class="chip ok">Active Governance</span>
+      </div>
+      <div class="check-item">
+        <span class="check-icon done">✓</span>
+        <div class="grow">
+          <strong>Review department dashboard</strong>
+          <div class="sub">Regular audit of skill coverage, trend lines and high-level milestones.</div>
+        </div>
+      </div>
+      <div class="check-item">
+        <span class="check-icon warn">!</span>
+        <div class="grow">
+          <strong>Identify shortages and affected teams</strong>
+          <div class="sub">Team Alpha and Beta face critical cloud & container deficit.</div>
+        </div>
+        <button class="btn small ghost" onclick="navigate('gap-heatmap')">Inspect</button>
+      </div>
+      <div class="check-item">
+        <span class="check-icon info">→</span>
+        <div class="grow">
+          <strong>Agree priorities with managers and HR</strong>
+          <div class="sub">Align learning budgets and expedited certification cohorts.</div>
+        </div>
+        <button class="btn small success" id="planRespBtn">Discuss</button>
+      </div>
+      <div class="check-item">
+        <span class="check-icon done">✓</span>
+        <div class="grow">
+          <strong>Monitor improvement over time</strong>
+          <div class="sub">Track aggregate completion rates and monthly capability scores.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Priority Actions & Critical Gaps Table -->
+  <div class="g2">
+    <div class="card">
+      <div class="card-header">
+        <h2>Priority Actions & Risks</h2>
+        <button class="btn small ghost" onclick="navigate('risks')">All Alerts (${unackedRisks.length})</button>
+      </div>
+      <div id="priorityActions"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Critical Department Skill Gaps</h2>
+        <button class="btn small ghost" onclick="navigate('skill-matrix')">Full Matrix</button>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Skill</th><th>Category</th><th>Affected</th><th>Severity</th></tr>
+          </thead>
+          <tbody id="topGapsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>`;
+
+  /* Render Trend Bars */
+  const chart = $("#trendChart", main);
+  d.coverageTrend.forEach(t => {
+    const h = Math.round((t.coverage / trendMax) * 100);
+    const color = t.coverage >= 70 ? "var(--accent4)" : t.coverage >= 50 ? "var(--brand)" : "var(--accent5)";
+    chart.insertAdjacentHTML("beforeend", `
+      <div class="trend-bar-wrap">
+        <div class="trend-val">${t.coverage}%</div>
+        <div class="trend-bar" style="height:${h}%;background:${color}"></div>
+        <div class="trend-label">${esc(t.month)}</div>
+      </div>`);
+  });
+
+  /* Render Priority Actions */
+  const pa = $("#priorityActions", main);
+  if (!unackedRisks.length) {
+    pa.innerHTML = `<p class="empty">✅ No critical risks pending department attention.</p>`;
+  } else {
+    unackedRisks.slice(0, 3).forEach(r => {
+      const cls = r.severity === "CRITICAL" ? "bad" : r.severity === "HIGH" ? "warn" : "info";
+      pa.insertAdjacentHTML("beforeend", `
+        <div class="callout ${cls}" style="margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+            <div>
+              <strong>${esc(r.skillName)}</strong> &middot; <span style="font-size:12px;opacity:.9">${esc(r.teamName || "Department")}</span>
+              <div style="font-size:13px;margin-top:4px">${esc(r.recommendedAction || r.description)}</div>
+            </div>
+            <div>${severityChip(r.severity)}</div>
+          </div>
+        </div>`);
+    });
+  }
+
+  /* Render Top Gaps */
+  const tb = $("#topGapsBody", main);
+  if (!gaps.length) {
+    tb.innerHTML = `<tr><td colspan="4" class="empty">No critical gaps recorded.</td></tr>`;
+  } else {
+    gaps.slice(0, 5).forEach(g => {
+      tb.insertAdjacentHTML("beforeend", `
+        <tr>
+          <td><strong>${esc(g.skillName)}</strong></td>
+          <td><span class="chip">${esc(g.category)}</span></td>
+          <td>${g.employeesAffected ?? 0} of ${g.totalRated ?? 48}</td>
+          <td>${severityChip(g.severity)}</td>
+        </tr>`);
+    });
+  }
+
+  $("#openPlanFromDash", main)?.addEventListener("click", () => openPlanModal());
+  $("#planRespBtn", main)?.addEventListener("click", () => openPlanModal());
+});
+
+/* ================================================================
+   VIEW 2: DEPARTMENT OVERVIEW (Teams, Roles & Summary)
+   ================================================================ */
+registerView("dept-overview", async main => {
+  const teams = await apiOrMock("/teams", "teams");
+  const roles = MOCK.roles;
+  const totalEmp = teams.reduce((s, t) => s + (t.headcount || 0), 0);
+  const totalGaps = teams.reduce((s, t) => s + (t.openGaps || 0), 0);
+  const avgCov = teams.length ? Math.round(teams.reduce((s, t) => s + (t.avgCoveragePct || 0), 0) / teams.length) : 0;
+
+  main.innerHTML = `
+  <div class="section-head">
+    <div>
+      <h1>Department Overview</h1>
+      <p>Teams, functional roles and workforce capability distributions.</p>
+    </div>
+    <button class="btn small ghost noprint" id="exportTeamsCSV">⬇ Export Teams CSV</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-tile p1"><div class="tile-icon">🏢</div><b>${teams.length}</b><span>Active Teams</span></div>
+    <div class="stat-tile p2"><div class="tile-icon">👥</div><b>${totalEmp}</b><span>Department Headcount</span></div>
+    <div class="stat-tile p3"><div class="tile-icon">📊</div><b>${avgCov}%</b><span>Avg Team Coverage</span></div>
+    <div class="stat-tile p4"><div class="tile-icon">⚠️</div><b>${totalGaps}</b><span>Open Skill Gaps</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>Teams & Lead Allocation</h2>
+      <span class="sub">Click headers to sort</span>
+    </div>
+    <div class="tablewrap">
+      <table id="teamsTable">
+        <thead>
+          <tr>
+            <th class="sortable" data-col="teamName">Team</th>
+            <th class="sortable" data-col="focus">Focus Area</th>
+            <th class="sortable" data-col="headcount">Headcount</th>
+            <th class="sortable" data-col="avgCoveragePct">Skill Coverage</th>
+            <th class="sortable" data-col="openGaps">Open Gaps</th>
+            <th>Lead</th>
+            <th>Health Status</th>
+          </tr>
+        </thead>
+        <tbody id="teamsBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <div class="card-header">
+        <h2>Department Role Distribution</h2>
+        <span class="sub">Aggregated headcounts</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Job Role</th><th>Headcount</th><th>Avg Level</th><th>Target</th></tr>
+          </thead>
+          <tbody>
+            ${roles.map(r => `
+              <tr>
+                <td><strong>${esc(r.roleName)}</strong></td>
+                <td><span class="chip">${r.count} staff</span></td>
+                <td>${r.avgLevel}/5</td>
+                <td>${r.targetLevel}/5</td>
+              </tr>`).join("")}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <h2>Workforce Coverage Summary</h2>
+      </div>
+      <p class="sub" style="margin-bottom:16px">Overall readiness across the department by technical proficiency tier:</p>
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span>Tier 1: Cloud & Infrastructure (Team Beta)</span>
+          <span style="font-weight:700">72%</span>
+        </div>
+        <div class="bar ok"><i style="width:72%"></i></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span>Tier 2: Data Engineering & Analytics (Team Delta)</span>
+          <span style="font-weight:700">80%</span>
+        </div>
+        <div class="bar ok"><i style="width:80%"></i></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span>Tier 3: Quality & Security (Team Gamma)</span>
+          <span style="font-weight:700">65%</span>
+        </div>
+        <div class="bar warn"><i style="width:65%"></i></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
+          <span>Tier 4: Core Systems & Services (Team Alpha)</span>
+          <span style="font-weight:700;color:var(--bad)">58% (Needs focus)</span>
+        </div>
+        <div class="bar bad"><i style="width:58%"></i></div>
+      </div>
+    </div>
+  </div>`;
+
+  let teamData = [...teams];
+  let sortCol = "avgCoveragePct", sortAsc = false;
+
+  function renderTeamRows() {
+    const tbody = $("#teamsBody", main);
+    tbody.innerHTML = "";
+    teamData.forEach(t => {
+      const cv = Math.round(t.avgCoveragePct || 0);
+      tbody.insertAdjacentHTML("beforeend", `
+        <tr>
+          <td><strong>${esc(t.teamName)}</strong></td>
+          <td><span class="chip">${esc(t.focus || "General Engineering")}</span></td>
+          <td>${t.headcount ?? "-"}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:8px">
+              <div class="bar ${barColor(cv)}" style="width:80px"><i style="width:${cv}%"></i></div>
+              <span style="font-size:12.5px;font-weight:600">${cv}%</span>
+            </div>
+          </td>
+          <td>${t.openGaps ?? 0}</td>
+          <td>${esc(t.lead || "Unassigned")}</td>
+          <td>${coverageChip(cv)}</td>
+        </tr>`);
+    });
+  }
+
+  renderTeamRows();
+
+  $$("th.sortable", main).forEach(th => {
+    th.addEventListener("click", () => {
+      const col = th.dataset.col;
+      if (sortCol === col) sortAsc = !sortAsc;
+      else { sortCol = col; sortAsc = true; }
+      teamData.sort((a, b) => {
+        let va = a[sortCol], vb = b[sortCol];
+        if (typeof va === "string") return sortAsc ? va.localeCompare(vb) : vb.localeCompare(va);
+        return sortAsc ? (va - vb) : (vb - va);
+      });
+      renderTeamRows();
+    });
+  });
+
+  $("#exportTeamsCSV", main)?.addEventListener("click", () => {
+    let csv = "Team,Focus,Headcount,AvgCoveragePct,OpenGaps,Lead\n";
+    teamData.forEach(t => {
+      csv += `"${t.teamName}","${t.focus || ''}",${t.headcount},${t.avgCoveragePct},${t.openGaps},"${t.lead || ''}"\n`;
+    });
+    downloadCSV("Department_Teams_Overview.csv", csv);
+  });
+});
+
+/* ================================================================
+   VIEW 3: DEPARTMENT SKILL MATRIX
+   ================================================================ */
+registerView("skill-matrix", async main => {
+  main.innerHTML = `
+  <div class="section-head">
+    <div>
+      <h1>Department Skill Matrix</h1>
+      <p>Compare required vs. available skills across all department members.</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn small ghost noprint" id="exportMatrixCSV">⬇ Export Matrix CSV</button>
+    </div>
+  </div>
+
+  <div class="filter-bar">
+    <div>
+      <label style="margin:0 0 4px">Filter by Category</label>
+      <select id="matrixCatFilter">
+        <option value="all">All Categories</option>
+        <option value="Technical">Technical</option>
+        <option value="Soft Skills">Soft Skills</option>
+        <option value="Management">Management</option>
+      </select>
+    </div>
+    <div>
+      <label style="margin:0 0 4px">Sort By</label>
+      <select id="matrixSortFilter">
+        <option value="gapDesc">Highest Gap Score (Urgent)</option>
+        <option value="covAsc">Lowest Coverage %</option>
+        <option value="covDesc">Highest Coverage %</option>
+        <option value="name">Skill Name (A-Z)</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Skill Name</th>
+            <th>Category</th>
+            <th>Required</th>
+            <th>Dept Avg</th>
+            <th>Level Bar (Dept vs Req)</th>
+            <th>Rated Staff</th>
+            <th>Coverage</th>
+            <th>Gap Delta</th>
+            <th>Readiness</th>
+          </tr>
+        </thead>
+        <tbody id="matrixBody"></tbody>
+      </table>
+    </div>
+    <div id="matrixTotals" style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:13px;display:flex;justify-content:space-between;color:var(--muted)"></div>
+  </div>`;
+
+  async function loadMatrix() {
+    const cat = $("#matrixCatFilter", main).value;
+    const sort = $("#matrixSortFilter", main).value;
+    let rows = await apiOrMock("/skill-matrix", "skill-matrix");
+    if (cat !== "all") rows = rows.filter(r => r.category === cat);
+
+    rows.sort((a, b) => {
+      const gapA = a.gapScore != null ? a.gapScore : (a.requiredLevel - a.avgDeptLevel);
+      const gapB = b.gapScore != null ? b.gapScore : (b.requiredLevel - b.avgDeptLevel);
+      if (sort === "gapDesc") return gapB - gapA;
+      if (sort === "covAsc")  return (a.coveragePct || 0) - (b.coveragePct || 0);
+      if (sort === "covDesc") return (b.coveragePct || 0) - (a.coveragePct || 0);
+      if (sort === "name")    return a.skillName.localeCompare(b.skillName);
+      return 0;
+    });
+
+    const tbody = $("#matrixBody", main);
+    tbody.innerHTML = "";
+    if (!rows.length) {
+      tbody.innerHTML = `<tr><td colspan="9" class="empty">No skills match the selected filter.</td></tr>`;
+      return;
+    }
+
+    let sumGap = 0, sumCov = 0;
+    rows.forEach(r => {
+      const gap = r.gapScore != null ? parseFloat(r.gapScore) : (r.requiredLevel - r.avgDeptLevel);
+      const cv = r.coveragePct != null ? Math.round(r.coveragePct) : 0;
+      sumGap += gap; sumCov += cv;
+
+      // Dual bar calculation (0-5 scale mapped to %)
+      const actualPct = Math.min(100, Math.round(((r.avgDeptLevel || 0) / 5) * 100));
+      const reqPct = Math.min(100, Math.round(((r.requiredLevel || 0) / 5) * 100));
+
+      tbody.insertAdjacentHTML("beforeend", `
+        <tr ${matrixRowClass(gap)}>
+          <td><strong>${esc(r.skillName)}</strong></td>
+          <td><span class="chip">${esc(r.category)}</span></td>
+          <td>${r.requiredLevel}/5</td>
+          <td>${r.avgDeptLevel != null ? parseFloat(r.avgDeptLevel).toFixed(1) : "—"}/5</td>
+          <td>
+            <div style="min-width:110px">
+              <div class="dual-bar">
+                <i class="actual" style="width:${actualPct}%"></i>
+                <u class="req" style="left:calc(${reqPct}% - 2px)" title="Target: ${r.requiredLevel}"></u>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);margin-top:2px">
+                <span>avg ${r.avgDeptLevel}</span>
+                <span>req ${r.requiredLevel}</span>
+              </div>
+            </div>
+          </td>
+          <td>${r.employeesRated || 0}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:6px">
+              <div class="bar ${barColor(cv)}" style="width:60px"><i style="width:${cv}%"></i></div>
+              <span style="font-size:12px">${cv}%</span>
+            </div>
+          </td>
+          <td>${gap > 0 ? `<strong style="color:var(--bad)">▲ ${gap.toFixed(1)}</strong>` : `<strong style="color:var(--ok)">✔ Met</strong>`}</td>
+          <td>${coverageChip(cv)}</td>
+        </tr>`);
+    });
+
+    const avgG = (sumGap / rows.length).toFixed(1);
+    const avgC = Math.round(sumCov / rows.length);
+    $("#matrixTotals", main).innerHTML = `
+      <span>Showing <strong>${rows.length}</strong> skills</span>
+      <span>Average Department Gap: <strong>${avgG}</strong></span>
+      <span>Average Readiness: <strong>${avgC}%</strong></span>`;
+  }
+
+  await loadMatrix();
+  $("#matrixCatFilter", main).addEventListener("change", loadMatrix);
+  $("#matrixSortFilter", main).addEventListener("change", loadMatrix);
+
+  $("#exportMatrixCSV", main)?.addEventListener("click", async () => {
+    const rows = await apiOrMock("/skill-matrix", "skill-matrix");
+    let csv = "SkillName,Category,RequiredLevel,AvgDeptLevel,EmployeesRated,CoveragePct,GapScore\n";
+    rows.forEach(r => {
+      csv += `"${r.skillName}","${r.category}",${r.requiredLevel},${r.avgDeptLevel},${r.employeesRated},${r.coveragePct},${r.gapScore}\n`;
+    });
+    downloadCSV("Department_Skill_Matrix.csv", csv);
+  });
+});
+
+/* ================================================================
+   VIEW 4: GAP HEATMAP
+   ================================================================ */
+registerView("gap-heatmap", async main => {
+  const d = await apiOrMock("/gap-heatmap", "gap-heatmap");
+  const { skills, teams, cells } = d;
+
+  main.innerHTML = `
+  <div class="section-head">
+    <div>
+      <h1>Gap Heatmap</h1>
+      <p>Identify critical skills and specific teams needing immediate attention.</p>
+    </div>
+    <div style="display:flex;gap:8px">
+      <select id="hmCatFilter" style="padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px">
+        <option value="all">All Skills</option>
+        <option value="Technical">Technical Skills Only</option>
+        <option value="Soft Skills">Soft Skills Only</option>
+        <option value="Management">Management Skills Only</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="callout">
+    <strong>Strategic Heatmap Key:</strong> Hover over any grid cell to view average vs. required rating.
+    <div style="display:inline-flex;gap:12px;margin-left:14px;font-size:12.5px">
+      <span>🔴 Critical Gap (&gt; 1.0)</span>
+      <span>🟡 High Gap (0.5 – 1.0)</span>
+      <span>🟢 Target Met (&lt; 0.5)</span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="heatmap-wrap" id="hmWrap"></div>
+    <div class="hm-legend">
+      <div class="hm-legend-item"><div class="hm-legend-swatch" style="background:#ef4444"></div> Critical gap (&gt;1.0) — High project risk</div>
+      <div class="hm-legend-item"><div class="hm-legend-swatch" style="background:#f59e0b"></div> High gap (0.5–1.0) — Training needed</div>
+      <div class="hm-legend-item"><div class="hm-legend-swatch" style="background:#10b981"></div> Met (&lt;0.5) — Capability verified</div>
+      <div class="hm-legend-item"><div class="hm-legend-swatch" style="background:#e1e3f5"></div> No data available</div>
+    </div>
+  </div>
+
+  <!-- Priority Alert Callout -->
+  <div class="g2">
+    <div class="card">
+      <h2>🔥 Most Critical Team Deficits</h2>
+      <div class="row">
+        <div class="grow">
+          <strong>Team Alpha &middot; Cloud Fundamentals</strong>
+          <div class="sub">Gap: 1.6 / 5 (Team Avg 1.4 vs Req 3.0)</div>
+        </div>
+        <span class="chip crit">Urgent</span>
+      </div>
+      <div class="row">
+        <div class="grow">
+          <strong>Team Alpha &middot; Java Architecture</strong>
+          <div class="sub">Gap: 1.5 / 5 (Team Avg 2.5 vs Req 4.0)</div>
+        </div>
+        <span class="chip crit">Urgent</span>
+      </div>
+      <div class="row">
+        <div class="grow">
+          <strong>Team Delta &middot; Communication</strong>
+          <div class="sub">Gap: 2.0 / 5 (Team Avg 2.0 vs Req 4.0)</div>
+        </div>
+        <span class="chip bad">High</span>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>💡 Recommended Action Plan</h2>
+      <p class="sub">Department Head executive recommendations for managers:</p>
+      <ul style="font-size:13.5px;padding-left:18px;line-height:1.7;margin:8px 0">
+        <li>Cross-train <strong>Team Alpha</strong> with Cloud specialists from Team Delta.</li>
+        <li>Schedule <strong>Team Beta</strong> into an accelerated Kubernetes certification cohort.</li>
+        <li>Enroll <strong>Team Delta</strong> analysts into client communication and executive presentation workshops.</li>
+      </ul>
+      <button class="btn small success" onclick="openPlanModal()">Initiate Manager Alignment</button>
+    </div>
+  </div>`;
+
+  const wrap = $("#hmWrap", main);
+  if (!skills.length || !teams.length) {
+    wrap.innerHTML = `<p class="empty">No heatmap data available.</p>`;
+    return;
+  }
+
+  const lookup = {};
+  cells.forEach(c => { lookup[`${c.skill}|${c.team}`] = c; });
+
+  function renderHeatmapGrid() {
+    wrap.innerHTML = `<div class="heatmap" style="grid-template-columns: 180px ${teams.map(() => '72px').join(' ')}; align-items:center;"></div>`;
+    const grid = $(".heatmap", wrap);
+
+    // Header row
+    grid.insertAdjacentHTML("beforeend", `<div></div>`);
+    teams.forEach(t => {
+      grid.insertAdjacentHTML("beforeend", `<div class="hm-col-label">${esc(t)}</div>`);
+    });
+
+    // Rows
+    skills.forEach(skill => {
+      grid.insertAdjacentHTML("beforeend", `<div class="hm-label" title="${esc(skill)}">${esc(skill)}</div>`);
+      teams.forEach(team => {
+        const cell = lookup[`${skill}|${team}`];
+        let cls = "none", tipText = "No data", label = "?";
+        if (cell) {
+          const g = parseFloat(cell.gap);
+          if (g > 1.0) cls = "crit";
+          else if (g > 0.5) cls = "high";
+          else cls = "ok";
+          label = g > 0 ? "▲ " + g.toFixed(1) : "✔";
+          tipText = `${skill} (${team}) — Avg: ${cell.avgLevel} / Req: ${cell.required} | Gap: ${g.toFixed(1)}`;
+        }
+        grid.insertAdjacentHTML("beforeend", `
+          <div class="hm-cell ${cls}" data-tip="${esc(tipText)}">${label}</div>`);
+      });
+    });
+
+    // Summary bottom row: Worst gap per team
+    grid.insertAdjacentHTML("beforeend", `<div class="hm-label" style="font-weight:700;color:var(--bad)">Max Team Gap</div>`);
+    teams.forEach(team => {
+      let maxGap = 0;
+      skills.forEach(s => {
+        const c = lookup[`${s}|${team}`];
+        if (c && parseFloat(c.gap) > maxGap) maxGap = parseFloat(c.gap);
+      });
+      grid.insertAdjacentHTML("beforeend", `
+        <div style="font-size:12px;font-weight:700;text-align:center;color:var(--bad)">${maxGap.toFixed(1)}</div>`);
+    });
+  }
+
+  renderHeatmapGrid();
+});
+
+/* ================================================================
+   VIEW 5: WORKFORCE CAPABILITY
+   ================================================================ */
+registerView("workforce", async main => {
+  const d = await apiOrMock("/workforce", "workforce");
+
+  main.innerHTML = `
+  <div class="section-head">
+    <div>
+      <h1>Workforce Capability</h1>
+      <p>Review core strengths, persistent shortages and emerging capability needs.</p>
+    </div>
+    <span class="chip ok" style="padding:6px 12px;font-size:13px">Health Index: <strong>${d.healthScore || 74}/100</strong></span>
+  </div>
+
+  <div class="card" style="margin-bottom:18px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <strong>Overall Department Capability Health Meter</strong>
+      <span style="font-weight:700;color:var(--ok)">Good (74%)</span>
+    </div>
+    <div class="bar ok" style="height:12px"><i style="width:74%"></i></div>
+    <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-top:4px">
+      <span>Critical (&lt;50%)</span>
+      <span>Moderate (50-70%)</span>
+      <span>Optimal (70-100%)</span>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <h2>💪 Department Strengths (Coverage &ge; 60%)</h2>
+      <p class="sub" style="margin-bottom:14px">Skills where the department meets or exceeds expectations:</p>
+      <div id="strengthList"></div>
+    </div>
+
+    <div class="card">
+      <h2>⚠️ Capability Shortages (Urgent Attention)</h2>
+      <p class="sub" style="margin-bottom:14px">Areas with lowest coverage causing project delivery risks:</p>
+      <div id="shortageList"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header">
+      <h2>🔮 Emerging Technology &amp; Leadership Needs</h2>
+      <span class="chip warn">Strategic Planning</span>
+    </div>
+    <div class="tablewrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Emerging Skill</th>
+            <th>Category</th>
+            <th>Required Target</th>
+            <th>Current Avg</th>
+            <th>Priority Delta</th>
+            <th>Recommended Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${d.emerging.map(e => `
+            <tr>
+              <td><strong>${esc(e.skillName)}</strong></td>
+              <td><span class="chip">${esc(e.category)}</span></td>
+              <td>${e.requiredLevel}/5</td>
+              <td>${e.avgLevel != null ? parseFloat(e.avgLevel).toFixed(1) : "—"}/5</td>
+              <td><span class="chip crit">${esc(e.priority || "Critical")}</span></td>
+              <td><span class="sub">Enroll high-potentials in external certification sprints.</span></td>
+            </tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+  </div>`;
+
+  function renderSkillBar(item) {
+    const p = Math.round(item.coveragePct || 0);
+    return `
+      <div style="margin-bottom:14px">
+        <div style="display:flex;justify-content:space-between;font-size:13.5px;margin-bottom:4px">
+          <strong>${esc(item.skillName)}</strong>
+          <span><span class="chip">${esc(item.category)}</span> &nbsp; <strong>${p}%</strong> <span style="font-size:11px;color:var(--muted)">(${item.trend || ""})</span></span>
+        </div>
+        <div class="bar ${barColor(p)}"><i style="width:${p}%"></i></div>
+      </div>`;
+  }
+
+  const sl = $("#strengthList", main);
+  d.strengths.forEach(s => sl.insertAdjacentHTML("beforeend", renderSkillBar(s)));
+
+  const sh = $("#shortageList", main);
+  d.shortages.forEach(s => sh.insertAdjacentHTML("beforeend", renderSkillBar(s)));
+});
+
+/* ================================================================
+   VIEW 6: LEARNING & MENTORING OVERVIEW
+   ================================================================ */
+registerView("learning", async main => {
+  const d = (await apiOrMock("/learning", "learning")) || {};
+
+  const totalEnrollments = d.totalEnrollments ?? 0;
+  const completionRate = d.completionRate ?? 0;
+  const activeMentorships = d.activeMentorships ?? 0;
+  const sessionsCount = d.knowledgeSessionsCount ?? (Array.isArray(d.knowledgeSessions) ? d.knowledgeSessions.length : (typeof d.knowledgeSessions === "number" ? d.knowledgeSessions : 0));
+  const teamList = Array.isArray(d.enrollmentsByTeam) ? d.enrollmentsByTeam : [];
+  const mentorshipList = Array.isArray(d.mentorshipPairs) ? d.mentorshipPairs : [];
+  const sessionList = Array.isArray(d.knowledgeSessions) ? d.knowledgeSessions : (Array.isArray(d.knowledgeSessionsList) ? d.knowledgeSessionsList : []);
+  const completionList = Array.isArray(d.recentCompletions) ? d.recentCompletions : [];
+
+  main.innerHTML = `
+  <div class="section-head">
+    <div>
+      <h1>Learning &amp; Mentoring Overview</h1>
+      <p>Aggregate participation in training courses, mentorship programs and knowledge exchange.</p>
+    </div>
+    <button class="btn small success" onclick="openPlanModal()">Coordinate with L&amp;D Lead</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-tile p1"><div class="tile-icon">📚</div><b>${totalEnrollments}</b><span>Total Enrollments</span></div>
+    <div class="stat-tile p5"><div class="tile-icon">✅</div><b>${completionRate}%</b><span>Completion Rate</span></div>
+    <div class="stat-tile p6"><div class="tile-icon">🤝</div><b>${activeMentorships}</b><span>Active Mentorships</span></div>
+    <div class="stat-tile p2"><div class="tile-icon">🎙️</div><b>${sessionsCount}</b><span>Knowledge Sessions</span></div>
+  </div>
+
+  <div class="g2">
+    <!-- Enrollments by Team -->
+    <div class="card">
+      <h2>Team Participation &amp; Completion</h2>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Team</th><th>Enrolled</th><th>Completed</th><th>Rate</th></tr>
+          </thead>
+          <tbody>
+            ${teamList.length > 0 ? teamList.map(t => {
+              const enrollments = Number(t.enrollments) || 0;
+              const completions = Number(t.completions) || 0;
+              const r = enrollments ? Math.round((completions / enrollments) * 100) : 0;
+              return `
+                <tr>
+                  <td><strong>${esc(t.teamName || 'General')}</strong></td>
+                  <td>${enrollments} staff</td>
+                  <td>${completions} completed</td>
+                  <td>${coverageChip(r)}</td>
+                </tr>`;
+            }).join("") : `<tr><td colspan="4" style="text-align:center;padding:16px;color:var(--muted)">No team enrollment records found</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Active Mentorships -->
+    <div class="card">
+      <div class="card-header">
+        <h2>Department Cross-Mentorship Pairs</h2>
+        <span class="chip ok">Active</span>
+      </div>
+      <div class="tablewrap">
+        <table>
+          <thead>
+            <tr><th>Mentor ➔ Mentee</th><th>Target Skill</th><th>Progress</th></tr>
+          </thead>
+          <tbody>
+            ${mentorshipList.length > 0 ? mentorshipList.map(m => {
+              const progress = Math.min(100, Math.max(0, Number(m.progress) || 0));
+              return `
+              <tr>
+                <td><strong>${esc(m.mentor || 'Mentor')}</strong><br><small style="color:var(--muted)">➔ ${esc(m.mentee || 'Mentee')}</small></td>
+                <td><span class="chip">${esc(m.skill || 'General')}</span></td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:6px">
+                    <div class="bar ok" style="width:50px"><i style="width:${progress}%"></i></div>
+                    <span style="font-size:11.5px">${progress}%</span>
+                  </div>
+                </td>
+              </tr>`;
+            }).join("") : `<tr><td colspan="3" style="text-align:center;padding:16px;color:var(--muted)">No active mentorship pairs found</td></tr>`}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="g2">
+    <!-- Knowledge Sessions -->
+    <div class="card">
+      <h2>Upcoming Knowledge Sharing Sessions</h2>
+      ${sessionList.length > 0 ? sessionList.map(s => `
+        <div class="row">
+          <div class="grow">
+            <strong>${esc(s.title || 'Untitled Session')}</strong>
+            <div class="sub">Speaker: ${esc(s.presenter || 'TBD')}${s.date ? ' &middot; ' + esc(s.date) : ''}${s.time ? ' at ' + esc(s.time) : ''}</div>
+          </div>
+          <span class="chip ${s.status === 'Completed' ? 'ok' : 'warn'}">${esc(s.status || 'Scheduled')}</span>
+        </div>`).join("") : `<div style="text-align:center;padding:24px;color:var(--muted)">No upcoming knowledge sharing sessions scheduled</div>`}
+    </div>
+
+    <!-- Recent Completions -->
+    <div class="card">
+      <h2>Recent Verified Completions</h2>
+      ${completionList.length > 0 ? completionList.slice(0, 4).map(c => `
+        <div class="row">
+          <div class="grow">
+            <strong>${esc(c.employeeName || 'Employee')}</strong>
+            <div class="sub">${esc(c.courseTitle || 'Course')}</div>
+          </div>
+          <div style="text-align:right">
+            <span class="chip ok">${esc(c.skillName || 'Skill')}</span>
+            <div class="sub" style="font-size:11px;margin-top:2px">${fmt(c.completedAt)}</div>
+          </div>
+        </div>`).join("") : `<div style="text-align:center;padding:24px;color:var(--muted)">No recent course completions recorded</div>`}
+    </div>
+  </div>`;
+});
+
+/* ================================================================
+   VIEW 7: RISK & PRIORITY ALERTS
+   ================================================================ */
+registerView("risks", async main => {
+  main.innerHTML = `
+  <div class="section-head">
+    <div>
+      <h1>Risk &amp; Priority Alerts</h1>
+      <p>Highlighted capability risks requiring department head intervention and manager alignment.</p>
+    </div>
+    <button class="btn small ghost noprint" id="exportRisksCSV">⬇ Export Risks CSV</button>
+  </div>
+
+  <div class="filter-bar">
+    <div>
+      <label style="margin:0 0 4px">Severity</label>
+      <select id="riskSevFilter">
+        <option value="ALL">All Severities</option>
+        <option value="CRITICAL">Critical Only</option>
+        <option value="HIGH">High Only</option>
+        <option value="MEDIUM">Medium Only</option>
+      </select>
+    </div>
+    <div>
+      <label style="margin:0 0 4px">Team</label>
+      <select id="riskTeamFilter">
+        <option value="ALL">All Teams</option>
+        <option value="Team Alpha">Team Alpha</option>
+        <option value="Team Beta">Team Beta</option>
+        <option value="Team Gamma">Team Gamma</option>
+        <option value="Team Delta">Team Delta</option>
+      </select>
+    </div>
+    <div style="margin-bottom:8px">
+      <label style="display:flex;align-items:center;gap:6px;cursor:pointer;margin:0">
+        <input type="checkbox" id="showAckedRisks"> Show acknowledged alerts
+      </label>
+    </div>
+  </div>
+
+  <div id="alertsContainer"></div>`;
+
+  let allRisks = await apiOrMock("/risks", "risks");
+
+  function renderAlerts() {
+    const sev = $("#riskSevFilter", main).value;
+    const team = $("#riskTeamFilter", main).value;
+    const showAcked = $("#showAckedRisks", main).checked;
+    const container = $("#alertsContainer", main);
+
+    let filtered = allRisks.filter(r => {
+      if (sev !== "ALL" && r.severity !== sev) return false;
+      if (team !== "ALL" && r.teamName !== team) return false;
+      if (!showAcked && r.acknowledged) return false;
+      return true;
+    });
+
+    if (!filtered.length) {
+      container.innerHTML = `<div class="card"><p class="empty">✅ No capability risk alerts matching your filter.</p></div>`;
+      return;
+    }
+
+    container.innerHTML = "";
+    filtered.forEach(r => {
+      const cls = r.severity === "CRITICAL" ? "crit" : r.severity === "HIGH" ? "high" : "med";
+      container.insertAdjacentHTML("beforeend", `
+        <div class="alert-card ${cls} ${r.acknowledged ? 'ack' : ''}" id="alertCard-${r.alertId}">
+          <div class="alert-header">
+            <div>
+              <div class="alert-title">${esc(r.skillName)}</div>
+              <div class="alert-meta">Team: <strong>${esc(r.teamName || "Department")}</strong> &middot; Recorded ${fmt(r.createdAt)}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              ${severityChip(r.severity)}
+              ${r.acknowledged
+                ? `<span class="chip ok">Acknowledged</span>`
+                : `<button class="btn small ghost noprint" onclick="ackRisk(${r.alertId})">Acknowledge</button>`
+              }
+              <button class="btn small success noprint" onclick="openPlanModal('${esc(r.teamName || "")}', '${esc(r.skillName)}')">Agree Plan</button>
+            </div>
+          </div>
+          <div class="alert-desc">${esc(r.description || "")}</div>
+          ${r.recommendedAction ? `
+            <div class="alert-action">
+              <strong>Department Head Action Directive:</strong>
+              ${esc(r.recommendedAction)}
+            </div>` : ""}
+        </div>`);
+    });
+  }
+
+  renderAlerts();
+  $("#riskSevFilter", main).addEventListener("change", renderAlerts);
+  $("#riskTeamFilter", main).addEventListener("change", renderAlerts);
+  $("#showAckedRisks", main).addEventListener("change", renderAlerts);
+
+  window.ackRisk = async (id) => {
+    try {
+      await api(`/risks/${id}/acknowledge`, { method: "POST" });
+      toast("Alert acknowledged.");
+    } catch {
+      toast("Alert acknowledged (offline mode).");
+    }
+    const target = allRisks.find(x => x.alertId === id);
+    if (target) target.acknowledged = 1;
+    renderAlerts();
+    updateRiskBadge(allRisks.filter(x => !x.acknowledged).length);
+  };
+
+  $("#exportRisksCSV", main)?.addEventListener("click", () => {
+    let csv = "AlertID,SkillName,TeamName,Severity,Acknowledged,Description,RecommendedAction\n";
+    allRisks.forEach(r => {
+      csv += `${r.alertId},"${r.skillName}","${r.teamName || ''}","${r.severity}",${r.acknowledged},"${(r.description||'').replace(/"/g, '""')}","${(r.recommendedAction||'').replace(/"/g, '""')}"\n`;
+    });
+    downloadCSV("Department_Risk_Alerts.csv", csv);
+  });
+});
+
+/* ================================================================
+   VIEW 8: REPORTS & ANALYTICS
+   ================================================================ */
+registerView("reports", async main => {
+  main.innerHTML = `
+  <div class="section-head">
+    <div>
+      <h1>Reports &amp; Analytics</h1>
+      <p>Executive analytics, workforce capability exports, and project planning summaries.</p>
+    </div>
+    <button class="btn small ghost noprint" onclick="window.print()">🖨️ Print Executive Report</button>
+  </div>
+
+  <div class="g3">
+    <div class="card">
+      <h2>📋 Full Skill Matrix</h2>
+      <p style="font-size:13.5px;color:var(--muted)">Required vs. actual ratings across all technical, management and soft skills.</p>
+      <button class="btn small" style="margin-top:10px" id="dlSkillCSV">⬇ Export Matrix CSV</button>
+    </div>
+    <div class="card">
+      <h2>⚠️ Gap &amp; Risk Report</h2>
+      <p style="font-size:13.5px;color:var(--muted)">Ranked gap severities, affected headcount and corrective action directives.</p>
+      <button class="btn small" style="margin-top:10px" id="dlGapCSV">⬇ Export Gap CSV</button>
+    </div>
+    <div class="card">
+      <h2>👥 Workforce Allocation</h2>
+      <p style="font-size:13.5px;color:var(--muted)">Team headcounts, role mappings, and learning participation ratios.</p>
+      <button class="btn small" style="margin-top:10px" id="dlWorkforceCSV">⬇ Export Workforce CSV</button>
+    </div>
+  </div>
+
+  <div class="g2">
+    <div class="card">
+      <h2>Skill Readiness Distribution</h2>
+      <p class="sub" style="margin-bottom:14px">Tiered readiness of department workforce:</p>
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
+          <span>Tier A: Exceeds Target (&ge; 80%)</span>
+          <strong>38% of skills</strong>
+        </div>
+        <div class="bar ok"><i style="width:38%"></i></div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
+          <span>Tier B: Meets Target (60–79%)</span>
+          <strong>35% of skills</strong>
+        </div>
+        <div class="bar" style="background:#e1e3f5"><i style="width:35%;background:var(--brand)"></i></div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
+          <span>Tier C: Approaching Target (40–59%)</span>
+          <strong>17% of skills</strong>
+        </div>
+        <div class="bar warn"><i style="width:17%"></i></div>
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:3px">
+          <span>Tier D: Critical Deficit (&lt; 40%)</span>
+          <strong style="color:var(--bad)">10% of skills</strong>
+        </div>
+        <div class="bar bad"><i style="width:10%"></i></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Executive Summary for Project Planning</h2>
+      <table style="font-size:13px;margin-top:4px">
+        <tr><td><strong>Department:</strong></td><td>Engineering &amp; Technology</td></tr>
+        <tr><td><strong>Headcount:</strong></td><td>48 Active Professionals</td></tr>
+        <tr><td><strong>Active Teams:</strong></td><td>4 (Alpha, Beta, Gamma, Delta)</td></tr>
+        <tr><td><strong>Primary Delivery Risk:</strong></td><td><span class="chip crit">Cloud &amp; Kubernetes Deficit</span></td></tr>
+        <tr><td><strong>Recommended Budget:</strong></td><td>Approve 20 Fast-Track Cloud Certifications</td></tr>
+        <tr><td><strong>Target Date:</strong></td><td>Dec 15, 2026 (70% Coverage Target)</td></tr>
+      </table>
+    </div>
+  </div>`;
+
+  $("#dlSkillCSV", main).addEventListener("click", () => {
+    let csv = "SkillName,Category,RequiredLevel,AvgDeptLevel,CoveragePct,GapScore\n";
+    MOCK["skill-matrix"].forEach(r => {
+      csv += `"${r.skillName}","${r.category}",${r.requiredLevel},${r.avgDeptLevel},${r.coveragePct},${r.gapScore}\n`;
+    });
+    downloadCSV("Department_Skill_Matrix_Report.csv", csv);
+  });
+
+  $("#dlGapCSV", main).addEventListener("click", () => {
+    let csv = "SkillName,Category,RequiredLevel,AvgLevel,EmployeesAffected,Severity\n";
+    MOCK.gaps.forEach(g => {
+      csv += `"${g.skillName}","${g.category}",${g.requiredLevel},${g.avgLevel},${g.employeesAffected},"${g.severity}"\n`;
+    });
+    downloadCSV("Department_Skill_Gaps_Report.csv", csv);
+  });
+
+  $("#dlWorkforceCSV", main).addEventListener("click", () => {
+    let csv = "TeamName,Headcount,AvgCoveragePct,OpenGaps,Lead\n";
+    MOCK.teams.forEach(t => {
+      csv += `"${t.teamName}",${t.headcount},${t.avgCoveragePct},${t.openGaps},"${t.lead}"\n`;
+    });
+    downloadCSV("Department_Workforce_Summary.csv", csv);
+  });
+});
+
+/* ================================================================
+   VIEW 9: ANNOUNCEMENTS
+   ================================================================ */
+registerView("announcements", async main => {
+  main.innerHTML = `
+  <div class="section-head">
+    <div>
+      <h1>Announcements</h1>
+      <p>Broadcast strategic department priorities, skill goals and cohort notices.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Post New Department Announcement</h2>
+    <form id="annForm">
+      <label for="annTitle">Title *</label>
+      <input type="text" id="annTitle" placeholder="e.g. Q4 Cloud Certification Sprint" maxlength="200" required>
+
+      <label for="annAudience">Target Audience *</label>
+      <select id="annAudience">
+        <option value="All Teams">All Department Teams</option>
+        <option value="Team Alpha">Team Alpha (Cloud &amp; Backend)</option>
+        <option value="Team Beta">Team Beta (DevOps &amp; Infrastructure)</option>
+        <option value="Team Gamma">Team Gamma (Security &amp; QA)</option>
+        <option value="Team Delta">Team Delta (Data &amp; AI)</option>
+      </select>
+
+      <label for="annBody">Message Details *</label>
+      <textarea id="annBody" placeholder="Outline specific action items, deadlines and contact info..." required></textarea>
+
+      <div style="margin-top:14px;display:flex;gap:10px">
+        <button type="submit" class="btn">📢 Broadcast Announcement</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="annList"></div>`;
+
+  async function loadAnnouncements() {
+    const list = await apiOrMock("/announcements", "announcements");
+    const container = $("#annList", main);
+    container.innerHTML = "";
+    if (!list.length) {
+      container.innerHTML = `<div class="card"><p class="empty">No announcements active.</p></div>`;
+      return;
+    }
+
+    list.forEach(a => {
+      container.insertAdjacentHTML("beforeend", `
+        <div class="ann-card" id="ann-${a.announcementId}">
+          <div class="ann-title">${esc(a.title)}</div>
+          <div class="ann-meta">
+            <span>Posted by <strong>${esc(a.authorName || "You")}</strong></span>
+            <span>&middot;</span>
+            <span>${fmtDt(a.createdAt)}</span>
+            <span>&middot;</span>
+            <span class="chip">${esc(a.audience || "All Teams")}</span>
+          </div>
+          <div class="ann-body">${esc(a.body)}</div>
+        </div>`);
+    });
+  }
+
+  await loadAnnouncements();
+
+  $("#annForm", main).addEventListener("submit", async e => {
+    e.preventDefault();
+    const title = $("#annTitle", main).value.trim();
+    const audience = $("#annAudience", main).value;
+    const body = $("#annBody", main).value.trim();
+    if (!title || !body) return;
+
+    try {
+      await api("/announcements", { method: "POST", body: { title, body, audience } });
+      toast("Announcement posted!");
+    } catch {
+      // Mock addition
+      MOCK.announcements.unshift({
+        announcementId: Date.now(),
+        title,
+        authorName: "You (Dept Head)",
+        audience,
+        body,
+        createdAt: new Date().toISOString()
+      });
+      toast("Announcement broadcasted (offline mode)!");
+    }
+    $("#annTitle", main).value = "";
+    $("#annBody", main).value = "";
+    await loadAnnouncements();
+  });
+});
+
+/* ================================================================
+   VIEW 10: NOTIFICATIONS
+   ================================================================ */
+registerView("notifications", async main => {
+  main.innerHTML = `
+  <div class="section-head">
+    <div>
+      <h1>Notifications</h1>
+      <p>Important alerts, learning updates and milestone triggers.</p>
+    </div>
+    <button class="btn small ghost noprint" id="markAllBtn">Mark all as read</button>
+  </div>
+
+  <div class="card">
+    <div class="filter-bar" style="margin-bottom:12px">
+      <button class="btn small ghost notif-filter active" data-filter="all">All Alerts</button>
+      <button class="btn small ghost notif-filter" data-filter="unread">Unread Only</button>
+    </div>
+    <div id="notifList"></div>
+  </div>`;
+
+  let notifData = await apiOrMock("/notifications", "notifications");
+
+  function renderNotifs(filter = "all") {
+    const list = notifData.items || [];
+    const container = $("#notifList", main);
+    container.innerHTML = "";
+
+    const filtered = filter === "unread" ? list.filter(n => !n.isRead) : list;
+    if (!filtered.length) {
+      container.innerHTML = `<p class="empty">No notifications in this folder.</p>`;
+      return;
+    }
+
+    filtered.forEach(n => {
+      const unread = !n.isRead;
+      container.insertAdjacentHTML("beforeend", `
+        <div class="notif-item ${unread ? 'unread' : ''}" id="notifItem-${n.notificationId}">
+          <div class="notif-dot ${unread ? '' : 'read'}"></div>
+          <div class="notif-msg">${esc(n.message)}</div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+            <span class="notif-time">${fmtDt(n.createdAt)}</span>
+            ${unread ? `<button class="btn small ghost noprint" onclick="markOneRead(${n.notificationId})">Mark read</button>` : ""}
+          </div>
+        </div>`);
+    });
+  }
+
+  renderNotifs("all");
+
+  $$(".notif-filter", main).forEach(btn => {
+    btn.addEventListener("click", () => {
+      $$(".notif-filter", main).forEach(b => b.classList.remove("active"));
+      btn.classList.add("active");
+      renderNotifs(btn.dataset.filter);
+    });
+  });
+
+  window.markOneRead = async (id) => {
+    try { await api(`/notifications/${id}/read`, { method: "POST" }); } catch {}
+    const item = notifData.items.find(x => x.notificationId === id);
+    if (item) item.isRead = 1;
+    notifData.unread = Math.max(0, (notifData.unread || 1) - 1);
+    updateNotifBadge(notifData.unread);
+    renderNotifs();
+  };
+
+  $("#markAllBtn", main).addEventListener("click", async () => {
+    try { await api("/notifications/read-all", { method: "POST" }); } catch {}
+    (notifData.items || []).forEach(n => n.isRead = 1);
+    notifData.unread = 0;
+    updateNotifBadge(0);
+    renderNotifs();
+    toast("All notifications marked as read.");
+  });
+});
+
+/* ================================================================
+   MODAL: DISCUSS IMPROVEMENT PLANS WITH MANAGERS & HR
+   ================================================================ */
+function openPlanModal(team = "", skill = "") {
+  const modal = $("#planModal");
+  if (!modal) return;
+  modal.hidden = false;
+  if (team) {
+    const sel = $("#planTargetTeam");
+    for (let opt of sel.options) {
+      if (opt.value.includes(team)) { sel.value = opt.value; break; }
+    }
+  }
+  if (skill) {
+    const sel = $("#planSkill");
+    for (let opt of sel.options) {
+      if (opt.value.includes(skill)) { sel.value = opt.value; break; }
+    }
+  }
+}
+
+function closePlanModal() {
+  const modal = $("#planModal");
+  if (modal) modal.hidden = true;
+}
+
+$("#discussPlanBtn")?.addEventListener("click", () => openPlanModal());
+$("#closePlanModal")?.addEventListener("click", closePlanModal);
+$("#cancelPlanBtn")?.addEventListener("click", closePlanModal);
+
+$("#planForm")?.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const team = $("#planTargetTeam").value;
+  const skill = $("#planSkill").value;
+  const hr = $("#planHrPartner").value;
+  const action = $("#planAction").value.trim();
+
+  // Create an announcement automatically to reflect agreement
+  MOCK.announcements.unshift({
+    announcementId: Date.now(),
+    title: `Agreed Priority Plan: ${skill} (${team})`,
+    authorName: "You (Dept Head) & " + hr.split(" ")[0],
+    audience: team,
+    body: `Department Head and HR consultation agreed action: ${action}. Priority target established for team managers.`,
+    createdAt: new Date().toISOString()
+  });
+
+  closePlanModal();
+  toast(`Plan recorded! HR Partner (${hr.split(" ")[0]}) & ${team} lead notified.`);
+  $("#planAction").value = "";
+  if (activeView === "announcements") navigate("announcements");
+});
+
+/* ================================================================
+   INITIALIZATION
+   ================================================================ */
+(async () => {
+  try {
+    const notifs = await apiOrMock("/notifications", "notifications");
+    updateNotifBadge(notifs.unread || 0);
+  } catch {}
+
+  try {
+    const risks = await apiOrMock("/risks", "risks");
+    const unacked = (risks || []).filter(r => !r.acknowledged).length;
+    updateRiskBadge(unacked);
+  } catch {}
+
+  navigate("overview");
+})();
+</script>
+</body>
+</html>
+
